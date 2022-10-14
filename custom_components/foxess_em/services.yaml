@@ -1,0 +1,9 @@
+# Describes the format for available services for the Fox integration
+
+fox_start_force_charge:
+  description: >
+    Starts force charge now until midnight
+
+fox_stop_force_charge:
+  description: >
+    Stops force charge

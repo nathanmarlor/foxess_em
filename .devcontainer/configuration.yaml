@@ -1,0 +1,30 @@
+default_config:
+
+logger:
+  default: info
+  logs:
+    custom_components.foxess_em: debug
+# If you need to debug uncommment the line below (doc: https://www.home-assistant.io/integrations/debugpy/)
+debugpy:
+
+sensor:
+  - platform: statistics
+    name: "Solar"
+    entity_id: sensor.forecast_today
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+template:
+  - sensor:
+      - name: "Battery SOC"
+        state: "15"
+  - sensor:
+      - name: "Load Power"
+        state: "1"
+  - sensor:
+      - name: "myenergi eddi-13195267 Internal Load CT1"
+        state: "1"
+  - sensor:
+      - name: "sensor.myenergi_eddi_13195267_green_energy_today"
+        state: "1"

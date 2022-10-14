@@ -1,0 +1,15 @@
+{
+  "domain": "foxess_em",
+  "name": "FoxESS - Energy Management",
+  "documentation": "https://github.com/nathanmarlor/foxess_em",
+  "issue_tracker": "https://github.com/nathanmarlor/foxess_em/issues",
+  "dependencies": ["recorder"],
+  "config_flow": true,
+  "codeowners": ["@nathanmarlor"],
+  "requirements": [],
+  "version": "0.0.2",
+  "iot_class": "cloud_polling",
+  "supported_brands": {
+    "foxess": "FoxESS"
+  }
+}
