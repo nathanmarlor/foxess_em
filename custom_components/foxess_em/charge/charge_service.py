@@ -1,5 +1,6 @@
-"""Battery controller"""
+"""Charge service"""
 import logging
+from datetime import time
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_point_in_time
@@ -23,8 +24,8 @@ class ChargeService(UnloadController):
         battery_controller: BatteryController,
         forecast_controller: ForecastController,
         fox: FoxCloudService,
-        eco_start_time,
-        eco_end_time,
+        eco_start_time: time,
+        eco_end_time: time,
     ) -> None:
         """Init charge service"""
         UnloadController.__init__(self)

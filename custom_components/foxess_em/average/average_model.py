@@ -1,6 +1,7 @@
 """Average model"""
 import logging
 from datetime import datetime
+from datetime import time
 
 import pandas as pd
 import pytz
@@ -21,7 +22,11 @@ class AverageModel:
     """Class to store history retrieval"""
 
     def __init__(
-        self, hass: HomeAssistant, entities: list, eco_start_time, eco_end_time
+        self,
+        hass: HomeAssistant,
+        entities: dict[str, TrackedSensor],
+        eco_start_time: time,
+        eco_end_time: time,
     ) -> None:
         self._hass = hass
         self._tracked_sensors = entities
@@ -34,8 +39,8 @@ class AverageModel:
         """Model status"""
         return self._ready
 
-    async def refresh(self, sensor_id=None):
-        """Refresh all historical data"""
+    async def refresh(self, sensor_id: str = None):
+        """Refresh historical data"""
         if sensor_id is None:
             # refresh all
             for sensor in self._tracked_sensors:
@@ -47,7 +52,7 @@ class AverageModel:
             await self._update_history(self._tracked_sensors[sensor_id])
 
     async def _update_history(self, sensor: TrackedSensor):
-        """Get HA history"""
+        """Update history values"""
 
         await self._update_item(sensor.primary)
 
@@ -55,7 +60,7 @@ class AverageModel:
             await self._update_item(item)
 
     async def _update_item(self, item: HistorySensor):
-
+        """Retrieve values from HA"""
         recorder = get_instance(self._hass)
 
         to_date = datetime.utcnow()
@@ -95,7 +100,7 @@ class AverageModel:
         item.values = values_dict
 
     def resample_data(self):
-        """Resampled data"""
+        """Return resampled data"""
         if len(self._resampled) == 0:
             raise NoDataError("No house load data available")
         return self._resampled
@@ -128,14 +133,12 @@ class AverageModel:
 
     def average_all_house_load(self) -> float:
         """House load today"""
-
         l_df = self._resampled
 
         return round(l_df.load.sum() / _DAYS_AVERAGE, 2)
 
     def average_peak_house_load(self) -> float:
         """House load peak"""
-
         eco_start = datetime.now().replace(
             hour=self._eco_start_time.hour,
             minute=self._eco_start_time.minute,
@@ -158,7 +161,6 @@ class AverageModel:
 
     def average_house_load_15m(self):
         """Calculate 15m house load"""
-
         total = (
             energy_util.sum_energy(
                 self._tracked_sensors["house_load_15m"].primary.values

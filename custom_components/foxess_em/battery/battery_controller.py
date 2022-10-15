@@ -1,6 +1,7 @@
 """Battery controller"""
 import logging
 from datetime import datetime
+from datetime import time
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
@@ -24,13 +25,13 @@ class BatteryController(UnloadController, CallbackController):
         hass: HomeAssistant,
         forecast_controller: ForecastController,
         average_controller: AverageController,
-        min_soc,
-        capacity,
-        dawn_buffer,
-        day_buffer,
-        charge_rate,
-        eco_start_time,
-        eco_end_time,
+        min_soc: float,
+        capacity: float,
+        dawn_buffer: float,
+        day_buffer: float,
+        charge_rate: float,
+        eco_start_time: time,
+        eco_end_time: time,
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
@@ -92,17 +93,17 @@ class BatteryController(UnloadController, CallbackController):
         return self._model.charge_to_perc(self.charge_total() + self.state_at_eco_end())
 
     def state_at_dawn(self):
-        """Battery and forecast remaining meets load until dawn"""
+        """Battery state at dawn"""
         battery_value = self._model.state_at_dawn()
         return round(battery_value, 2)
 
     def state_at_eco_end(self):
-        """Battery and forecast remaining vs load until eco end"""
+        """Battery state at end of eco period"""
         battery_value = self._model.state_at_eco_end()
         return round(battery_value, 2)
 
     def state_at_eco_start(self):
-        """Battery and forecast remaining vs load until eco start"""
+        """Battery state at start of eco period"""
         battery_value = self._model.state_at_eco_start()
         return round(battery_value, 2)
 
@@ -111,7 +112,7 @@ class BatteryController(UnloadController, CallbackController):
         return self._model.todays_dawn_time()
 
     def todays_dawn_time_str(self):
-        """Return todays dawn time"""
+        """Return todays dawn time in ISO format"""
         return self._model.todays_dawn_time().isoformat()
 
     def next_dawn_time(self):
@@ -154,7 +155,7 @@ class BatteryController(UnloadController, CallbackController):
         return self._model.charge_start_time(self.charge_total())
 
     def charge_start_time_str(self):
-        """Return charge time"""
+        """Return charge time in ISO format"""
         return self.charge_start_time().isoformat()
 
     def battery_last_update(self):
@@ -162,18 +163,18 @@ class BatteryController(UnloadController, CallbackController):
         return self._last_update
 
     def battery_last_update_str(self):
-        """Battery last update"""
+        """Battery last update in ISO format"""
         return self.battery_last_update().isoformat()
 
     def average_last_update_str(self):
-        """Battery last update"""
+        """Average last update in ISO format"""
         return self._average_controller.last_update().isoformat()
 
     def forecast_last_update_str(self):
-        """Battery last update"""
+        """Forecast last update in ISO format"""
         return self._forecast_controller.last_update().isoformat()
 
-    def set_boost(self, status):
+    def set_boost(self, status: bool):
         """Set boost on/off"""
         self._boost = status
         self._notify_listeners()
@@ -182,7 +183,7 @@ class BatteryController(UnloadController, CallbackController):
         """Boost status"""
         return self._boost
 
-    def set_full(self, status):
+    def set_full(self, status: bool):
         """Set full charge on/off"""
         self._full = status
         self._notify_listeners()

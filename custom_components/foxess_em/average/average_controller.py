@@ -1,5 +1,7 @@
+"""Average controller"""
 import logging
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
@@ -22,10 +24,10 @@ class AverageController(UnloadController, CallbackController):
         self,
         hass: HomeAssistant,
         forecast_controller: ForecastController,
-        eco_start_time,
-        eco_end_time,
-        house_power,
-        aux_power,
+        eco_start_time: time,
+        eco_end_time: time,
+        house_power: str,
+        aux_power: list[str],
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
@@ -63,7 +65,7 @@ class AverageController(UnloadController, CallbackController):
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(self, *args, sensor_id=None):
+    async def async_refresh(self, *args, sensor_id: str = None):
         """Refresh data"""
 
         await self._model.refresh(sensor_id)
