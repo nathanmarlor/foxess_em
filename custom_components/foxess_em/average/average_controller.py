@@ -10,7 +10,6 @@ from homeassistant.helpers.event import async_track_utc_time_change
 from ..average.average_model import AverageModel
 from ..common.callback_controller import CallbackController
 from ..common.unload_controller import UnloadController
-from ..forecast.forecast_controller import ForecastController
 from .tracked_sensor import HistorySensor
 from .tracked_sensor import TrackedSensor
 
@@ -23,7 +22,6 @@ class AverageController(UnloadController, CallbackController):
     def __init__(
         self,
         hass: HomeAssistant,
-        forecast_controller: ForecastController,
         eco_start_time: time,
         eco_end_time: time,
         house_power: str,
@@ -32,7 +30,6 @@ class AverageController(UnloadController, CallbackController):
         UnloadController.__init__(self)
         CallbackController.__init__(self)
         self._hass = hass
-        self._forecast_controller = forecast_controller
         self._last_update = None
 
         entities = {

@@ -75,6 +75,7 @@ class ForecastModel:
         df = pd.DataFrame.from_dict(values)
 
         df = df.set_index("period_start").resample("1Min").mean().interpolate("linear")
+
         df["period_start"] = pd.to_datetime(df.index.values, utc=True)
         df["period_start_iso"] = df["period_start"].map(lambda x: x.isoformat())
         df["pv_estimate"] = df["pv_estimate"] / 60

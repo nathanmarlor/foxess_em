@@ -85,7 +85,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # Initialise controllers and services
     forecast_controller = ForecastController(hass, solcast_client)
     average_controller = AverageController(
-        hass, forecast_controller, eco_start_time, eco_end_time, house_power, aux_power
+        hass, eco_start_time, eco_end_time, house_power, aux_power
     )
     battery_controller = BatteryController(
         hass,
