@@ -64,7 +64,7 @@ class FoxCloudService:
             "condition": {"queryDate": {"begin": 0, "end": 0}},
         }
 
-    def _build_charge_start_query(self, device_sn):
+    def _build_charge_start_query(self, device_sn: str):
         """Build device query object"""
         now = datetime.now().astimezone()
         midnight = now.replace(hour=23, minute=59, second=59, microsecond=0)
@@ -97,7 +97,7 @@ class FoxCloudService:
 
         return query
 
-    def _build_charge_stop_query(self, device_sn):
+    def _build_charge_stop_query(self, device_sn: str):
         """Build device query object"""
         query = {
             "sn": device_sn,

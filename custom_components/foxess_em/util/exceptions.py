@@ -9,4 +9,5 @@ class NoDataError(Exception):
         super().__init__(self.message)
 
     def __str__(self):
+        """String representation"""
         return f"{self.message}"

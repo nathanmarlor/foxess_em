@@ -75,7 +75,7 @@ class SolcastApiClient:
         return history_estimates + live_estimates
 
     async def _fetch_data(
-        self, api_key, site_id, solcast_url, path="error", hours=50
+        self, api_key: str, site_id: str, solcast_url: str, path="error", hours=50
     ) -> dict[str, Any]:
         """fetch data via the Solcast API."""
 
@@ -97,7 +97,7 @@ class SolcastApiClient:
         except Exception as ex:
             _LOGGER.error("Solcast API fetch error: %s", ex)
 
-    def _log_status(self, status) -> None:
+    def _log_status(self, status: int) -> None:
         """Processes status code returned from Solcast"""
         if status == 429:
             _LOGGER.error("Solcast API allowed polling limit exceeded")

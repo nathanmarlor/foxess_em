@@ -52,7 +52,7 @@ class ForecastController(UnloadController, CallbackController):
         return self._api.ready()
 
     async def async_refresh(self, *args):
-        """Setup class time tracking"""
+        """Refresh forecast"""
         try:
             _LOGGER.debug("Refreshing forecast data")
 

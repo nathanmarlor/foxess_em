@@ -25,7 +25,7 @@ class ForecastModel:
         return self._ready
 
     async def refresh(self) -> dict:
-        """Get data from the API."""
+        """Get data from the API"""
 
         data = await self._api.async_get_data()
 

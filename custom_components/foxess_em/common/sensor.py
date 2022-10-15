@@ -1,6 +1,7 @@
 """Sensor"""
 import logging
 
+from custom_components.foxess_em.common.callback_controller import CallbackController
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_IDENTIFIERS
@@ -19,7 +20,7 @@ class Sensor(SensorEntity):
 
     def __init__(
         self,
-        controller,
+        controller: CallbackController,
         entity_description: SensorDescription,
         entry: ConfigEntry,
     ) -> None:
@@ -59,6 +60,7 @@ class Sensor(SensorEntity):
 
     @property
     def native_unit_of_measurement(self):
+        """Return native unit of measurement"""
         return self._entity_description.native_unit_of_measurement
 
     @property
