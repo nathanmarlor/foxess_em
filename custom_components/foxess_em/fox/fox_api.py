@@ -26,7 +26,7 @@ class FoxApiClient:
         self._fox_username = fox_username
         self._fox_password = hashlib.md5(str(fox_password).encode("utf-8")).hexdigest()
 
-    async def _refresh_token(self):
+    async def _refresh_token(self) -> dict:
         """Refresh login token"""
         _LOGGER.debug("Logging into Fox Cloud")
         params = {"user": self._fox_username, "password": self._fox_password}
@@ -40,7 +40,7 @@ class FoxApiClient:
 
         return await self._post_data(url, params)
 
-    async def _post_data(self, url: str, params: dict[str, str]):
+    async def _post_data(self, url: str, params: dict[str, str]) -> dict:
         try:
             _LOGGER.debug(f"Issuing request to ({url}) with params: {params}")
             async with async_timeout.timeout(_TIMEOUT):

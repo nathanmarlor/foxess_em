@@ -75,7 +75,7 @@ SENSORS: dict[str, SensorDescription] = {
 }
 
 
-def sensors(controllers, entry):
+def sensors(controllers, entry) -> list:
     """Setup sensor platform."""
     entities = []
 

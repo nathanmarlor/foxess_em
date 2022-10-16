@@ -11,7 +11,7 @@ from .forecast import forecast_sensor
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
-async def async_setup_entry(hass, entry: ConfigEntry, async_add_devices):
+async def async_setup_entry(hass, entry: ConfigEntry, async_add_devices) -> None:
     """Setup sensor platform."""
 
     controllers = hass.data[DOMAIN][entry.entry_id]["controllers"]

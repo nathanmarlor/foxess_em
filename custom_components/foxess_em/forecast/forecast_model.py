@@ -20,11 +20,11 @@ class ForecastModel:
         self._api = api
         self._ready = False
 
-    def ready(self):
+    def ready(self) -> bool:
         """Model status"""
         return self._ready
 
-    async def refresh(self) -> dict:
+    async def refresh(self) -> None:
         """Get data from the API"""
 
         data = await self._api.async_get_data()
@@ -33,13 +33,13 @@ class ForecastModel:
 
         self._ready = True
 
-    def resample_data(self):
+    def resample_data(self) -> pd.DataFrame:
         """Return resampled data"""
         if len(self._resampled) == 0:
             raise NoDataError("No forecast data available")
         return self._resampled
 
-    def total_kwh_forecast_today(self) -> int:
+    def total_kwh_forecast_today(self) -> float:
         """Total forecast today"""
         date_now = datetime.now().astimezone()
         f_df = self._resampled
@@ -47,7 +47,7 @@ class ForecastModel:
 
         return round(filtered.pv_estimate.sum(), 2)
 
-    def total_kwh_forecast_tomorrow(self) -> int:
+    def total_kwh_forecast_tomorrow(self) -> float:
         """Total forecast tomorrow"""
         date_tomorrow = datetime.now().astimezone() + timedelta(days=1)
         f_df = self._resampled
@@ -55,7 +55,7 @@ class ForecastModel:
 
         return round(filtered.pv_estimate.sum(), 2)
 
-    def total_kwh_forecast_today_remaining(self):
+    def total_kwh_forecast_today_remaining(self) -> float:
         """Return Remaining Forecasts data for today"""
         date_now = datetime.now().astimezone()
         forecast = self._resampled
@@ -66,15 +66,20 @@ class ForecastModel:
 
         return round(forecast.pv_estimate.sum(), 2)
 
-    def energy(self):
+    def energy(self) -> pd.DataFrame:
         """Return energy"""
         return self._resampled
 
-    def _resample(self, values):
+    def _resample(self, values) -> pd.DataFrame:
         """Resample values"""
         df = pd.DataFrame.from_dict(values)
 
-        df = df.set_index("period_start").resample("1Min").mean().interpolate("linear")
+        df = (
+            df.set_index("period_start")
+            .resample("1Min")
+            .mean(numeric_only=True)
+            .interpolate("linear")
+        )
 
         df["period_start"] = pd.to_datetime(df.index.values, utc=True)
         df["period_start_iso"] = df["period_start"].map(lambda x: x.isoformat())

@@ -2,6 +2,7 @@
 import logging
 
 from custom_components.foxess_em.common.callback_controller import CallbackController
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_IDENTIFIERS
@@ -41,7 +42,7 @@ class Sensor(SensorEntity):
         self._unique_id = f"foxess_em_{entity_description.name}"
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the sensor."""
         return self._entity_description.name
 
@@ -59,22 +60,22 @@ class Sensor(SensorEntity):
             return method()
 
     @property
-    def native_unit_of_measurement(self):
+    def native_unit_of_measurement(self) -> str:
         """Return native unit of measurement"""
         return self._entity_description.native_unit_of_measurement
 
     @property
-    def icon(self):
+    def icon(self) -> str:
         """Return the icon of the sensor."""
         return self._entity_description.icon
 
     @property
-    def device_class(self):
+    def device_class(self) -> SensorDeviceClass:
         """Return the device class of the sensor."""
         return self._entity_description.device_class
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return the unique ID of the binary sensor."""
         return self._unique_id
 
@@ -85,11 +86,11 @@ class Sensor(SensorEntity):
         """
         return self._entity_description.should_poll
 
-    def update_callback(self):
+    def update_callback(self) -> None:
         """Schedule a state update."""
         self.schedule_update_ha_state(True)
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Add update callback after being added to hass."""
         await super().async_added_to_hass()
         self._controller.add_update_listener(self)

@@ -2,7 +2,7 @@
 from datetime import timedelta
 
 
-def sum_energy(values: list[dict]):
+def sum_energy(values: list[dict]) -> float:
     """Sum power values into energy"""
 
     energy_total = 0

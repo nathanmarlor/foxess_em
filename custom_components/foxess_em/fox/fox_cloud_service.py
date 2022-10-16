@@ -20,7 +20,7 @@ class FoxCloudService:
         self._api = api
         self._device_sn = None
 
-    async def start_force_charge(self, *args):
+    async def start_force_charge(self, *args) -> None:
         """Start force charge"""
         _LOGGER.debug("Requesting start force charge from Fox Cloud")
 
@@ -32,7 +32,7 @@ class FoxCloudService:
         except NoDataError as ex:
             _LOGGER.error(ex)
 
-    async def stop_force_charge(self, *args):
+    async def stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
         _LOGGER.debug("Requesting stop force charge from Fox Cloud")
 
@@ -44,7 +44,7 @@ class FoxCloudService:
         except NoDataError as ex:
             _LOGGER.error(ex)
 
-    async def device_serial_number(self):
+    async def device_serial_number(self) -> None:
         """Get device serial number"""
         if self._device_sn is None:
             device = await self._api.async_post_data(
@@ -55,7 +55,7 @@ class FoxCloudService:
 
         return self._device_sn
 
-    def _build_device_query(self):
+    def _build_device_query(self) -> dict:
         """Build device query object"""
         return {
             "pagesize": 10,
@@ -64,7 +64,7 @@ class FoxCloudService:
             "condition": {"queryDate": {"begin": 0, "end": 0}},
         }
 
-    def _build_charge_start_query(self, device_sn: str):
+    def _build_charge_start_query(self, device_sn: str) -> dict:
         """Build device query object"""
         now = datetime.now().astimezone()
         midnight = now.replace(hour=23, minute=59, second=59, microsecond=0)
@@ -97,7 +97,7 @@ class FoxCloudService:
 
         return query
 
-    def _build_charge_stop_query(self, device_sn: str):
+    def _build_charge_stop_query(self, device_sn: str) -> dict:
         """Build device query object"""
         query = {
             "sn": device_sn,

@@ -1,9 +1,11 @@
 """Adds config flow for foxess_em."""
 import datetime
 import logging
+from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
@@ -83,12 +85,12 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize."""
         self._errors = {}
         self._data = None
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         self._errors = {}
 
@@ -110,7 +112,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=_SOLCAST_SCHEMA, errors=self._errors
         )
 
-    async def async_step_fox(self, user_input=None):
+    async def async_step_fox(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             fox_valid = await self._test_fox(
@@ -127,7 +129,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="fox", data_schema=_FOX_SCHEMA, errors=self._errors
         )
 
-    async def async_step_battery(self, user_input=None):
+    async def async_step_battery(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             user_input[MIN_SOC] = round(user_input[MIN_SOC] / 100, 2)
@@ -145,7 +147,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="battery", data_schema=_BATTERY_SCHEMA, errors=self._errors
         )
 
-    async def async_step_power(self, user_input=None):
+    async def async_step_power(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             self._data.update(user_input)
@@ -161,7 +163,9 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         except ValueError:
             return False
 
-    async def _test_solcast(self, solcast_site_id, solcast_api_key, solcast_url):
+    async def _test_solcast(
+        self, solcast_site_id: str, solcast_api_key: str, solcast_url: str
+    ):
         """Return true if credentials is valid."""
         try:
             session = async_create_clientsession(self.hass)
@@ -178,7 +182,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             pass
         return False
 
-    async def _test_fox(self, fox_username, fox_password):
+    async def _test_fox(self, fox_username: str, fox_password: str):
         """Return true if credentials is valid."""
         try:
             session = async_create_clientsession(self.hass)
@@ -196,7 +200,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(config_entry: ConfigEntry):
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
@@ -251,7 +255,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             }
         )
 
-    async def async_step_init(self, user_input):
+    async def async_step_init(self, user_input: dict[str, Any]):
         """Manage the options for the custom component."""
         if user_input is not None:
             user_input[MIN_SOC] = round(user_input[MIN_SOC] / 100, 2)

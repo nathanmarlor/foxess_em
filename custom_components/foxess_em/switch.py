@@ -58,33 +58,33 @@ class BatterySwitch(SwitchEntity):
 
         self._unique_id = f"{DEFAULT_NAME}_{SWITCH}_{self._switch_desc.name}"
 
-    async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument
+    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn on the switch."""
         switch = getattr(self._controller, self._switch_desc.switch)
         switch(True)
 
-    async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
+    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn off the switch."""
         switch = getattr(self._controller, self._switch_desc.switch)
         switch(False)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the switch."""
         return self._switch_desc.name
 
     @property
-    def icon(self):
+    def icon(self) -> str:
         """Return the icon of this switch."""
         return self._switch_desc.icon
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return the unique ID of the binary sensor."""
         return self._unique_id
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return true if the switch is on."""
         is_on = getattr(self._controller, self._switch_desc.is_on)
         return is_on()

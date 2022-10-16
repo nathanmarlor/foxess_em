@@ -61,7 +61,7 @@ class ChargeService(UnloadController):
         )
         self._unload_listeners.append(eco_end)
 
-    async def _set_schedule(self, *args):
+    async def _set_schedule(self, *args) -> None:  # pylint: disable=unused-argument
         """Configure battery needs"""
         _LOGGER.debug("Configuring battery schedule")
 
@@ -84,7 +84,9 @@ class ChargeService(UnloadController):
         else:
             _LOGGER.debug("No charge required")
 
-    async def _start_force_charge(self, *args) -> None:
+    async def _start_force_charge(
+        self, *args
+    ) -> None:  # pylint: disable=unused-argument
         """Initiate force charging"""
         _LOGGER.debug(f"Starting force charge to {self._perc_target}")
 
@@ -104,7 +106,9 @@ class ChargeService(UnloadController):
 
         await self._fox.start_force_charge()
 
-    async def _stop_force_charge(self, *args):
+    async def _stop_force_charge(
+        self, *args
+    ) -> None:  # pylint: disable=unused-argument
         """Stop force charging"""
 
         if self._charge_active:
