@@ -32,6 +32,7 @@ class BatteryController(UnloadController, CallbackController):
         charge_rate: float,
         eco_start_time: time,
         eco_end_time: time,
+        battery_soc: str,
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
@@ -45,6 +46,7 @@ class BatteryController(UnloadController, CallbackController):
             charge_rate,
             eco_start_time,
             eco_end_time,
+            battery_soc,
         )
         self._forecast_controller = forecast_controller
         self._average_controller = average_controller
@@ -54,7 +56,7 @@ class BatteryController(UnloadController, CallbackController):
 
         # Refresh on SoC change
         battery_refresh = async_track_state_change(
-            self._hass, "sensor.battery_soc", self.refresh
+            self._hass, battery_soc, self.refresh
         )
         self._unload_listeners.append(battery_refresh)
 

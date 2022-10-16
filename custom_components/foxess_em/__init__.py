@@ -19,6 +19,7 @@ from .battery.battery_controller import BatteryController
 from .charge.charge_service import ChargeService
 from .const import AUX_POWER
 from .const import BATTERY_CAPACITY
+from .const import BATTERY_SOC
 from .const import CHARGE_RATE
 from .const import DAWN_BUFFER
 from .const import DAY_BUFFER
@@ -68,6 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
     eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
     house_power = entry.data.get(HOUSE_POWER)
+    battery_soc = entry.data.get(BATTERY_SOC)
     aux_power = entry.options.get(AUX_POWER, entry.data.get(AUX_POWER))
     min_soc = entry.options.get(MIN_SOC, entry.data.get(MIN_SOC))
     capacity = entry.options.get(BATTERY_CAPACITY, entry.data.get(BATTERY_CAPACITY))
@@ -98,6 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         charge_rate,
         eco_start_time,
         eco_end_time,
+        battery_soc,
     )
     fox_service = FoxCloudService(fox_client)
     charge_service = ChargeService(
@@ -107,6 +110,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         fox_service,
         eco_start_time,
         eco_end_time,
+        battery_soc,
     )
 
     hass.data[DOMAIN][entry.entry_id] = {
