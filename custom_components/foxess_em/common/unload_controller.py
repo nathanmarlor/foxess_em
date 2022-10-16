@@ -10,7 +10,7 @@ class UnloadController:
     def __init__(self) -> None:
         self._unload_listeners = []
 
-    def unload(self):
+    def unload(self) -> None:
         """Unload all listeners"""
         for listener in self._unload_listeners:
             listener()

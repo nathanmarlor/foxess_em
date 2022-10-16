@@ -1,14 +1,16 @@
+"""Average controller"""
 import logging
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
+from pandas import DataFrame
 
 from ..average.average_model import AverageModel
 from ..common.callback_controller import CallbackController
 from ..common.unload_controller import UnloadController
-from ..forecast.forecast_controller import ForecastController
 from .tracked_sensor import HistorySensor
 from .tracked_sensor import TrackedSensor
 
@@ -21,16 +23,14 @@ class AverageController(UnloadController, CallbackController):
     def __init__(
         self,
         hass: HomeAssistant,
-        forecast_controller: ForecastController,
-        eco_start_time,
-        eco_end_time,
-        house_power,
-        aux_power,
+        eco_start_time: time,
+        eco_end_time: time,
+        house_power: str,
+        aux_power: list[str],
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
         self._hass = hass
-        self._forecast_controller = forecast_controller
         self._last_update = None
 
         entities = {
@@ -59,11 +59,13 @@ class AverageController(UnloadController, CallbackController):
         )
         self._unload_listeners.append(midnight_refresh)
 
-    def ready(self):
+    def ready(self) -> bool:
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(self, *args, sensor_id=None):
+    async def async_refresh(
+        self, *args, sensor_id: str = None
+    ) -> None:  # pylint: disable=unused-argument
         """Refresh data"""
 
         await self._model.refresh(sensor_id)
@@ -73,22 +75,22 @@ class AverageController(UnloadController, CallbackController):
             self._last_update = datetime.now().astimezone()
             self._notify_listeners()
 
-    def resample_data(self):
+    def resample_data(self) -> DataFrame:
         """Return resampled data"""
         return self._model.resample_data()
 
-    def average_all_house_load(self):
+    def average_all_house_load(self) -> float:
         """Average daily house load"""
         return self._model.average_all_house_load()
 
-    def average_peak_house_load(self):
+    def average_peak_house_load(self) -> float:
         """Average peak house load"""
         return self._model.average_peak_house_load()
 
-    def house_load_15m(self):
+    def house_load_15m(self) -> float:
         """Calculate 15m house load"""
         return self._model.average_house_load_15m()
 
-    def last_update(self):
+    def last_update(self) -> datetime:
         """Return last update"""
         return self._last_update

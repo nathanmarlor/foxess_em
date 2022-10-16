@@ -1,24 +1,8 @@
 """Energy utilities"""
 from datetime import timedelta
 
-import pandas as pd
 
-
-def resample(values):
-    """Resample dict of datetime/value to 1m"""
-    df = pd.DataFrame.from_dict(values)
-    df["value"] = pd.to_numeric(df["value"], errors="coerce")
-    df["datetime"] = pd.to_datetime(df["datetime"], utc=True)
-
-    df = df.dropna()
-    full_data = df.set_index("datetime").resample("1T").mean().interpolate("linear")
-
-    full_data["datetime"] = full_data.index.values
-
-    return full_data
-
-
-def sum_energy(values):
+def sum_energy(values: list[dict]) -> float:
     """Sum power values into energy"""
 
     energy_total = 0

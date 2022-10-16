@@ -18,7 +18,7 @@ class FoxApiClient:
     """API client"""
 
     def __init__(
-        self, session: aiohttp.ClientSession, fox_username, fox_password
+        self, session: aiohttp.ClientSession, fox_username: str, fox_password: str
     ) -> None:
         """Fox API Client."""
         self._session = session
@@ -26,20 +26,21 @@ class FoxApiClient:
         self._fox_username = fox_username
         self._fox_password = hashlib.md5(str(fox_password).encode("utf-8")).hexdigest()
 
-    async def _refresh_token(self):
+    async def _refresh_token(self) -> dict:
+        """Refresh login token"""
         _LOGGER.debug("Logging into Fox Cloud")
         params = {"user": self._fox_username, "password": self._fox_password}
         result = await self._post_data(_LOGIN, params)
         self._token = {"token": result["token"]}
 
-    async def async_post_data(self, url, params) -> dict:
+    async def async_post_data(self, url: str, params: dict[str, str]) -> dict:
         """Post data via the Fox API."""
         if self._token is None:
             await self._refresh_token()
 
         return await self._post_data(url, params)
 
-    async def _post_data(self, url, params):
+    async def _post_data(self, url: str, params: dict[str, str]) -> dict:
         try:
             _LOGGER.debug(f"Issuing request to ({url}) with params: {params}")
             async with async_timeout.timeout(_TIMEOUT):
@@ -62,7 +63,6 @@ class FoxApiClient:
                 raise NoDataError(
                     f"Could not make request to Fox Cloud - Error: {status}"
                 )
-
         else:
             raise NoDataError(
                 f"Could not make request to Fox Cloud - HTTP Status: {response.status}"

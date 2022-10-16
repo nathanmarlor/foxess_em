@@ -1,6 +1,7 @@
 """Battery model"""
 import logging
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 
 import pandas as pd
@@ -17,13 +18,13 @@ class BatteryModel:
     def __init__(
         self,
         hass: HomeAssistant,
-        min_soc,
-        capacity,
-        dawn_buffer,
-        day_buffer,
-        charge_rate,
-        eco_start_time,
-        eco_end_time,
+        min_soc: float,
+        capacity: float,
+        dawn_buffer: float,
+        day_buffer: float,
+        charge_rate: float,
+        eco_start_time: time,
+        eco_end_time: time,
     ) -> None:
         self._hass = hass
         self._model = None
@@ -36,13 +37,12 @@ class BatteryModel:
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
 
-    def ready(self):
+    def ready(self) -> bool:
         """Model status"""
         return self._ready
 
-    def battery_capacity_remaining(self):
+    def battery_capacity_remaining(self) -> float:
         """Usable capacity remaining"""
-        battery_soc = 0
         battery_state = self._hass.states.get("sensor.battery_soc")
         if battery_state is None:
             raise NoDataError("Battery state is invalid")
@@ -54,16 +54,13 @@ class BatteryModel:
 
         return battery_capacity - (self._min_soc * self._capacity)
 
-    def charge_to_perc(self, charge):
+    def charge_to_perc(self, charge: float) -> float:
         """Convert kWh to percentage of charge"""
         perc = ((charge / self._capacity) + self._min_soc) * 100
 
-        if perc > 99:
-            return 99
-        else:
-            return round(perc, 0)
+        return min(99, round(perc, 0))
 
-    def charge_start_time(self, charge):
+    def charge_start_time(self, charge: float) -> datetime:
         """Convert kWh to time to charge"""
         minutes = (charge / self._charge_rate) * 60
         delta = timedelta(minutes=minutes)
@@ -72,10 +69,10 @@ class BatteryModel:
 
         return start_time
 
-    def refresh_battery_model(self, forecast, load):
+    def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
 
-        load = load.groupby(load["time"]).mean()
+        load = load.groupby(load["time"]).mean(numeric_only=True)
         load["time"] = load.index.values
 
         now = datetime.utcnow()
@@ -111,19 +108,19 @@ class BatteryModel:
         self._model = merged
         self._ready = True
 
-    def state_at_eco_start(self):
+    def state_at_eco_start(self) -> float:
         """State at eco end"""
         return self._state_at_datetime(self._next_eco_start_time())
 
-    def state_at_eco_end(self):
+    def state_at_eco_end(self) -> float:
         """State at eco end"""
         return self._state_at_datetime(self._next_eco_end_time())
 
-    def state_at_dawn(self):
+    def state_at_dawn(self) -> float:
         """State at eco end"""
         return self._state_at_datetime(self.next_dawn_time())
 
-    def dawn_load(self):
+    def dawn_load(self) -> float:
         """Dawn load"""
         dawn_time = self.next_dawn_time()
         eco_time = self._next_eco_end_time()
@@ -139,7 +136,7 @@ class BatteryModel:
 
         return round(load_sum, 2)
 
-    def dawn_charge_needs(self):
+    def dawn_charge_needs(self) -> float:
         """Dawn charge needs"""
         if self._is_after_todays_eco_end() and self._is_before_todays_dawn():
             return 0
@@ -155,7 +152,7 @@ class BatteryModel:
 
         return round(ceiling, 2)
 
-    def next_dawn_time(self):
+    def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
         now = datetime.now().astimezone()
 
@@ -167,12 +164,12 @@ class BatteryModel:
         else:
             return dawn_today
 
-    def todays_dawn_time(self):
+    def todays_dawn_time(self) -> datetime:
         """Calculate dawn time"""
         now = datetime.now().astimezone()
         return self._dawn_time(now)
 
-    def _dawn_time(self, date: datetime):
+    def _dawn_time(self, date: datetime) -> datetime:
         """Calculate dawn time"""
         filtered = self._model[self._model["date"] == date.date()]
         dawn = filtered[filtered["delta"] > 0]
@@ -184,8 +181,12 @@ class BatteryModel:
             return self._model.iloc[dawn["period_start"].idxmin()].period_start
 
     def day_charge_needs(
-        self, forecast_today, forecast_tomorrow, state_at_eco_end, house_load
-    ):
+        self,
+        forecast_today: float,
+        forecast_tomorrow: float,
+        state_at_eco_end: float,
+        house_load: float,
+    ) -> float:
         """Day charge needs"""
         if self._is_after_todays_eco_end():
             forecast = forecast_tomorrow
@@ -200,24 +201,22 @@ class BatteryModel:
 
         return round(ceiling, 2)
 
-    def ceiling_charge_total(self, charge_total):
+    def ceiling_charge_total(self, charge_total: float) -> float:
         """Ceiling total charge"""
         available_capacity = round(
             self._capacity - (self._min_soc * self._capacity) - self.state_at_eco_end(),
             2,
         )
 
-        if charge_total > available_capacity:
-            return available_capacity
-        else:
-            return charge_total
+        return min(available_capacity, charge_total)
 
-    def _state_at_datetime(self, time):
+    def _state_at_datetime(self, time: datetime) -> float:
         """Battery and forecast remaining meets load until dawn"""
         time = time.replace(second=0, microsecond=0)
         return self._model[self._model["period_start"] == time].battery.iloc[0]
 
-    def _next_eco_end_time(self):
+    def _next_eco_end_time(self) -> datetime:
+        """Next eco end time"""
         now = datetime.now().astimezone()
         eco_end = now.replace(
             hour=self._eco_end_time.hour,
@@ -230,7 +229,8 @@ class BatteryModel:
 
         return eco_end
 
-    def _next_eco_start_time(self):
+    def _next_eco_start_time(self) -> datetime:
+        """Next eco start time"""
         now = datetime.now().astimezone()
         eco_start = now.replace(
             hour=self._eco_start_time.hour,
@@ -243,7 +243,7 @@ class BatteryModel:
 
         return eco_start
 
-    def _is_after_todays_eco_end(self):
+    def _is_after_todays_eco_end(self) -> bool:
         """Is current time after eco period end"""
         now = datetime.now().astimezone()
         eco_end = now.replace(
@@ -254,7 +254,7 @@ class BatteryModel:
         )
         return now > eco_end
 
-    def _is_before_todays_dawn(self):
+    def _is_before_todays_dawn(self) -> bool:
         """Is current time after eco period end"""
         now = datetime.now().astimezone()
         dawn_time = self.todays_dawn_time()

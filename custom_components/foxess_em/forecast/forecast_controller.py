@@ -4,6 +4,7 @@ from datetime import datetime
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
+from pandas import DataFrame
 
 from ..common.callback_controller import CallbackController
 from ..common.unload_controller import UnloadController
@@ -47,12 +48,12 @@ class ForecastController(UnloadController, CallbackController):
         )
         self._unload_listeners.append(reset_api)
 
-    def ready(self):
+    def ready(self) -> bool:
         """Model status"""
         return self._api.ready()
 
-    async def async_refresh(self, *args):
-        """Setup class time tracking"""
+    async def async_refresh(self, *args) -> None:  # pylint: disable=unused-argument
+        """Refresh forecast"""
         try:
             _LOGGER.debug("Refreshing forecast data")
 
@@ -68,34 +69,34 @@ class ForecastController(UnloadController, CallbackController):
         except Exception as ex:
             _LOGGER.error(ex)
 
-    def resample_data(self):
+    def resample_data(self) -> DataFrame:
         """Return resampled data"""
         return self._api.resample_data()
 
-    async def _reset_api_count(self, *args):
+    async def _reset_api_count(self, *args) -> None:  # pylint: disable=unused-argument
         """Reset API count to 0"""
         self._api_count = 0
 
-    def total_kwh_forecast_today(self) -> int:
+    def total_kwh_forecast_today(self) -> float:
         """Total forecast today"""
         return self._api.total_kwh_forecast_today()
 
-    def total_kwh_forecast_tomorrow(self) -> int:
+    def total_kwh_forecast_tomorrow(self) -> float:
         """Total forecast tomorrow"""
         return self._api.total_kwh_forecast_tomorrow()
 
-    def total_kwh_forecast_today_remaining(self):
+    def total_kwh_forecast_today_remaining(self) -> float:
         """Return Remaining Forecasts data for today"""
         return self._api.total_kwh_forecast_today_remaining()
 
-    def energy(self):
+    def energy(self) -> DataFrame:
         """Return energy"""
         return self._api.energy()
 
-    def last_update(self):
+    def last_update(self) -> datetime:
         """Return last update time"""
         return self._last_update
 
-    def api_count(self):
+    def api_count(self) -> int:
         """Return API count"""
         return self._api_count

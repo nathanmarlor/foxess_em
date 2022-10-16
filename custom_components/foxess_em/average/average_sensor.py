@@ -37,7 +37,7 @@ SENSORS: dict[str, SensorDescription] = {
 }
 
 
-def sensors(controllers, entry):
+def sensors(controllers, entry) -> list:
     """Setup sensor platform."""
     entities = []
 
@@ -51,7 +51,7 @@ def sensors(controllers, entry):
 class TimeSeriesAverageSensor(Sensor):
     """Time series overload"""
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Retrieve latest state."""
         if self._entity_description.should_poll:
             await self._controller.async_refresh(sensor_id=self._entity_description.key)

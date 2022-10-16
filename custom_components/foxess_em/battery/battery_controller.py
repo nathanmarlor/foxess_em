@@ -1,6 +1,7 @@
 """Battery controller"""
 import logging
 from datetime import datetime
+from datetime import time
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
@@ -24,13 +25,13 @@ class BatteryController(UnloadController, CallbackController):
         hass: HomeAssistant,
         forecast_controller: ForecastController,
         average_controller: AverageController,
-        min_soc,
-        capacity,
-        dawn_buffer,
-        day_buffer,
-        charge_rate,
-        eco_start_time,
-        eco_end_time,
+        min_soc: float,
+        capacity: float,
+        dawn_buffer: float,
+        day_buffer: float,
+        charge_rate: float,
+        eco_start_time: time,
+        eco_end_time: time,
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
@@ -57,15 +58,15 @@ class BatteryController(UnloadController, CallbackController):
         )
         self._unload_listeners.append(battery_refresh)
 
-    def ready(self):
+    def ready(self) -> bool:
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(self):
+    async def async_refresh(self) -> None:
         """Async refresh"""
         self.refresh()
 
-    def refresh(self, *args):
+    def refresh(self, *args) -> None:  # pylint: disable=unused-argument
         """Refresh battery model"""
         _LOGGER.debug("Refreshing battery model")
 
@@ -83,46 +84,46 @@ class BatteryController(UnloadController, CallbackController):
         except Exception as ex:
             _LOGGER.error(ex)
 
-    def update_callback(self):
+    def update_callback(self) -> None:
         """Schedule a refresh"""
         self.refresh()
 
-    def charge_to_perc(self):
+    def charge_to_perc(self) -> int:
         """Calculate percentage target"""
         return self._model.charge_to_perc(self.charge_total() + self.state_at_eco_end())
 
-    def state_at_dawn(self):
-        """Battery and forecast remaining meets load until dawn"""
+    def state_at_dawn(self) -> float:
+        """Battery state at dawn"""
         battery_value = self._model.state_at_dawn()
         return round(battery_value, 2)
 
-    def state_at_eco_end(self):
-        """Battery and forecast remaining vs load until eco end"""
+    def state_at_eco_end(self) -> float:
+        """Battery state at end of eco period"""
         battery_value = self._model.state_at_eco_end()
         return round(battery_value, 2)
 
-    def state_at_eco_start(self):
-        """Battery and forecast remaining vs load until eco start"""
+    def state_at_eco_start(self) -> float:
+        """Battery state at start of eco period"""
         battery_value = self._model.state_at_eco_start()
         return round(battery_value, 2)
 
-    def todays_dawn_time(self):
+    def todays_dawn_time(self) -> datetime:
         """Return todays dawn time"""
         return self._model.todays_dawn_time()
 
-    def todays_dawn_time_str(self):
-        """Return todays dawn time"""
+    def todays_dawn_time_str(self) -> str:
+        """Return todays dawn time in ISO format"""
         return self._model.todays_dawn_time().isoformat()
 
-    def next_dawn_time(self):
+    def next_dawn_time(self) -> datetime:
         """Return next dawn time"""
         return self._model.next_dawn_time()
 
-    def dawn_charge_needs(self):
+    def dawn_charge_needs(self) -> float:
         """Dawn charge needs"""
         return self._model.dawn_charge_needs()
 
-    def day_charge_needs(self):
+    def day_charge_needs(self) -> float:
         """Day charge needs"""
         state_at_eco_end = self.state_at_eco_end()
         house_load = self._average_controller.average_peak_house_load()
@@ -133,7 +134,7 @@ class BatteryController(UnloadController, CallbackController):
             forecast_today, forecast_tomorrow, state_at_eco_end, house_load
         )
 
-    def charge_total(self):
+    def charge_total(self) -> float:
         """Total kWh required to charge"""
         if self._full:
             return self._model.ceiling_charge_total(float("inf"))
@@ -149,44 +150,44 @@ class BatteryController(UnloadController, CallbackController):
 
         return total
 
-    def charge_start_time(self):
+    def charge_start_time(self) -> datetime:
         """Return charge time"""
         return self._model.charge_start_time(self.charge_total())
 
-    def charge_start_time_str(self):
-        """Return charge time"""
+    def charge_start_time_str(self) -> str:
+        """Return charge time in ISO format"""
         return self.charge_start_time().isoformat()
 
-    def battery_last_update(self):
+    def battery_last_update(self) -> datetime:
         """Battery last update"""
         return self._last_update
 
-    def battery_last_update_str(self):
-        """Battery last update"""
+    def battery_last_update_str(self) -> str:
+        """Battery last update in ISO format"""
         return self.battery_last_update().isoformat()
 
-    def average_last_update_str(self):
-        """Battery last update"""
+    def average_last_update_str(self) -> str:
+        """Average last update in ISO format"""
         return self._average_controller.last_update().isoformat()
 
-    def forecast_last_update_str(self):
-        """Battery last update"""
+    def forecast_last_update_str(self) -> str:
+        """Forecast last update in ISO format"""
         return self._forecast_controller.last_update().isoformat()
 
-    def set_boost(self, status):
+    def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
         self._boost = status
         self._notify_listeners()
 
-    def boost_status(self):
+    def boost_status(self) -> bool:
         """Boost status"""
         return self._boost
 
-    def set_full(self, status):
+    def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
         self._full = status
         self._notify_listeners()
 
-    def full_status(self):
+    def full_status(self) -> bool:
         """Full status"""
         return self._full
