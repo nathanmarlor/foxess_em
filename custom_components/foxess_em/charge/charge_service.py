@@ -26,6 +26,7 @@ class ChargeService(UnloadController):
         fox: FoxCloudService,
         eco_start_time: time,
         eco_end_time: time,
+        battery_soc: str,
     ) -> None:
         """Init charge service"""
         UnloadController.__init__(self)
@@ -35,6 +36,7 @@ class ChargeService(UnloadController):
         self._fox = fox
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
+        self._battery_soc = battery_soc
         self._cancel_charge_listener = None
         self._charge_active = False
         self._perc_target = 0
@@ -95,7 +97,7 @@ class ChargeService(UnloadController):
         # Setup trigger to stop charge when target percentage is met
         start_charge = async_track_state_change(
             self._hass,
-            "sensor.battery_soc",
+            self._battery_soc,
             self._stop_force_charge,
             str(int(self._perc_target) - 1),
             str(int(self._perc_target)),

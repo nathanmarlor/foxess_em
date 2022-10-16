@@ -20,8 +20,8 @@ ATTR_ENTRY_TYPE = "entry_type"
 SOLCAST_API_SITE = "site"
 SOLCAST_API_KEY = "key"
 SOLCAST_SCAN_INTERVAL = "scan_interval"
-SOLCAST_URL = "https://8c85c8b3-56db-49c5-96c3-44f615be2779.mock.pstmn.io"
-# SOLCAST_URL = "https://api.solcast.com.au"
+# SOLCAST_URL = "https://8c85c8b3-56db-49c5-96c3-44f615be2779.mock.pstmn.io"
+SOLCAST_URL = "https://api.solcast.com.au"
 FOX_USERNAME = "fox_username"
 FOX_PASSWORD = "fox_password"
 
@@ -35,6 +35,7 @@ DAY_BUFFER = "day_buffer"
 MIN_SOC = "min_soc"
 BATTERY_CAPACITY = "capacity"
 CHARGE_RATE = "charge_rate"
+BATTERY_SOC = "battery_soc"
 
 # Defaults
 DEFAULT_NAME = DOMAIN

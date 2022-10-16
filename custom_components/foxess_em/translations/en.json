@@ -34,6 +34,7 @@
         "title": "FoxESS - Energy Management: (4/4)",
         "description": "Please enter your load power options",
         "data": {
+          "battery_soc": "Battery SoC (%)",
           "house_power": "House Power (kW)",
           "aux_power": "Aux Power (W) - Power to remove from the base house load i.e. Eddi"
         }

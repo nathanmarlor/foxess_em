@@ -15,6 +15,7 @@ from ..foxess_em.const import DAY_BUFFER
 from ..foxess_em.const import MIN_SOC
 from .const import AUX_POWER
 from .const import BATTERY_CAPACITY
+from .const import BATTERY_SOC
 from .const import CHARGE_RATE
 from .const import DOMAIN
 from .const import ECO_END_TIME
@@ -69,6 +70,11 @@ _BATTERY_SCHEMA = vol.Schema(
 
 _POWER_SCHEMA = vol.Schema(
     {
+        vol.Required(
+            BATTERY_SOC, default="sensor.battery_soc"
+        ): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", multiple=False)
+        ),
         vol.Required(HOUSE_POWER, default="sensor.load_power"): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", multiple=False)
         ),

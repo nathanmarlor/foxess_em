@@ -25,6 +25,7 @@ class BatteryModel:
         charge_rate: float,
         eco_start_time: time,
         eco_end_time: time,
+        battery_soc: str,
     ) -> None:
         self._hass = hass
         self._model = None
@@ -36,6 +37,7 @@ class BatteryModel:
         self._charge_rate = charge_rate
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
+        self._battery_soc = battery_soc
 
     def ready(self) -> bool:
         """Model status"""
@@ -43,7 +45,7 @@ class BatteryModel:
 
     def battery_capacity_remaining(self) -> float:
         """Usable capacity remaining"""
-        battery_state = self._hass.states.get("sensor.battery_soc")
+        battery_state = self._hass.states.get(self._battery_soc)
         if battery_state is None:
             raise NoDataError("Battery state is invalid")
         if battery_state.state in ["unknown", "unavailable"]:
