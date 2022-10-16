@@ -81,6 +81,10 @@ class AverageModel:
             from_date,
             to_date,
             str(item.sensor_name),
+            False,
+            False,
+            None,
+            False,
         )
 
         values = history_list.get(item.sensor_name)
