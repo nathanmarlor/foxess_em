@@ -74,7 +74,7 @@ class BatteryModel:
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
 
-        load = load.groupby(load["time"]).mean(numeric_only=True)
+        load = load.groupby(load["time"]).mean()
         load["time"] = load.index.values
 
         now = datetime.utcnow()

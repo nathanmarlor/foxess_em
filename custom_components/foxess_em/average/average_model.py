@@ -136,13 +136,7 @@ class AverageModel:
         """Resample values"""
         df = pd.DataFrame.from_dict(values)
 
-        df = (
-            df.set_index("datetime")
-            .resample("1s")
-            .ffill()
-            .resample("1Min")
-            .mean(numeric_only=True)
-        )
+        df = df.set_index("datetime").resample("1s").ffill().resample("1Min").mean()
 
         df = df.rename(columns={"value": "load"})
         df["load"] = df["load"] / 60
