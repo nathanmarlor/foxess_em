@@ -97,12 +97,6 @@ class AverageModel:
         # Add start/final value to ensure even resampling later
         values_dict.append(
             {
-                "datetime": from_date.replace(tzinfo=pytz.UTC),
-                "value": values_dict[0]["value"],
-            }
-        )
-        values_dict.append(
-            {
                 "datetime": to_date.replace(tzinfo=pytz.UTC),
                 "value": values_dict[-1]["value"],
             }
