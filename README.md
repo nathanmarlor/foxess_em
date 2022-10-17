@@ -139,6 +139,16 @@ Description of switches:
 
 </details>
 
+## Extras
+
+<details>
+    <summary>Energy Dashboard Forecast</summary>
+
+![Energy Dash Setup](images/energy-dashboard-config.png)</p>
+![Energy Dash](images/energy-dashboard.png)
+
+</details>
+
 ## Contributions are welcome!
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
