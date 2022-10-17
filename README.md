@@ -55,7 +55,7 @@ Recommend installation through [HACS][hacs]
 ## Configuration and Options
 
 <details>
-    <summary><b>Solcast Setup</b></summary>
+    <summary><b>Solcast Setup</b></summary></p>
 
 - **Site ID**: Single site ID from Solcast Toolkit (i.e. aaaa-bbbb-cccc...)
 - **API Key**: API Key from Solcast Toolkit
@@ -65,7 +65,7 @@ Recommend installation through [HACS][hacs]
 </details>
 
 <details>
-    <summary><b>FoxESS Cloud Setup</b></summary>
+    <summary><b>FoxESS Cloud Setup</b></summary></p>
 
 - **Username**: Username from FoxESS Cloud
 - **Password**: Password from FoxESS Cloud
@@ -75,7 +75,7 @@ Recommend installation through [HACS][hacs]
 </details>
 
 <details>
-    <summary><b>Battery Parameters</b></summary>
+    <summary><b>Battery Parameters</b></summary></p>
 
 Enter your desired battery parameters:
 
@@ -84,7 +84,7 @@ Enter your desired battery parameters:
 - **Dawn Buffer**: As forecasts and usage patterns can change, leave a buffer to ensure the battery doesn't get too close to empty
 - **Day Buffer**: As above, but for the day
 - **Battery Capacity**: Capacity of battery in kWh
-- **Charge Rate**: Typical charge rate observed through a charging window (usually inverter output (i.e. 3.6kw minus standing hour load))
+- **Charge Rate**: Typical charge rate observed through a charging window (usually inverter output (i.e. 3.6kw minus standing hour load)
 - **Minimum SoC**: Minimum State of Charge as set in the FoxESS App
 
 ![Battery Params](images/config-step-3.png)
@@ -92,7 +92,7 @@ Enter your desired battery parameters:
 </details>
 
 <details>
-    <summary><b>Home Assistant Sensors</b></summary>
+    <summary><b>Home Assistant Sensors</b></summary></p>
 
 - **Battery SoC**: Battery State of Charge sensor - must be an integer %
 - **House Power**: House load power - must be kW
@@ -105,7 +105,9 @@ Enter your desired battery parameters:
 ## Sensors and Switches
 
 <details>
-    <summary><b>Sensors</b></summary>
+    <summary><b>Sensors</b></summary></p>
+
+Description of sensors:
 
 | Sensor                    | Description                                                                            | Attributes                                                                        |
 | ------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -126,7 +128,9 @@ Enter your desired battery parameters:
 </details>
 
 <details>
-    <summary><b>Switches</b></summary>
+    <summary><b>Switches</b></summary></p>
+
+Description of switches:
 
 | Switch              | Description                                                                |
 | ------------------- | -------------------------------------------------------------------------- |
