@@ -142,10 +142,17 @@ Description of switches:
 ## Extras
 
 <details>
-    <summary>Energy Dashboard Forecast</summary>
+    <summary><b>Energy Dashboard Forecast</b></summary>
 
 ![Energy Dash Setup](images/energy-dashboard-config.png)</p>
 ![Energy Dash](images/energy-dashboard.png)
+
+</details>
+
+<details>
+    <summary><b>Service Calls</b></summary>
+
+![Service](images/service.png)</p>
 
 </details>
 
