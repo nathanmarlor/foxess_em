@@ -62,15 +62,6 @@ class BatteryModel:
 
         return min(99, round(perc, 0))
 
-    def charge_start_time(self, charge: float) -> datetime:
-        """Convert kWh to time to charge"""
-        minutes = (charge / self._charge_rate) * 60
-        delta = timedelta(minutes=minutes)
-
-        start_time = self._next_eco_end_time() - delta
-
-        return start_time
-
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
 
