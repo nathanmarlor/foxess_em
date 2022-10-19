@@ -22,7 +22,6 @@ class BatteryModel:
         capacity: float,
         dawn_buffer: float,
         day_buffer: float,
-        charge_rate: float,
         eco_start_time: time,
         eco_end_time: time,
         battery_soc: str,
@@ -34,7 +33,6 @@ class BatteryModel:
         self._capacity = capacity
         self._dawn_buffer = dawn_buffer
         self._day_buffer = day_buffer
-        self._charge_rate = charge_rate
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc

@@ -34,7 +34,6 @@ DAWN_BUFFER = "dawn_buffer"
 DAY_BUFFER = "day_buffer"
 MIN_SOC = "min_soc"
 BATTERY_CAPACITY = "capacity"
-CHARGE_RATE = "charge_rate"
 BATTERY_SOC = "battery_soc"
 
 # Defaults
