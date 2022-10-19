@@ -41,13 +41,25 @@ class ChargeService(UnloadController):
         self._cancel_listeners = []
         self._charge_active = False
         self._perc_target = 0
+        self._target_capacity = 0
+
+        # Setup trigger to start just before eco period starts
+        eco_start_setup = async_track_utc_time_change(
+            self._hass,
+            self._eco_start_setup,
+            hour=eco_start_time.hour,
+            minute=eco_start_time.minute - 5,
+            second=0,
+            local=True,
+        )
+        self._unload_listeners.append(eco_start_setup)
 
         # Setup trigger to start when eco period starts
         eco_start = async_track_utc_time_change(
             self._hass,
-            self._set_target_soc,
-            hour=self._eco_start_time.hour,
-            minute=self._eco_start_time.minute - 5,
+            self._eco_start,
+            hour=eco_start_time.hour,
+            minute=eco_start_time.minute,
             second=0,
             local=True,
         )
@@ -56,37 +68,34 @@ class ChargeService(UnloadController):
         # Setup trigger to stop when eco period ends
         eco_end = async_track_utc_time_change(
             self._hass,
-            self._stop_hold,
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
+            self._eco_end,
+            hour=eco_end_time.hour,
+            minute=eco_end_time.minute,
             second=0,
             local=True,
         )
         self._unload_listeners.append(eco_end)
 
-    async def _set_target_soc(self, *args) -> None:  # pylint: disable=unused-argument
+    async def _eco_start_setup(self, *args) -> None:  # pylint: disable=unused-argument
         """Set target SoC"""
         _LOGGER.debug("Calculating optimal battery SoC")
 
         await self._forecast_controller.async_refresh()
 
-        current_capacity = self._battery_controller.battery_capacity_remaining()
-        target_capacity = self._battery_controller.charge_total()
-
+        self._target_capacity = self._battery_controller.charge_total()
         self._perc_target = self._battery_controller.charge_to_perc()
 
-        if target_capacity > current_capacity:
-            _LOGGER.debug(f"Setting force charge to start at {self._eco_start_time}")
-            start_charge = async_track_utc_time_change(
-                self._hass,
-                self._start_force_charge,
-                hour=self._eco_start_time.hour,
-                minute=self._eco_start_time.minute,
-                second=0,
-                local=True,
-            )
-            self._cancel_listeners.append(start_charge)
-            self._unload_listeners.append(start_charge)
+    async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
+        """Eco start"""
+        _LOGGER.debug(f"Setting min SoC to {self._perc_target}%")
+        await self._fox.set_min_soc(self._perc_target)
+
+        current_capacity = self._battery_controller.battery_capacity_remaining()
+
+        if self._target_capacity > current_capacity:
+            _LOGGER.debug(f"Starting force charge to {self._perc_target}")
+            self._charge_active = True
+            await self._fox.start_force_charge()
         else:
             _LOGGER.debug(
                 f"Allowing battery to continue discharge until {self._perc_target}"
@@ -96,39 +105,29 @@ class ChargeService(UnloadController):
         track_charge = async_track_state_change(
             self._hass,
             self._battery_soc,
-            self._stop_and_hold_charge,
+            self._stop_force_charge,
             None,
             str(int(self._perc_target)),
         )
         self._cancel_listeners.append(track_charge)
         self._unload_listeners.append(track_charge)
 
-    async def _start_force_charge(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
-        """Initiate force charging"""
-        _LOGGER.debug(f"Starting force charge to {self._perc_target}")
-        self._charge_active = True
-        await self._fox.start_force_charge()
-
-    async def _stop_and_hold_charge(
+    async def _stop_force_charge(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
         """Battery SoC has met desired percentage"""
-        # Stop charging if active
         if self._charge_active:
             _LOGGER.debug("Stopping force charge")
             self._charge_active = False
             await self._fox.stop_force_charge()
 
-        _LOGGER.debug(f"Holding charge at {self._perc_target}")
-        await self._fox.set_min_soc(self._perc_target)
-
-    async def _stop_hold(self, *args) -> None:  # pylint: disable=unused-argument
+    async def _eco_end(self, *args) -> None:  # pylint: disable=unused-argument
         """Stop holding SoC"""
         # Stop listening for updates
         for listener in self._cancel_listeners:
             listener()
+
+        await self._stop_force_charge()
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
