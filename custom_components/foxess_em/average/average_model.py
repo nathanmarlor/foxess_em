@@ -102,7 +102,7 @@ class AverageModel:
         values_dict.append(
             {
                 "datetime": from_date.replace(tzinfo=pytz.UTC),
-                "value": values_dict[0]["value"],
+                "value": 0,
             }
         )
         values_dict.append(
