@@ -124,10 +124,6 @@ class ChargeService(UnloadController):
         _LOGGER.debug(f"Holding charge at {self._perc_target}")
         await self._fox.set_min_soc(self._perc_target)
 
-        # Reset boost/full status for the next day
-        self._battery_controller.set_boost(False)
-        self._battery_controller.set_full(False)
-
     async def _stop_hold(self, *args) -> None:  # pylint: disable=unused-argument
         """Stop holding SoC"""
         # Stop listening for updates
@@ -135,5 +131,8 @@ class ChargeService(UnloadController):
             listener()
 
         _LOGGER.debug("Releasing SoC hold")
-
         await self._fox.set_min_soc(self._original_soc * 100)
+
+        _LOGGER.debug("Resetting switches")
+        self._battery_controller.set_boost(False)
+        self._battery_controller.set_full(False)
