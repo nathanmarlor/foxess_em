@@ -47,7 +47,7 @@ class ChargeService(UnloadController):
             self._hass,
             self._set_target_soc,
             hour=self._eco_start_time.hour,
-            minute=self._eco_end_time.minute,
+            minute=self._eco_end_time.minute - 5,
             second=0,
             local=True,
         )
