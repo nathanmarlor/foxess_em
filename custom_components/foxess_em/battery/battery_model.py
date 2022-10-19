@@ -143,12 +143,12 @@ class BatteryModel:
         if self._is_after_todays_eco_end() and self._is_before_todays_dawn():
             return 0
 
-        eco_end = self.state_at_eco_end()
+        eco_start = self.state_at_eco_start()
         dawn_load = self.dawn_load()
 
-        dawn_charge_needs = eco_end - dawn_load
+        dawn_charge_needs = eco_start - dawn_load
 
-        dawn_buffer_top_up = max([0, self._dawn_buffer - dawn_charge_needs])
+        dawn_buffer_top_up = self._dawn_buffer - dawn_charge_needs
 
         ceiling = self.ceiling_charge_total(dawn_buffer_top_up)
 
@@ -186,7 +186,7 @@ class BatteryModel:
         self,
         forecast_today: float,
         forecast_tomorrow: float,
-        state_at_eco_end: float,
+        state_at_eco_start: float,
         house_load: float,
     ) -> float:
         """Day charge needs"""
@@ -195,18 +195,20 @@ class BatteryModel:
         else:
             forecast = forecast_today
 
-        day_charge_needs = (state_at_eco_end - house_load) + forecast
+        day_charge_needs = (state_at_eco_start - house_load) + forecast
 
-        day_buffer_top_up = max([0, self._day_buffer - day_charge_needs])
+        day_buffer_top_up = self._day_buffer - day_charge_needs
 
-        ceiling = max([0, self.ceiling_charge_total(day_buffer_top_up)])
+        ceiling = self.ceiling_charge_total(day_buffer_top_up)
 
         return round(ceiling, 2)
 
     def ceiling_charge_total(self, charge_total: float) -> float:
         """Ceiling total charge"""
         available_capacity = round(
-            self._capacity - (self._min_soc * self._capacity) - self.state_at_eco_end(),
+            self._capacity
+            - (self._min_soc * self._capacity)
+            - self.state_at_eco_start(),
             2,
         )
 
