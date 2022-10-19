@@ -8,6 +8,7 @@ from ..util.exceptions import NoDataError
 _BASE_URL = "https://www.foxesscloud.com/c/v0"
 _SET_TIMES = "/device/battery/time/set"
 _DEVICE = "/device/list"
+_MIN_SOC = "/device/battery/soc/set"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +45,20 @@ class FoxCloudService:
         except NoDataError as ex:
             _LOGGER.error(ex)
 
+    async def set_min_soc(
+        self, soc: int, *args
+    ) -> None:  # pylint: disable=unused-argument
+        """Start force charge"""
+        _LOGGER.debug("Sending min SoC to Fox Cloud")
+
+        try:
+            device_sn = await self.device_serial_number()
+            await self._api.async_post_data(
+                f"{_BASE_URL}{_MIN_SOC}", self._build_min_soc_query(device_sn, soc)
+            )
+        except NoDataError as ex:
+            _LOGGER.error(ex)
+
     async def device_serial_number(self) -> None:
         """Get device serial number"""
         if self._device_sn is None:
@@ -63,6 +78,10 @@ class FoxCloudService:
             "total": 0,
             "condition": {"queryDate": {"begin": 0, "end": 0}},
         }
+
+    def _build_min_soc_query(self, device_sn: str, soc: int) -> dict:
+        """Build min SoC query object"""
+        return {"sn": device_sn, "minGridSoc": soc, "minSoc": soc}
 
     def _build_charge_start_query(self, device_sn: str) -> dict:
         """Build device query object"""

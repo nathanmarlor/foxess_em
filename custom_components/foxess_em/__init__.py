@@ -111,6 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         eco_start_time,
         eco_end_time,
         battery_soc,
+        min_soc,
     )
 
     hass.data[DOMAIN][entry.entry_id] = {

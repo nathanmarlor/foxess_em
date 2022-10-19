@@ -18,7 +18,7 @@ sensor:
 template:
   - sensor:
       - name: "Battery SOC"
-        state: "15"
+        state: "10"
   - sensor:
       - name: "Load Power"
         state: "1"
