@@ -88,10 +88,6 @@ class BatteryController(UnloadController, CallbackController):
         """Schedule a refresh"""
         self.refresh()
 
-    def battery_capacity_remaining(self) -> int:
-        """Battery capacity remaining"""
-        return self._model.battery_capacity_remaining()
-
     def charge_to_perc(self) -> int:
         """Calculate percentage target"""
         return self._model.charge_to_perc(
