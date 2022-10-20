@@ -9,7 +9,6 @@ from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder import history
 from homeassistant.core import HomeAssistant
 
-from ..util import energy_util
 from ..util.exceptions import NoDataError
 from .tracked_sensor import HistorySensor
 from .tracked_sensor import TrackedSensor
@@ -173,14 +172,3 @@ class AverageModel:
         filtered = l_df.between_time(eco_end, eco_start)
 
         return round(filtered.load.sum() / _DAYS_AVERAGE, 2)
-
-    def average_house_load_15m(self) -> float:
-        """Calculate 15m house load"""
-        total = (
-            energy_util.sum_energy(
-                self._tracked_sensors["house_load_15m"].primary.values
-            )
-            * 4
-        )
-
-        return round(total, 2)

@@ -26,14 +26,6 @@ SENSORS: dict[str, SensorDescription] = {
         icon="mdi:battery",
         should_poll=False,
     ),
-    "average_house_load_15m": SensorDescription(
-        key="house_load_15m",
-        device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
-        name="Load: Last 15m",
-        icon="mdi:battery",
-        should_poll=True,
-    ),
 }
 
 
@@ -42,16 +34,7 @@ def sensors(controllers, entry) -> list:
     entities = []
 
     for sensor in SENSORS:
-        sen = TimeSeriesAverageSensor(controllers["average"], SENSORS[sensor], entry)
+        sen = Sensor(controllers["average"], SENSORS[sensor], entry)
         entities.append(sen)
 
     return entities
-
-
-class TimeSeriesAverageSensor(Sensor):
-    """Time series overload"""
-
-    async def async_update(self) -> None:
-        """Retrieve latest state."""
-        if self._entity_description.should_poll:
-            await self._controller.async_refresh(sensor_id=self._entity_description.key)
