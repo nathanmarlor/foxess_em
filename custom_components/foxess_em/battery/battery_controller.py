@@ -130,10 +130,9 @@ class BatteryController(UnloadController, CallbackController):
         house_load = self._average_controller.average_peak_house_load()
         forecast_today = self._forecast_controller.total_kwh_forecast_today()
         forecast_tomorrow = self._forecast_controller.total_kwh_forecast_tomorrow()
-        state_at_eco_start = self.state_at_eco_start()
 
         return self._model.day_charge_needs(
-            forecast_today, forecast_tomorrow, state_at_eco_start, house_load
+            forecast_today, forecast_tomorrow, house_load
         )
 
     def charge_total(self) -> float:
