@@ -100,25 +100,12 @@ class BatteryController(UnloadController, CallbackController):
 
     def state_at_dawn(self) -> float:
         """Battery state at dawn"""
-        dawn = max(
-            [
-                self._model.state_at_dawn(),
-                self.charge_total()
-                + self.state_at_eco_start()
-                - self._model.dawn_load(),
-            ]
-        )
-
+        dawn = self._model.state_at_dawn()
         return round(dawn, 2)
 
     def state_at_eco_end(self) -> float:
         """Battery state at end of eco period"""
-        eco_end = max(
-            [
-                self._model.state_at_eco_end(),
-                self.charge_total() + self.state_at_eco_start(),
-            ]
-        )
+        eco_end = self._model.state_at_eco_end()
         return round(eco_end, 2)
 
     def state_at_eco_start(self) -> float:

@@ -41,7 +41,7 @@ class ChargeService(UnloadController):
         self._cancel_listeners = []
         self._charge_active = False
         self._perc_target = 0
-        self._target_capacity = 0
+        self._charge_required = 0
 
         # Setup trigger to start just before eco period starts
         eco_start_setup = async_track_utc_time_change(
@@ -82,7 +82,7 @@ class ChargeService(UnloadController):
 
         await self._forecast_controller.async_refresh()
 
-        self._target_capacity = self._battery_controller.charge_total()
+        self._charge_required = self._battery_controller.charge_total()
         self._perc_target = self._battery_controller.charge_to_perc()
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
@@ -90,27 +90,25 @@ class ChargeService(UnloadController):
         _LOGGER.debug(f"Setting min SoC to {self._perc_target}%")
         await self._fox.set_min_soc(self._perc_target)
 
-        current_capacity = self._battery_controller.battery_capacity_remaining()
-
-        if self._target_capacity > current_capacity:
+        if self._charge_required > 0:
             _LOGGER.debug(f"Starting force charge to {self._perc_target}")
             self._charge_active = True
             await self._fox.start_force_charge()
+
+            # Setup trigger to stop charge when target percentage is met
+            track_charge = async_track_state_change(
+                self._hass,
+                self._battery_soc,
+                self._stop_force_charge,
+                None,
+                str(int(self._perc_target)),
+            )
+            self._cancel_listeners.append(track_charge)
+            self._unload_listeners.append(track_charge)
         else:
             _LOGGER.debug(
                 f"Allowing battery to continue discharge until {self._perc_target}"
             )
-
-        # Setup trigger to stop charge when target percentage is met
-        track_charge = async_track_state_change(
-            self._hass,
-            self._battery_soc,
-            self._stop_force_charge,
-            None,
-            str(int(self._perc_target)),
-        )
-        self._cancel_listeners.append(track_charge)
-        self._unload_listeners.append(track_charge)
 
     async def _stop_force_charge(
         self, *args
