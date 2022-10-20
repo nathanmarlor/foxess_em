@@ -113,7 +113,11 @@ class BatteryModel:
 
     def dawn_load(self) -> float:
         """Dawn load"""
-        dawn_time = self.next_dawn_time()
+        dawn_date = datetime.now().astimezone()
+        if self._is_after_todays_eco_end():
+            dawn_date += timedelta(days=1)
+
+        dawn_time = self._dawn_time(dawn_date)
         eco_time = self._next_eco_end_time()
 
         dawn_load = self._model[
@@ -126,22 +130,6 @@ class BatteryModel:
         load_sum = abs(dawn_load.delta.sum())
 
         return round(load_sum, 2)
-
-    def dawn_charge_needs(self) -> float:
-        """Dawn charge needs"""
-        if self._is_after_todays_eco_end() and self._is_before_todays_dawn():
-            return 0
-
-        eco_start = self.state_at_eco_start()
-        dawn_load = self.dawn_load()
-
-        dawn_charge_needs = eco_start - dawn_load
-
-        dawn_buffer_top_up = self._dawn_buffer - dawn_charge_needs
-
-        ceiling = self.ceiling_charge_total(dawn_buffer_top_up)
-
-        return round(ceiling, 2)
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
@@ -170,6 +158,20 @@ class BatteryModel:
             return date.replace(hour=12, minute=0, second=0, microsecond=0)
         else:
             return self._model.iloc[dawn["period_start"].idxmin()].period_start
+
+    def dawn_charge_needs(self) -> float:
+        """Dawn charge needs"""
+
+        eco_start = self.state_at_eco_start()
+        dawn_load = self.dawn_load()
+
+        dawn_charge_needs = eco_start - dawn_load
+
+        dawn_buffer_top_up = self._dawn_buffer - dawn_charge_needs
+
+        ceiling = self.ceiling_charge_total(dawn_buffer_top_up)
+
+        return round(ceiling, 2)
 
     def day_charge_needs(
         self,
@@ -246,9 +248,3 @@ class BatteryModel:
             microsecond=0,
         )
         return now > eco_end
-
-    def _is_before_todays_dawn(self) -> bool:
-        """Is current time after eco period end"""
-        now = datetime.now().astimezone()
-        dawn_time = self.todays_dawn_time()
-        return now < dawn_time
