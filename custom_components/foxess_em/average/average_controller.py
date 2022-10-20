@@ -40,10 +40,7 @@ class AverageController(UnloadController, CallbackController):
                     HistorySensor(sensor, timedelta(days=2), True)
                     for sensor in aux_power
                 ],
-            ),
-            "house_load_15m": TrackedSensor(
-                HistorySensor(house_power, timedelta(minutes=15)), []
-            ),
+            )
         }
 
         self._model = AverageModel(hass, entities, eco_start_time, eco_end_time)

@@ -38,17 +38,13 @@ class AverageModel:
         """Model status"""
         return self._ready
 
-    async def refresh(self, sensor_id: str = None) -> None:
+    async def refresh(self) -> None:
         """Refresh historical data"""
-        if sensor_id is None:
-            # refresh all
-            for sensor in self._tracked_sensors:
-                await self._update_history(self._tracked_sensors[sensor])
-                self._resampled = self._house_load_resample()
-                self._ready = True
-        else:
-            # refresh one specific sensor
-            await self._update_history(self._tracked_sensors[sensor_id])
+        # refresh all
+        for sensor in self._tracked_sensors:
+            await self._update_history(self._tracked_sensors[sensor])
+            self._resampled = self._house_load_resample()
+            self._ready = True
 
     async def _update_history(self, sensor: TrackedSensor) -> None:
         """Update history values"""
