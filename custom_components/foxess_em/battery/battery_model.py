@@ -114,7 +114,7 @@ class BatteryModel:
     def dawn_load(self) -> float:
         """Dawn load"""
         dawn_date = datetime.now().astimezone()
-        if self._is_after_todays_eco_end():
+        if self._is_after_todays_eco_start():
             dawn_date += timedelta(days=1)
 
         dawn_time = self._dawn_time(dawn_date)
@@ -181,7 +181,7 @@ class BatteryModel:
         house_load: float,
     ) -> float:
         """Day charge needs"""
-        if self._is_after_todays_eco_end():
+        if self._is_after_todays_eco_start():
             forecast = forecast_tomorrow
         else:
             forecast = forecast_today
@@ -238,12 +238,12 @@ class BatteryModel:
 
         return eco_start
 
-    def _is_after_todays_eco_end(self) -> bool:
-        """Is current time after eco period end"""
+    def _is_after_todays_eco_start(self) -> bool:
+        """Is current time after eco period start"""
         now = datetime.now().astimezone()
         eco_end = now.replace(
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute,
             second=0,
             microsecond=0,
         )
