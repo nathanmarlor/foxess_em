@@ -84,7 +84,6 @@ Enter your desired battery parameters:
 - **Dawn Buffer**: As forecasts and usage patterns can change, leave a buffer to ensure the battery doesn't get too close to empty
 - **Day Buffer**: As above, but for the day
 - **Battery Capacity**: Capacity of battery in kWh
-- **Charge Rate**: Typical charge rate observed through a charging window (usually inverter output (i.e. 3.6kw minus standing hour load)
 - **Minimum SoC**: Minimum State of Charge as set in the FoxESS App
 
 ![Battery Params](images/config-step-3.png)
@@ -109,21 +108,25 @@ Enter your desired battery parameters:
 
 Description of sensors:
 
-| Sensor                    | Description                                                                            | Attributes                                                                        |
-| ------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Capacity: Charge Needed   | Charge needed for the next off-peak period                                             | Dawn charge needed </br> Day charge needed </br> Charge start time </br> Target % |
-| Capacity: Dawn            | Forecasted battery capacity at dawn                                                    |                                                                                   |
-| Capacity: Eco End         | Forecasted battery capacity at the end of the off-peak period                          |                                                                                   |
-| Capacity: Eco Start       | Forecasted battery capacity at the start of the off-peak period                        |                                                                                   |
-| Capacity: Next Dawn Time  | Forecasted next dawn time (i.e. solar output > house load)                             |                                                                                   |
-| Forecast: API Count       | Number of hits against the Solcast API                                                 |                                                                                   |
-| Forecast: Today           | Forecasted solar output for today                                                      |                                                                                   |
-| Forecast: Today Remaining | Forecasted solar output remaining (resampled to 1Min for continual updates)            |                                                                                   |
-| Forecast: Tomorrow        | Forecasted solar output for tomorrow                                                   |                                                                                   |
-| Last Update               | Last update time                                                                       | Battery last update</br> Forecast last update</br> Average last update</br>       |
-| Load: Daily               | Total load, averaged over the last 2 complete days                                     |                                                                                   |
-| Load: Last 15m            | Average load for the last 15 minutes                                                   |                                                                                   |
-| Load: Peak                | Peak only load (i.e. outside of the Go period), averaged over the last 2 complete days |                                                                                   |
+Notes:
+
+- a negative capacity value indicates surplus charge available
+- all capacity values are forward looking to the next period once past the eco-start time</br>
+
+| Sensor                    | Description                                                                            | Attributes                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Capacity: Charge Needed   | Charge needed for the next off-peak period                                             | Dawn charge needed </br> Day charge needed </br> Target %                   |
+| Capacity: Dawn            | Forecasted battery capacity at dawn                                                    |                                                                             |
+| Capacity: Eco End         | Forecasted battery capacity at the end of the off-peak period                          |                                                                             |
+| Capacity: Eco Start       | Forecasted battery capacity at the start of the off-peak period                        |                                                                             |
+| Capacity: Next Dawn Time  | Forecasted next dawn time (i.e. solar output > house load)                             |                                                                             |
+| Forecast: API Count       | Number of hits against the Solcast API                                                 |                                                                             |
+| Forecast: Today           | Forecasted solar output for today                                                      |                                                                             |
+| Forecast: Today Remaining | Forecasted solar output remaining (resampled to 1Min for continual updates)            |                                                                             |
+| Forecast: Tomorrow        | Forecasted solar output for tomorrow                                                   |                                                                             |
+| Last Update               | Last update time                                                                       | Battery last update</br> Forecast last update</br> Average last update</br> |
+| Load: Daily               | Total load, averaged over the last 2 complete days                                     |                                                                             |
+| Load: Peak                | Peak only load (i.e. outside of the Go period), averaged over the last 2 complete days |                                                                             |
 
 </details>
 
