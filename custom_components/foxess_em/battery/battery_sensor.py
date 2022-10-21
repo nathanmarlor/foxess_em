@@ -20,7 +20,6 @@ SENSORS: dict[str, SensorDescription] = {
         state_attributes={
             "Dawn Charge Needed:": "dawn_charge_needs",
             "Day Charge Needed:": "day_charge_needs",
-            "Charge Start Time:": "charge_start_time_str",
             "Target %:": "charge_to_perc",
         },
     ),

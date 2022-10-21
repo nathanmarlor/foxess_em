@@ -29,7 +29,6 @@ class BatteryController(UnloadController, CallbackController):
         capacity: float,
         dawn_buffer: float,
         day_buffer: float,
-        charge_rate: float,
         eco_start_time: time,
         eco_end_time: time,
         battery_soc: str,
@@ -43,7 +42,6 @@ class BatteryController(UnloadController, CallbackController):
             capacity,
             dawn_buffer,
             day_buffer,
-            charge_rate,
             eco_start_time,
             eco_end_time,
             battery_soc,
@@ -92,17 +90,19 @@ class BatteryController(UnloadController, CallbackController):
 
     def charge_to_perc(self) -> int:
         """Calculate percentage target"""
-        return self._model.charge_to_perc(self.charge_total() + self.state_at_eco_end())
+        return self._model.charge_to_perc(
+            self.charge_total() + self.state_at_eco_start()
+        )
 
     def state_at_dawn(self) -> float:
         """Battery state at dawn"""
-        battery_value = self._model.state_at_dawn()
-        return round(battery_value, 2)
+        dawn = self._model.state_at_dawn()
+        return round(dawn, 2)
 
     def state_at_eco_end(self) -> float:
         """Battery state at end of eco period"""
-        battery_value = self._model.state_at_eco_end()
-        return round(battery_value, 2)
+        eco_end = self._model.state_at_eco_end()
+        return round(eco_end, 2)
 
     def state_at_eco_start(self) -> float:
         """Battery state at start of eco period"""
@@ -127,13 +127,12 @@ class BatteryController(UnloadController, CallbackController):
 
     def day_charge_needs(self) -> float:
         """Day charge needs"""
-        state_at_eco_end = self.state_at_eco_end()
         house_load = self._average_controller.average_peak_house_load()
         forecast_today = self._forecast_controller.total_kwh_forecast_today()
         forecast_tomorrow = self._forecast_controller.total_kwh_forecast_tomorrow()
 
         return self._model.day_charge_needs(
-            forecast_today, forecast_tomorrow, state_at_eco_end, house_load
+            forecast_today, forecast_tomorrow, house_load
         )
 
     def charge_total(self) -> float:
@@ -151,14 +150,6 @@ class BatteryController(UnloadController, CallbackController):
             total = self._model.ceiling_charge_total(total)
 
         return total
-
-    def charge_start_time(self) -> datetime:
-        """Return charge time"""
-        return self._model.charge_start_time(self.charge_total())
-
-    def charge_start_time_str(self) -> str:
-        """Return charge time in ISO format"""
-        return self.charge_start_time().isoformat()
 
     def battery_last_update(self) -> datetime:
         """Battery last update"""

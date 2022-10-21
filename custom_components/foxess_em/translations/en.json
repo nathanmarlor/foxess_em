@@ -26,7 +26,6 @@
           "dawn_buffer": "Dawn Buffer (kWh)",
           "day_buffer": "Day Buffer (kWh)",
           "capacity": "Battery Capacity (kWh)",
-          "charge_rate": "Charge Rate (kWh)",
           "min_soc": "Minimum SoC (%)"
         }
       },
@@ -59,7 +58,6 @@
           "dawn_buffer": "Dawn Buffer (kWh)",
           "day_buffer": "Day Buffer (kWh)",
           "capacity": "Battery Capacity (kWh)",
-          "charge_rate": "Charge Rate (kWh)",
           "min_soc": "Minimum SoC (%)"
         }
       }

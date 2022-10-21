@@ -9,13 +9,11 @@ from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder import history
 from homeassistant.core import HomeAssistant
 
-from ..util import energy_util
 from ..util.exceptions import NoDataError
 from .tracked_sensor import HistorySensor
 from .tracked_sensor import TrackedSensor
 
 _LOGGER = logging.getLogger(__name__)
-_DAYS_AVERAGE = 2
 
 
 class AverageModel:
@@ -39,17 +37,13 @@ class AverageModel:
         """Model status"""
         return self._ready
 
-    async def refresh(self, sensor_id: str = None) -> None:
+    async def refresh(self) -> None:
         """Refresh historical data"""
-        if sensor_id is None:
-            # refresh all
-            for sensor in self._tracked_sensors:
-                await self._update_history(self._tracked_sensors[sensor])
-                self._resampled = self._house_load_resample()
-                self._ready = True
-        else:
-            # refresh one specific sensor
-            await self._update_history(self._tracked_sensors[sensor_id])
+        # refresh all
+        for sensor in self._tracked_sensors:
+            await self._update_history(self._tracked_sensors[sensor])
+            self._resampled = self._house_load_resample()
+            self._ready = True
 
     async def _update_history(self, sensor: TrackedSensor) -> None:
         """Update history values"""
@@ -148,12 +142,16 @@ class AverageModel:
 
     def average_all_house_load(self) -> float:
         """House load today"""
+        days = self._tracked_sensors["house_load_7d"].primary.period.days
+
         l_df = self._resampled
 
-        return round(l_df.load.sum() / _DAYS_AVERAGE, 2)
+        return round(l_df.load.sum() / days, 2)
 
     def average_peak_house_load(self) -> float:
         """House load peak"""
+        days = self._tracked_sensors["house_load_7d"].primary.period.days
+
         eco_start = datetime.now().replace(
             hour=self._eco_start_time.hour,
             minute=self._eco_start_time.minute,
@@ -172,15 +170,4 @@ class AverageModel:
         l_df = self._resampled
         filtered = l_df.between_time(eco_end, eco_start)
 
-        return round(filtered.load.sum() / _DAYS_AVERAGE, 2)
-
-    def average_house_load_15m(self) -> float:
-        """Calculate 15m house load"""
-        total = (
-            energy_util.sum_energy(
-                self._tracked_sensors["house_load_15m"].primary.values
-            )
-            * 4
-        )
-
-        return round(total, 2)
+        return round(filtered.load.sum() / days, 2)

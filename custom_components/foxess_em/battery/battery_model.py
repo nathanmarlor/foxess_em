@@ -22,7 +22,6 @@ class BatteryModel:
         capacity: float,
         dawn_buffer: float,
         day_buffer: float,
-        charge_rate: float,
         eco_start_time: time,
         eco_end_time: time,
         battery_soc: str,
@@ -34,7 +33,6 @@ class BatteryModel:
         self._capacity = capacity
         self._dawn_buffer = dawn_buffer
         self._day_buffer = day_buffer
-        self._charge_rate = charge_rate
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
@@ -61,15 +59,6 @@ class BatteryModel:
         perc = ((charge / self._capacity) + self._min_soc) * 100
 
         return min(99, round(perc, 0))
-
-    def charge_start_time(self, charge: float) -> datetime:
-        """Convert kWh to time to charge"""
-        minutes = (charge / self._charge_rate) * 60
-        delta = timedelta(minutes=minutes)
-
-        start_time = self._next_eco_end_time() - delta
-
-        return start_time
 
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
@@ -124,8 +113,18 @@ class BatteryModel:
 
     def dawn_load(self) -> float:
         """Dawn load"""
-        dawn_time = self.next_dawn_time()
-        eco_time = self._next_eco_end_time()
+        dawn_date = datetime.now().astimezone()
+        if self._is_after_todays_eco_start():
+            dawn_date += timedelta(days=1)
+
+        eco_time = dawn_date.replace(
+            hour=self._eco_end_time.hour,
+            minute=self._eco_end_time.minute,
+            second=0,
+            microsecond=0,
+        )
+
+        dawn_time = self._dawn_time(dawn_date)
 
         dawn_load = self._model[
             (
@@ -137,22 +136,6 @@ class BatteryModel:
         load_sum = abs(dawn_load.delta.sum())
 
         return round(load_sum, 2)
-
-    def dawn_charge_needs(self) -> float:
-        """Dawn charge needs"""
-        if self._is_after_todays_eco_end() and self._is_before_todays_dawn():
-            return 0
-
-        eco_end = self.state_at_eco_end()
-        dawn_load = self.dawn_load()
-
-        dawn_charge_needs = eco_end - dawn_load
-
-        dawn_buffer_top_up = max([0, self._dawn_buffer - dawn_charge_needs])
-
-        ceiling = self.ceiling_charge_total(dawn_buffer_top_up)
-
-        return round(ceiling, 2)
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
@@ -182,31 +165,46 @@ class BatteryModel:
         else:
             return self._model.iloc[dawn["period_start"].idxmin()].period_start
 
+    def dawn_charge_needs(self) -> float:
+        """Dawn charge needs"""
+
+        eco_start = self.state_at_eco_start()
+        dawn_load = self.dawn_load()
+
+        dawn_charge_needs = eco_start - dawn_load
+
+        dawn_buffer_top_up = self._dawn_buffer - dawn_charge_needs
+
+        ceiling = self.ceiling_charge_total(dawn_buffer_top_up)
+
+        return round(ceiling, 2)
+
     def day_charge_needs(
         self,
         forecast_today: float,
         forecast_tomorrow: float,
-        state_at_eco_end: float,
         house_load: float,
     ) -> float:
         """Day charge needs"""
-        if self._is_after_todays_eco_end():
+        if self._is_after_todays_eco_start():
             forecast = forecast_tomorrow
         else:
             forecast = forecast_today
 
-        day_charge_needs = (state_at_eco_end - house_load) + forecast
+        day_charge_needs = (self.state_at_eco_start() - house_load) + forecast
 
-        day_buffer_top_up = max([0, self._day_buffer - day_charge_needs])
+        day_buffer_top_up = self._day_buffer - day_charge_needs
 
-        ceiling = max([0, self.ceiling_charge_total(day_buffer_top_up)])
+        ceiling = self.ceiling_charge_total(day_buffer_top_up)
 
         return round(ceiling, 2)
 
     def ceiling_charge_total(self, charge_total: float) -> float:
         """Ceiling total charge"""
         available_capacity = round(
-            self._capacity - (self._min_soc * self._capacity) - self.state_at_eco_end(),
+            self._capacity
+            - (self._min_soc * self._capacity)
+            - self.state_at_eco_start(),
             2,
         )
 
@@ -245,19 +243,13 @@ class BatteryModel:
 
         return eco_start
 
-    def _is_after_todays_eco_end(self) -> bool:
-        """Is current time after eco period end"""
+    def _is_after_todays_eco_start(self) -> bool:
+        """Is current time after eco period start"""
         now = datetime.now().astimezone()
-        eco_end = now.replace(
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
+        eco_start = now.replace(
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute,
             second=0,
             microsecond=0,
         )
-        return now > eco_end
-
-    def _is_before_todays_dawn(self) -> bool:
-        """Is current time after eco period end"""
-        now = datetime.now().astimezone()
-        dawn_time = self.todays_dawn_time()
-        return now < dawn_time
+        return now > eco_start

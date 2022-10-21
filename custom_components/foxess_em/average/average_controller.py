@@ -40,10 +40,7 @@ class AverageController(UnloadController, CallbackController):
                     HistorySensor(sensor, timedelta(days=2), True)
                     for sensor in aux_power
                 ],
-            ),
-            "house_load_15m": TrackedSensor(
-                HistorySensor(house_power, timedelta(minutes=15)), []
-            ),
+            )
         }
 
         self._model = AverageModel(hass, entities, eco_start_time, eco_end_time)
@@ -63,17 +60,14 @@ class AverageController(UnloadController, CallbackController):
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(
-        self, *args, sensor_id: str = None
-    ) -> None:  # pylint: disable=unused-argument
+    async def async_refresh(self, *args) -> None:  # pylint: disable=unused-argument
         """Refresh data"""
 
-        await self._model.refresh(sensor_id)
+        await self._model.refresh()
+        self._last_update = datetime.now().astimezone()
 
-        if sensor_id is None:
-            _LOGGER.debug("Finished refreshing averages model, notifying listeners")
-            self._last_update = datetime.now().astimezone()
-            self._notify_listeners()
+        _LOGGER.debug("Finished refreshing averages model, notifying listeners")
+        self._notify_listeners()
 
     def resample_data(self) -> DataFrame:
         """Return resampled data"""
@@ -86,10 +80,6 @@ class AverageController(UnloadController, CallbackController):
     def average_peak_house_load(self) -> float:
         """Average peak house load"""
         return self._model.average_peak_house_load()
-
-    def house_load_15m(self) -> float:
-        """Calculate 15m house load"""
-        return self._model.average_house_load_15m()
 
     def last_update(self) -> datetime:
         """Return last update"""
