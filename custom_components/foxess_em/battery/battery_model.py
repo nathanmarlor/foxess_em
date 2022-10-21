@@ -70,7 +70,7 @@ class BatteryModel:
 
         forecast = forecast[
             (forecast["date"] >= now.date())
-            & (forecast["date"] <= (now + timedelta(days=1)).date())
+            & (forecast["date"] <= (now + timedelta(days=2)).date())
         ]
 
         load.reset_index(drop=True, inplace=True)
