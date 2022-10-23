@@ -124,6 +124,7 @@ class ChargeService(UnloadController):
         # Stop listening for updates
         for listener in self._cancel_listeners:
             listener()
+        self._cancel_listeners.clear()
 
         await self._stop_force_charge()
 
