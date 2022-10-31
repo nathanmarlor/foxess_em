@@ -8,8 +8,5 @@
   "codeowners": ["@nathanmarlor"],
   "requirements": [],
   "version": "0.0.2",
-  "iot_class": "cloud_polling",
-  "supported_brands": {
-    "foxess": "FoxESS"
-  }
+  "iot_class": "cloud_polling"
 }
