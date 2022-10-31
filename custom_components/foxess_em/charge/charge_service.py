@@ -110,6 +110,10 @@ class ChargeService(UnloadController):
                 f"Allowing battery to continue discharge until {self._perc_target}"
             )
 
+        _LOGGER.debug("Resetting switches")
+        self._battery_controller.set_boost(False)
+        self._battery_controller.set_full(False)
+
     async def _stop_force_charge(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
@@ -130,7 +134,3 @@ class ChargeService(UnloadController):
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
-
-        _LOGGER.debug("Resetting switches")
-        self._battery_controller.set_boost(False)
-        self._battery_controller.set_full(False)
