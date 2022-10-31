@@ -135,10 +135,11 @@ Notes:
 
 Description of switches:
 
-| Switch              | Description                                                                |
-| ------------------- | -------------------------------------------------------------------------- |
-| Boost Charge (+1kW) | Adds 1kW to the charge needed sensor. Resets after the charge period.      |
-| Full Charge         | Fully charges the battery during off-peak. Resets after the charge period. |
+| Switch              | Description                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| Boost Charge (+1kW) | Adds 1kW to the charge needed sensor. Resets after the charge period.                    |
+| Disable Auto Charge | Prevents the integration from changing FoxESS settings to auto-charge or setting Min-SoC |
+| Full Charge         | Fully charges the battery during off-peak. Resets after the charge period.               |
 
 </details>
 
