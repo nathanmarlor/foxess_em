@@ -91,6 +91,9 @@ class ChargeService(UnloadController):
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
+        if self._battery_controller.disable_status() is True:
+            return
+
         _LOGGER.debug(f"Setting min SoC to {self._perc_target}%")
         await self._fox.set_min_soc(self._perc_target)
 
@@ -129,6 +132,9 @@ class ChargeService(UnloadController):
 
     async def _eco_end(self, *args) -> None:  # pylint: disable=unused-argument
         """Stop holding SoC"""
+        if self._battery_controller.disable_status() is True:
+            return
+
         # Stop listening for updates
         for listener in self._cancel_listeners:
             listener()
