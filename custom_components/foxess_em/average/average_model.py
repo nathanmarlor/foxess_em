@@ -75,10 +75,6 @@ class AverageModel:
             from_date,
             to_date,
             str(item.sensor_name),
-            False,
-            False,
-            None,
-            False,
         )
 
         values = history_list.get(item.sensor_name)
@@ -93,12 +89,11 @@ class AverageModel:
         ]
 
         # Add start/final value to ensure even resampling later
-        values_dict.append(
-            {
-                "datetime": from_date.replace(tzinfo=pytz.UTC),
-                "value": 0,
-            }
-        )
+        values_dict[0] = {
+            "datetime": from_date.replace(tzinfo=pytz.UTC),
+            "value": 0,
+        }
+
         values_dict.append(
             {
                 "datetime": to_date.replace(tzinfo=pytz.UTC),
