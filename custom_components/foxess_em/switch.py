@@ -26,6 +26,13 @@ _SWITCHES: dict[str, SwitchDescription] = {
         is_on="full_status",
         switch="set_full",
     ),
+    "disable": SwitchDescription(
+        key="disable",
+        name="Disable Auto Charge",
+        icon="mdi:sync-off",
+        is_on="disable_status",
+        switch="set_disable",
+    ),
 }
 
 

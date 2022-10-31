@@ -78,6 +78,10 @@ class ChargeService(UnloadController):
 
     async def _eco_start_setup(self, *args) -> None:  # pylint: disable=unused-argument
         """Set target SoC"""
+        if self._battery_controller.disable_status() is True:
+            _LOGGER.info("Skipping setup of charging schedule due to disabled status")
+            return
+
         _LOGGER.debug("Calculating optimal battery SoC")
 
         await self._forecast_controller.async_refresh()
