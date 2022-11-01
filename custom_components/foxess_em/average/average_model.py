@@ -42,8 +42,9 @@ class AverageModel:
         # refresh all
         for sensor in self._tracked_sensors:
             await self._update_history(self._tracked_sensors[sensor])
-            self._resampled = self._house_load_resample()
-            self._ready = True
+
+        self._resampled = self._house_load_resample()
+        self._ready = True
 
     async def _update_history(self, sensor: TrackedSensor) -> None:
         """Update history values"""
