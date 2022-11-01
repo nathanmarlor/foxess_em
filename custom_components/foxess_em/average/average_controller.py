@@ -50,6 +50,7 @@ class AverageController(UnloadController, CallbackController):
             self._hass,
             self.async_refresh,
             minute=30,
+            second=0,
             local=True,
         )
         self._unload_listeners.append(midnight_refresh)
