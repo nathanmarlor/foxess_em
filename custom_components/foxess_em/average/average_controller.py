@@ -35,9 +35,9 @@ class AverageController(UnloadController, CallbackController):
 
         entities = {
             "house_load_7d": TrackedSensor(
-                HistorySensor(house_power, timedelta(days=2), True),
+                HistorySensor(house_power, timedelta(days=2), False),
                 [
-                    HistorySensor(sensor, timedelta(days=2), True)
+                    HistorySensor(sensor, timedelta(days=2), False)
                     for sensor in aux_power
                 ],
             )

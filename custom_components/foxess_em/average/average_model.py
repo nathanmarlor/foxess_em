@@ -57,7 +57,7 @@ class AverageModel:
         """Retrieve values from HA"""
         recorder = get_instance(self._hass)
 
-        to_date = datetime.utcnow()
+        to_date = datetime.now().astimezone()
 
         if item.whole_day:
             to_date = (
@@ -81,7 +81,7 @@ class AverageModel:
 
         values_dict = [
             {
-                "datetime": value.last_changed.replace(tzinfo=pytz.UTC),
+                "datetime": value.last_changed.astimezone(pytz.utc),
                 "value": float(value.state),
             }
             for value in values
@@ -90,13 +90,13 @@ class AverageModel:
 
         # Add start/final value to ensure even resampling later
         values_dict[0] = {
-            "datetime": from_date.replace(tzinfo=pytz.UTC),
+            "datetime": from_date.astimezone(pytz.utc),
             "value": 0,
         }
 
         values_dict.append(
             {
-                "datetime": to_date.replace(tzinfo=pytz.UTC),
+                "datetime": to_date.astimezone(pytz.utc),
                 "value": values_dict[-1]["value"],
             }
         )
