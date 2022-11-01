@@ -45,13 +45,11 @@ class AverageController(UnloadController, CallbackController):
 
         self._model = AverageModel(hass, entities, eco_start_time, eco_end_time)
 
-        # Refresh at midnight
+        # Refresh every hour on the half hour
         midnight_refresh = async_track_utc_time_change(
             self._hass,
             self.async_refresh,
-            hour=0,
-            minute=0,
-            second=10,
+            minute=30,
             local=True,
         )
         self._unload_listeners.append(midnight_refresh)
