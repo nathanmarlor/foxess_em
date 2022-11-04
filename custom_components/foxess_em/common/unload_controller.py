@@ -14,3 +14,5 @@ class UnloadController:
         """Unload all listeners"""
         for listener in self._unload_listeners:
             listener()
+
+        self._unload_listeners.clear()
