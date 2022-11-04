@@ -42,13 +42,18 @@ class ChargeService(UnloadController):
         self._charge_active = False
         self._perc_target = 0
         self._charge_required = 0
+        self._disable = False
+
+        self._add_listeners()
+
+    def _add_listeners(self) -> None:
 
         # Setup trigger to start just before eco period starts
         eco_start_setup = async_track_utc_time_change(
             self._hass,
             self._eco_start_setup,
-            hour=eco_start_time.hour,
-            minute=eco_start_time.minute - 5,
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute - 5,
             second=0,
             local=True,
         )
@@ -58,8 +63,8 @@ class ChargeService(UnloadController):
         eco_start = async_track_utc_time_change(
             self._hass,
             self._eco_start,
-            hour=eco_start_time.hour,
-            minute=eco_start_time.minute,
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute,
             second=0,
             local=True,
         )
@@ -69,8 +74,8 @@ class ChargeService(UnloadController):
         eco_end = async_track_utc_time_change(
             self._hass,
             self._eco_end,
-            hour=eco_end_time.hour,
-            minute=eco_end_time.minute,
+            hour=self._eco_end_time.hour,
+            minute=self._eco_end_time.minute,
             second=0,
             local=True,
         )
@@ -78,9 +83,6 @@ class ChargeService(UnloadController):
 
     async def _eco_start_setup(self, *args) -> None:  # pylint: disable=unused-argument
         """Set target SoC"""
-        if self._battery_controller.disable_status() is True:
-            _LOGGER.info("Skipping setup of charging schedule due to disabled status")
-            return
 
         _LOGGER.debug("Resetting any existing Fox Cloud force charge schedules")
         self._fox.stop_force_charge()
@@ -92,8 +94,6 @@ class ChargeService(UnloadController):
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
-        if self._battery_controller.disable_status() is True:
-            return
 
         _LOGGER.debug(f"Setting min SoC to {self._perc_target}%")
         await self._fox.set_min_soc(self._perc_target)
@@ -133,15 +133,32 @@ class ChargeService(UnloadController):
 
     async def _eco_end(self, *args) -> None:  # pylint: disable=unused-argument
         """Stop holding SoC"""
-        if self._battery_controller.disable_status() is True:
-            return
 
-        # Stop listening for updates
-        for listener in self._cancel_listeners:
-            listener()
-        self._cancel_listeners.clear()
+        self._stop_listening()
 
         await self._stop_force_charge()
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
+
+    def _stop_listening(self):
+        # Stop listening for updates
+        for listener in self._cancel_listeners:
+            listener()
+            # Remove any dangling references in unload listeners
+            if listener in self._unload_listeners:
+                self._unload_listeners.remove(listener)
+        self._cancel_listeners.clear()
+
+    def set_disable(self, status: bool) -> None:
+        """Set disable on/off"""
+        self._disable = status
+
+        if status:
+            self.unload()
+        else:
+            self._add_listeners()
+
+    def disable_status(self) -> bool:
+        """Disable status"""
+        return self._disable

@@ -51,7 +51,6 @@ class BatteryController(UnloadController, CallbackController):
         self._last_update = None
         self._boost = False
         self._full = False
-        self._disable = False
 
         # Refresh on SoC change
         battery_refresh = async_track_state_change(
@@ -185,11 +184,3 @@ class BatteryController(UnloadController, CallbackController):
     def full_status(self) -> bool:
         """Full status"""
         return self._full
-
-    def set_disable(self, status: bool) -> None:
-        """Set disable on/off"""
-        self._disable = status
-
-    def disable_status(self) -> bool:
-        """Disable status"""
-        return self._disable
