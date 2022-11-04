@@ -84,8 +84,9 @@ class ChargeService(UnloadController):
     async def _eco_start_setup(self, *args) -> None:  # pylint: disable=unused-argument
         """Set target SoC"""
 
-        _LOGGER.debug("Resetting any existing Fox Cloud force charge schedules")
-        self._fox.stop_force_charge()
+        _LOGGER.debug("Resetting any existing Fox Cloud force charge/min SoC settings")
+        await self._fox.stop_force_charge()
+        await self._fox.set_min_soc(self._original_soc * 100)
 
         _LOGGER.debug("Calculating optimal battery SoC")
         await self._forecast_controller.async_refresh()
@@ -98,21 +99,10 @@ class ChargeService(UnloadController):
         _LOGGER.debug(f"Setting min SoC to {self._perc_target}%")
         await self._fox.set_min_soc(self._perc_target)
 
-        if self._charge_required > 0:
-            _LOGGER.debug(f"Starting force charge to {self._perc_target}")
-            self._charge_active = True
-            await self._fox.start_force_charge()
+        self._start_listening()
 
-            # Setup trigger to stop charge when target percentage is met
-            track_charge = async_track_state_change(
-                self._hass,
-                self._battery_soc,
-                self._stop_force_charge,
-                None,
-                str(int(self._perc_target)),
-            )
-            self._cancel_listeners.append(track_charge)
-            self._unload_listeners.append(track_charge)
+        if self._charge_required > 0:
+            await self._start_force_charge()
         else:
             _LOGGER.debug(
                 f"Allowing battery to continue discharge until {self._perc_target}"
@@ -122,24 +112,52 @@ class ChargeService(UnloadController):
         self._battery_controller.set_boost(False)
         self._battery_controller.set_full(False)
 
+    async def _start_force_charge(
+        self, *args
+    ) -> None:  # pylint: disable=unused-argument
+        """Battery SoC has not yet met desired percentage"""
+        _LOGGER.debug(f"Starting force charge to {self._perc_target}")
+        self._charge_active = True
+        await self._fox.start_force_charge()
+
     async def _stop_force_charge(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
         """Battery SoC has met desired percentage"""
-        if self._charge_active:
-            _LOGGER.debug("Stopping force charge")
-            self._charge_active = False
-            await self._fox.stop_force_charge()
+        _LOGGER.debug("Stopping force charge")
+        self._charge_active = False
+        await self._fox.stop_force_charge()
 
     async def _eco_end(self, *args) -> None:  # pylint: disable=unused-argument
         """Stop holding SoC"""
 
         self._stop_listening()
 
-        await self._stop_force_charge()
+        if self._charge_active:
+            await self._stop_force_charge()
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
+
+    async def _battery_soc_change(
+        self, entity, old_state, new_state
+    ):  # pylint: disable=unused-argument
+        new_state = float(new_state.state)
+
+        if (new_state >= self._perc_target) and self._charge_active:
+            await self._stop_force_charge()
+        elif new_state < self._perc_target and not self._charge_active:
+            await self._start_force_charge()
+
+    def _start_listening(self):
+        # Setup trigger to stop charge when target percentage is met
+        track_charge = async_track_state_change(
+            self._hass,
+            self._battery_soc,
+            self._battery_soc_change,
+        )
+        self._cancel_listeners.append(track_charge)
+        self._unload_listeners.append(track_charge)
 
     def _stop_listening(self):
         # Stop listening for updates
