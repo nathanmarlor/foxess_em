@@ -82,10 +82,11 @@ class ChargeService(UnloadController):
             _LOGGER.info("Skipping setup of charging schedule due to disabled status")
             return
 
+        _LOGGER.debug("Resetting any existing Fox Cloud force charge schedules")
+        self._fox.stop_force_charge()
+
         _LOGGER.debug("Calculating optimal battery SoC")
-
         await self._forecast_controller.async_refresh()
-
         self._charge_required = self._battery_controller.charge_total()
         self._perc_target = self._battery_controller.charge_to_perc()
 
