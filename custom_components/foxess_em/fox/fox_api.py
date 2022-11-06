@@ -56,7 +56,7 @@ class FoxApiClient:
                     url, json=params, headers=self._token
                 )
         except Exception as ex:
-            _LOGGER.error("Fox Cloud API error: %s", ex)
+            raise NoDataError(f"Fox Cloud API error: {ex}")
 
         if response.status == 200:
             result = await response.json(content_type=None)
