@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from ..util.exceptions import NoDataError
 
 _LOGGER = logging.getLogger(__name__)
+_MAX_PERC = 100
 
 
 class BatteryModel:
@@ -58,7 +59,7 @@ class BatteryModel:
         """Convert kWh to percentage of charge"""
         perc = ((charge / self._capacity) + self._min_soc) * 100
 
-        return min(99, round(perc, 0))
+        return min(_MAX_PERC, round(perc, 0))
 
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
