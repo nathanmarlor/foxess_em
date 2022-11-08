@@ -211,6 +211,34 @@ class BatteryModel:
 
         return min(available_capacity, charge_total)
 
+    def battery_depleted_time(self) -> datetime:
+        """Time battery capacity is 0"""
+        battery_depleted = self._model[
+            (self._model["battery"] == 0)
+            & (self._model["period_start"] > datetime.now().astimezone())
+        ]
+
+        if len(battery_depleted) == 0:
+            # battery runs past our model, return the last result
+            return self._model.iloc[-1].period_start
+
+        return self._model.iloc[battery_depleted["period_start"].idxmin()].period_start
+
+    def peak_grid_usage(self) -> float:
+        """Grid usage required to next eco start"""
+        eco_start = self._next_eco_start_time()
+        battery_depleted_time = self.battery_depleted_time()
+
+        grid_use = self._model[
+            (self._model["period_start"] > battery_depleted_time)
+            & (self._model["period_start"] < eco_start)
+        ]
+
+        if len(grid_use) == 0:
+            return 0
+
+        return round(grid_use.load.sum(), 2)
+
     def _state_at_datetime(self, time: datetime) -> float:
         """Battery and forecast remaining meets load until dawn"""
         time = time.replace(second=0, microsecond=0)
