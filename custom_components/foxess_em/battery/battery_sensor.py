@@ -71,6 +71,24 @@ SENSORS: dict[str, SensorDescription] = {
             "Average:": "average_last_update_str",
         },
     ),
+    "peak_grid_usage": SensorDescription(
+        key="peak_grid_usage",
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        name="Capacity: Peak Grid Usage",
+        icon="mdi:currency-gdp",
+        should_poll=False,
+        state_attributes={},
+    ),
+    "battery_depleted": SensorDescription(
+        key="battery_depleted",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        native_unit_of_measurement=None,
+        name="Capacity: Battery Depleted",
+        icon="mdi:clock-outline",
+        should_poll=False,
+        state_attributes={},
+    ),
 }
 
 

@@ -184,3 +184,11 @@ class BatteryController(UnloadController, CallbackController):
     def full_status(self) -> bool:
         """Full status"""
         return self._full
+
+    def battery_depleted(self) -> datetime:
+        """Time battery capacity is 0"""
+        return self._model.battery_depleted_time()
+
+    def peak_grid_usage(self) -> float:
+        """Grid usage required to next eco start"""
+        return self._model.peak_grid_usage()

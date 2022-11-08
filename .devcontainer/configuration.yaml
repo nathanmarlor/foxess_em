@@ -18,9 +18,12 @@ sensor:
 template:
   - sensor:
       - name: "Battery SOC"
-        state: "10"
+        state: "76"
   - sensor:
       - name: "Load Power"
+        state: "1"
+  - sensor:
+      - name: "Load Power New"
         state: "1"
   - sensor:
       - name: "myenergi eddi-13195267 Internal Load CT1"
