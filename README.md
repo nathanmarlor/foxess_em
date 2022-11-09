@@ -37,7 +37,6 @@ Example showing the integration:
 
 These may change as development progresses:
 
-- Only one Solcast site is supported (i.e. one solar array)
 - Only one FoxESS inverter is supported
 
 ## Installation
@@ -57,7 +56,6 @@ Recommend installation through [HACS][hacs]
 <details>
     <summary><b>Solcast Setup</b></summary></p>
 
-- **Site ID**: Single site ID from Solcast Toolkit (i.e. aaaa-bbbb-cccc...)
 - **API Key**: API Key from Solcast Toolkit
 
 ![Solcast Setup](images/config-step-1.png)

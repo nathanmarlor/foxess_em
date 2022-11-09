@@ -23,7 +23,6 @@ from .const import FOX_PASSWORD
 from .const import FOX_USERNAME
 from .const import HOUSE_POWER
 from .const import SOLCAST_API_KEY
-from .const import SOLCAST_API_SITE
 from .const import SOLCAST_URL
 from .forecast.solcast_api import SolcastApiClient
 from .fox.fox_api import FoxApiClient
@@ -35,7 +34,6 @@ _LOGGER = logging.getLogger(__name__)
 
 _SOLCAST_SCHEMA = vol.Schema(
     {
-        vol.Required(SOLCAST_API_SITE): str,
         vol.Required(SOLCAST_API_KEY): str,
     }
 )
@@ -101,7 +99,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             solcast_valid = await self._test_solcast(
-                user_input[SOLCAST_API_SITE], user_input[SOLCAST_API_KEY], SOLCAST_URL
+                user_input[SOLCAST_API_KEY], SOLCAST_URL
             )
             if solcast_valid:
                 self._errors["base"] = None
@@ -165,16 +163,12 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         except ValueError:
             return False
 
-    async def _test_solcast(
-        self, solcast_site_id: str, solcast_api_key: str, solcast_url: str
-    ):
+    async def _test_solcast(self, solcast_api_key: str, solcast_url: str):
         """Return true if credentials is valid."""
         try:
             session = async_create_clientsession(self.hass)
-            client = SolcastApiClient(
-                solcast_site_id, solcast_api_key, solcast_url, session
-            )
-            result = await client.async_get_data()
+            client = SolcastApiClient(solcast_api_key, solcast_url, session)
+            result = await client.async_get_sites()
             if result is not None:
                 return True
             else:

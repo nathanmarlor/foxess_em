@@ -3,9 +3,8 @@
     "step": {
       "user": {
         "title": "FoxESS - Energy Management: (1/4)",
-        "description": "Please enter your Solcast Site ID and API Key - https://toolkit.solcast.com.au/live-forecast",
+        "description": "Please enter your Solcast API Key - https://toolkit.solcast.com.au/live-forecast",
         "data": {
-          "site": "Site ID",
           "key": "API Key"
         }
       },
@@ -40,7 +39,7 @@
       }
     },
     "error": {
-      "solcast_auth": "Error - please check the Solcast Site ID and API Key",
+      "solcast_auth": "Error - please check the Solcast API Key",
       "fox_auth": "Error - please check the Fox ESS Username and Password",
       "time_invalid": "Time format not recognised"
     },
