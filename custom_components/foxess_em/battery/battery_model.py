@@ -237,7 +237,7 @@ class BatteryModel:
         if len(grid_use) == 0:
             return 0
 
-        return round(grid_use.load.sum(), 2)
+        return round(grid_use.delta.sum(), 2)
 
     def _state_at_datetime(self, time: datetime) -> float:
         """Battery and forecast remaining meets load until dawn"""
