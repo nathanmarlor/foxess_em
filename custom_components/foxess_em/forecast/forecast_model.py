@@ -27,7 +27,11 @@ class ForecastModel:
     async def refresh(self) -> None:
         """Get data from the API"""
 
-        data = await self._api.async_get_data()
+        sites = await self._api.async_get_sites()
+
+        data = []
+        for site in sites["sites"]:
+            data += await self._api.async_get_data(site["resource_id"])
 
         self._resampled = self._resample(data)
 
@@ -73,6 +77,9 @@ class ForecastModel:
     def _resample(self, values) -> pd.DataFrame:
         """Resample values"""
         df = pd.DataFrame.from_dict(values)
+
+        df = df.groupby("period_start").sum()
+        df["period_start"] = df.index.values
 
         df = df.set_index("period_start").resample("1Min").mean().interpolate("linear")
 

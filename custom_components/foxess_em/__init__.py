@@ -31,7 +31,6 @@ from .const import HOUSE_POWER
 from .const import MIN_SOC
 from .const import PLATFORMS
 from .const import SOLCAST_API_KEY
-from .const import SOLCAST_API_SITE
 from .const import SOLCAST_URL
 from .const import STARTUP_MESSAGE
 from .forecast.forecast_controller import ForecastController
@@ -61,7 +60,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 hass.config_entries.async_forward_entry_setup(entry, platform)
             )
 
-    solcast_site_id = entry.data.get(SOLCAST_API_SITE)
     solcast_api_key = entry.data.get(SOLCAST_API_KEY)
     fox_username = entry.data.get(FOX_USERNAME)
     fox_password = entry.data.get(FOX_PASSWORD)
@@ -76,9 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     day_buffer = entry.options.get(DAY_BUFFER, entry.data.get(DAY_BUFFER))
 
     session = async_get_clientsession(hass)
-    solcast_client = SolcastApiClient(
-        solcast_site_id, solcast_api_key, SOLCAST_URL, session
-    )
+    solcast_client = SolcastApiClient(solcast_api_key, SOLCAST_URL, session)
 
     fox_client = FoxApiClient(session, fox_username, fox_password)
 

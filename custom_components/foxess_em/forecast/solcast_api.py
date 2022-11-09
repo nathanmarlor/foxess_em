@@ -19,33 +19,44 @@ class SolcastApiClient:
 
     def __init__(
         self,
-        solcast_site_id: str,
         solcast_api_key: str,
         solcast_url: str,
         session: aiohttp.ClientSession,
     ) -> None:
         """Sample API Client."""
-        self._solcast_site_id = solcast_site_id
         self._solcast_api_key = solcast_api_key
         self._solcast_url = solcast_url
         self._session = session
 
-    async def async_get_data(self) -> dict:
+    async def async_get_sites(self) -> list[str]:
+        """Return available sites"""
+
+        _LOGGER.debug("Retrieving available sites")
+        sites = await self._fetch_data(
+            path="",
+            site_id="",
+            solcast_url=self._solcast_url,
+            api_key=self._solcast_api_key,
+        )
+
+        return sites
+
+    async def async_get_data(self, site_id: str) -> dict:
         """Get data from the API."""
 
-        _LOGGER.debug("Retrieving history data")
+        _LOGGER.debug(f"Retrieving history data for site: {site_id}")
         history = await self._fetch_data(
             path="estimated_actuals",
             api_key=self._solcast_api_key,
-            site_id=self._solcast_site_id,
+            site_id=site_id,
             solcast_url=self._solcast_url,
         )
 
-        _LOGGER.debug("Retrieving forecast data")
+        _LOGGER.debug(f"Retrieving forecast data for site: {site_id}")
         live = await self._fetch_data(
             path="forecasts",
             api_key=self._solcast_api_key,
-            site_id=self._solcast_site_id,
+            site_id=site_id,
             solcast_url=self._solcast_url,
         )
 

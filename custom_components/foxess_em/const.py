@@ -17,7 +17,6 @@ PLATFORMS = [SENSOR, SWITCH]
 ATTR_ENTRY_TYPE = "entry_type"
 
 # Configuration and options
-SOLCAST_API_SITE = "site"
 SOLCAST_API_KEY = "key"
 SOLCAST_SCAN_INTERVAL = "scan_interval"
 # SOLCAST_URL = "https://10f71ac8-06ad-4620-8559-8414ce9457dd.mock.pstmn.io"
