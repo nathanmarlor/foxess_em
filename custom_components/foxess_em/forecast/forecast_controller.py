@@ -1,8 +1,11 @@
 """Forecast controller"""
 import logging
 from datetime import datetime
+from datetime import time
+from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
 
@@ -13,6 +16,12 @@ from .forecast_model import ForecastModel
 from .solcast_api import SolcastApiClient
 
 _LOGGER = logging.getLogger(__name__)
+_API_AVAILABLE = 50
+_CALLS = 2
+_API_BUFFER = 3
+_START_HOUR = 6
+_HOURS_OF_SUNLIGHT = 14
+_MINUTES = _HOURS_OF_SUNLIGHT * 60
 
 
 class ForecastController(UnloadController, CallbackController):
@@ -26,12 +35,32 @@ class ForecastController(UnloadController, CallbackController):
         self._api_count = 0
         self._last_update = None
 
-        for h in range(6, 20):
+        async_call_later(hass, 5, self.setup_refresh)
+
+    async def setup_refresh(self, *args):
+        """Setup refresh intervals"""
+
+        sites = await self._api.sites()
+        sites = len(sites["sites"])
+
+        _LOGGER.debug(f"Creating refresh schedule for {sites} sites")
+
+        api_available = (_API_AVAILABLE - (_API_BUFFER * (sites * _CALLS))) / (
+            sites * _CALLS
+        )
+
+        interval = _MINUTES / api_available
+        for h in range(0, _MINUTES, int(interval)):
+            update_time = (
+                datetime.combine(datetime.today(), time(_START_HOUR))
+                + timedelta(minutes=h)
+            ).time()
+
             forecast_update = async_track_utc_time_change(
                 self._hass,
                 self.async_refresh,
-                hour=h,
-                minute=0,
+                hour=update_time.hour,
+                minute=update_time.minute,
                 second=0,
                 local=True,
             )
