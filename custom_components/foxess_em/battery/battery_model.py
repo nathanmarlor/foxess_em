@@ -86,16 +86,26 @@ class BatteryModel:
 
         battery = self.battery_capacity_remaining()
         battery_states = []
+        grid_usage = []
         available_capacity = self._capacity - (self._min_soc * self._capacity)
         for index, _ in merged.iterrows():
             if merged.iloc[index]["period_start"] >= datetime.now().astimezone():
                 delta = merged.iloc[index]["delta"]
-                battery = max([0, min([available_capacity, battery + delta])])
+                new_state = battery + delta
+                battery = max([0, min([available_capacity, new_state])])
                 battery_states.append(battery)
+                if new_state <= 0 or new_state >= available_capacity:
+                    # import (-) or excess (+)
+                    grid_usage.append(delta)
+                else:
+                    # battery usage
+                    grid_usage.append(0)
             else:
+                grid_usage.append(0)
                 battery_states.append(0)
 
         merged["battery"] = battery_states
+        merged["grid"] = grid_usage
 
         self._model = merged
         self._ready = True
@@ -213,6 +223,11 @@ class BatteryModel:
 
     def battery_depleted_time(self) -> datetime:
         """Time battery capacity is 0"""
+
+        if self.battery_capacity_remaining() == 0:
+            # battery is already empty, prevent constant time updates and set sensor to unknown
+            return None
+
         battery_depleted = self._model[
             (self._model["battery"] == 0)
             & (self._model["period_start"] > datetime.now().astimezone())
@@ -224,25 +239,36 @@ class BatteryModel:
 
         return self._model.iloc[battery_depleted["period_start"].idxmin()].period_start
 
-    def peak_grid_usage(self) -> float:
+    def peak_grid_import(self) -> float:
         """Grid usage required to next eco start"""
         eco_start = self._next_eco_start_time()
-        battery_depleted_time = self.battery_depleted_time()
 
         grid_use = self._model[
-            (self._model["period_start"] > battery_depleted_time)
-            & (self._model["period_start"] < eco_start)
+            (self._model["grid"] < 0) & (self._model["period_start"] < eco_start)
         ]
 
         if len(grid_use) == 0:
             return 0
 
-        return round(abs(grid_use[grid_use["delta"] < 0].delta.sum()), 2)
+        return round(abs(grid_use.grid.sum()), 2)
 
-    def _state_at_datetime(self, time: datetime) -> float:
+    def peak_grid_export(self) -> float:
+        """Grid usage required to next eco start"""
+        eco_start = self._next_eco_start_time()
+
+        grid_export = self._model[
+            (self._model["grid"] > 0) & (self._model["period_start"] < eco_start)
+        ]
+
+        if len(grid_export) == 0:
+            return 0
+
+        return round(grid_export.grid.sum(), 2)
+
+    def _state_at_datetime(self, state_time: datetime) -> float:
         """Battery and forecast remaining meets load until dawn"""
-        time = time.replace(second=0, microsecond=0)
-        return self._model[self._model["period_start"] == time].battery.iloc[0]
+        state_time = state_time.replace(second=0, microsecond=0)
+        return self._model[self._model["period_start"] == state_time].battery.iloc[0]
 
     def _next_eco_end_time(self) -> datetime:
         """Next eco end time"""
