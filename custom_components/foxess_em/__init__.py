@@ -60,13 +60,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 hass.config_entries.async_forward_entry_setup(entry, platform)
             )
 
-    solcast_api_key = entry.data.get(SOLCAST_API_KEY)
-    fox_username = entry.data.get(FOX_USERNAME)
-    fox_password = entry.data.get(FOX_PASSWORD)
-    eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
-    eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
-    house_power = entry.data.get(HOUSE_POWER)
-    battery_soc = entry.data.get(BATTERY_SOC)
+    solcast_api_key = entry.options.get(
+        SOLCAST_API_KEY, entry.data.get(SOLCAST_API_KEY)
+    )
+    fox_username = entry.options.get(FOX_USERNAME, entry.data.get(FOX_USERNAME))
+    fox_password = entry.options.get(FOX_PASSWORD, entry.data.get(FOX_PASSWORD))
+    eco_start_time = time.fromisoformat(
+        entry.options.get(ECO_START_TIME, entry.data.get(ECO_START_TIME))
+    )
+    eco_end_time = time.fromisoformat(
+        entry.options.get(ECO_END_TIME, entry.data.get(ECO_END_TIME))
+    )
+    house_power = entry.options.get(HOUSE_POWER, entry.data.get(HOUSE_POWER))
+    battery_soc = entry.options.get(BATTERY_SOC, entry.data.get(BATTERY_SOC))
     aux_power = entry.options.get(AUX_POWER, entry.data.get(AUX_POWER))
     min_soc = entry.options.get(MIN_SOC, entry.data.get(MIN_SOC))
     capacity = entry.options.get(BATTERY_CAPACITY, entry.data.get(BATTERY_CAPACITY))

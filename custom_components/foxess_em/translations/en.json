@@ -10,7 +10,7 @@
       },
       "fox": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your Fox ESS Username and Password - https://www.foxesscloud.com/",
+        "description": "Please enter your FoxESS Username and Password - https://www.foxesscloud.com/",
         "data": {
           "fox_username": "Fox Username",
           "fox_password": "Fox Password"
@@ -40,7 +40,7 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_auth": "Error - please check the Fox ESS Username and Password",
+      "fox_auth": "Error - please check the FoxESS Username and Password",
       "time_invalid": "Time format not recognised"
     },
     "abort": {
@@ -49,17 +49,50 @@
   },
   "options": {
     "step": {
-      "init": {
-        "title": "FoxESS - Energy Management: Battery Config",
+      "user": {
+        "title": "FoxESS - Energy Management: (1/4)",
+        "description": "Please enter your Solcast API Key - https://toolkit.solcast.com.au/live-forecast",
+        "data": {
+          "key": "API Key"
+        }
+      },
+      "fox": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your FoxESS Username and Password - https://www.foxesscloud.com/",
+        "data": {
+          "fox_username": "Fox Username",
+          "fox_password": "Fox Password"
+        }
+      },
+      "battery": {
+        "title": "FoxESS - Energy Management: (3/4)",
         "description": "Please enter your battery config options",
         "data": {
-          "aux_power": "Aux Power (W) - Power to remove from the base house load i.e. Eddi",
+          "eco_start_time": "Eco Start Time",
+          "eco_end_time": "Eco End Time",
           "dawn_buffer": "Dawn Buffer (kWh)",
           "day_buffer": "Day Buffer (kWh)",
           "capacity": "Battery Capacity (kWh)",
           "min_soc": "Minimum SoC (%)"
         }
+      },
+      "power": {
+        "title": "FoxESS - Energy Management: (4/4)",
+        "description": "Please enter your load power options",
+        "data": {
+          "battery_soc": "Battery SoC (%)",
+          "house_power": "House Power (kW)",
+          "aux_power": "Aux Power (W) - Power to remove from the base house load i.e. Eddi"
+        }
       }
+    },
+    "error": {
+      "solcast_auth": "Error - please check the Solcast API Key",
+      "fox_auth": "Error - please check the FoxESS Username and Password",
+      "time_invalid": "Time format not recognised"
+    },
+    "abort": {
+      "single_instance_allowed": "Only a single instance is allowed."
     }
   }
 }
