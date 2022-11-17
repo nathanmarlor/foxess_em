@@ -189,6 +189,10 @@ class BatteryController(UnloadController, CallbackController):
         """Time battery capacity is 0"""
         return self._model.battery_depleted_time()
 
-    def peak_grid_usage(self) -> float:
-        """Grid usage required to next eco start"""
-        return self._model.peak_grid_usage()
+    def peak_grid_import(self) -> float:
+        """Grid import to next eco start"""
+        return self._model.peak_grid_import()
+
+    def peak_grid_export(self) -> float:
+        """Grid export to next eco start"""
+        return self._model.peak_grid_export()

@@ -71,11 +71,20 @@ SENSORS: dict[str, SensorDescription] = {
             "Average:": "average_last_update_str",
         },
     ),
-    "peak_grid_usage": SensorDescription(
-        key="peak_grid_usage",
+    "peak_grid_import": SensorDescription(
+        key="peak_grid_import",
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
-        name="Capacity: Peak Grid Usage",
+        name="Capacity: Peak Grid Import",
+        icon="mdi:credit-card-clock-outline",
+        should_poll=False,
+        state_attributes={},
+    ),
+    "peak_grid_export": SensorDescription(
+        key="peak_grid_export",
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        name="Capacity: Peak Grid Export",
         icon="mdi:credit-card-clock-outline",
         should_poll=False,
         state_attributes={},
