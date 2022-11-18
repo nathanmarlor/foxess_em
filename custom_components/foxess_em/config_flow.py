@@ -55,9 +55,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     SOLCAST_API_KEY,
-                    default=self._options.get(
-                        SOLCAST_API_KEY, self._data.get(SOLCAST_API_KEY, "")
-                    ),
+                    default=self._data.get(SOLCAST_API_KEY, ""),
                 ): str,
             }
         )
@@ -66,15 +64,11 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     FOX_USERNAME,
-                    default=self._options.get(
-                        FOX_USERNAME, self._data.get(FOX_USERNAME, "")
-                    ),
+                    default=self._data.get(FOX_USERNAME, ""),
                 ): str,
                 vol.Required(
                     FOX_PASSWORD,
-                    default=self._options.get(
-                        FOX_PASSWORD, self._data.get(FOX_PASSWORD, "")
-                    ),
+                    default=self._data.get(FOX_PASSWORD, ""),
                 ): str,
             }
         )
@@ -83,42 +77,28 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     ECO_START_TIME,
-                    default=self._options.get(
-                        ECO_START_TIME,
-                        self._data.get(
-                            ECO_START_TIME, datetime.time(0, 30).isoformat()
-                        ),
+                    default=self._data.get(
+                        ECO_START_TIME, datetime.time(0, 30).isoformat()
                     ),
                 ): str,
                 vol.Required(
                     ECO_END_TIME,
-                    default=self._options.get(
-                        ECO_END_TIME,
-                        self._data.get(ECO_END_TIME, datetime.time(4, 30).isoformat()),
+                    default=self._data.get(
+                        ECO_END_TIME, datetime.time(4, 30).isoformat()
                     ),
                 ): str,
                 vol.Required(
-                    DAWN_BUFFER,
-                    default=float(
-                        self._options.get(DAWN_BUFFER, self._data.get(DAWN_BUFFER, 1))
-                    ),
+                    DAWN_BUFFER, default=float(self._data.get(DAWN_BUFFER, 1))
                 ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
                 vol.Required(
-                    DAY_BUFFER,
-                    default=self._options.get(
-                        DAY_BUFFER, self._data.get(DAY_BUFFER, 2)
-                    ),
+                    DAY_BUFFER, default=self._data.get(DAY_BUFFER, 2)
                 ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
                 vol.Required(
-                    BATTERY_CAPACITY,
-                    default=self._options.get(
-                        BATTERY_CAPACITY, self._data.get(BATTERY_CAPACITY, 10.4)
-                    ),
+                    BATTERY_CAPACITY, default=self._data.get(BATTERY_CAPACITY, 10.4)
                 ): vol.Coerce(float),
                 vol.Required(
                     MIN_SOC,
-                    default=self._options.get(MIN_SOC, self._data.get(MIN_SOC, 0.11))
-                    * 100,
+                    default=self._data.get(MIN_SOC, 0.11) * 100,
                 ): vol.All(vol.Coerce(float), vol.Range(min=10, max=99)),
             }
         )
@@ -127,23 +107,19 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     BATTERY_SOC,
-                    default=self._options.get(
-                        BATTERY_SOC, self._data.get(BATTERY_SOC, "sensor.battery_soc")
-                    ),
+                    default=self._data.get(BATTERY_SOC, "sensor.battery_soc"),
                 ): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor", multiple=False)
                 ),
                 vol.Required(
                     HOUSE_POWER,
-                    default=self._options.get(
-                        HOUSE_POWER, self._data.get(HOUSE_POWER, "sensor.load_power")
-                    ),
+                    default=self._data.get(HOUSE_POWER, "sensor.load_power"),
                 ): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor", multiple=False)
                 ),
-                vol.Required(
+                vol.Optional(
                     AUX_POWER,
-                    default=self._options.get(AUX_POWER, self._data.get(AUX_POWER, "")),
+                    default=self._data.get(AUX_POWER, []),
                 ): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor", multiple=True)
                 ),
