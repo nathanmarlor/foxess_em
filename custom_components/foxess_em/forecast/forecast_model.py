@@ -41,6 +41,10 @@ class ForecastModel:
         """Return number of sites"""
         return await self._api.async_get_sites()
 
+    async def api_status(self) -> int:
+        """Return number of API calls"""
+        return await self._api.async_get_api_calls()
+
     def resample_data(self) -> pd.DataFrame:
         """Return resampled data"""
         if len(self._resampled) == 0:

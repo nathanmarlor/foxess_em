@@ -28,14 +28,23 @@ class SolcastApiClient:
         self._solcast_url = solcast_url
         self._session = session
 
+    async def async_get_api_calls(self) -> list[str]:
+        """Return API information"""
+
+        _LOGGER.debug("Retrieving API call status")
+        api_status = await self._fetch_data(
+            solcast_url=f"{self._solcast_url}/json/reply/GetUserDailyLimit",
+            api_key=self._solcast_api_key,
+        )
+
+        return api_status
+
     async def async_get_sites(self) -> list[str]:
         """Return available sites"""
 
         _LOGGER.debug("Retrieving available sites")
         sites = await self._fetch_data(
-            path="",
-            site_id="",
-            solcast_url=self._solcast_url,
+            solcast_url=f"{self._solcast_url}/rooftop_sites",
             api_key=self._solcast_api_key,
         )
 
@@ -46,18 +55,14 @@ class SolcastApiClient:
 
         _LOGGER.debug(f"Retrieving history data for site: {site_id}")
         history = await self._fetch_data(
-            path="estimated_actuals",
             api_key=self._solcast_api_key,
-            site_id=site_id,
-            solcast_url=self._solcast_url,
+            solcast_url=f"{self._solcast_url}/rooftop_sites/{site_id}/estimated_actuals",
         )
 
         _LOGGER.debug(f"Retrieving forecast data for site: {site_id}")
         live = await self._fetch_data(
-            path="forecasts",
             api_key=self._solcast_api_key,
-            site_id=site_id,
-            solcast_url=self._solcast_url,
+            solcast_url=f"{self._solcast_url}/rooftop_sites/{site_id}/forecasts",
         )
 
         if (history is None) | (live is None):
@@ -86,7 +91,7 @@ class SolcastApiClient:
         return history_estimates + live_estimates
 
     async def _fetch_data(
-        self, api_key: str, site_id: str, solcast_url: str, path="error", hours=120
+        self, api_key: str, solcast_url: str, hours=120
     ) -> dict[str, Any]:
         """fetch data via the Solcast API."""
 
@@ -95,7 +100,7 @@ class SolcastApiClient:
 
             async with async_timeout.timeout(_TIMEOUT):
                 response = await self._session.get(
-                    f"{solcast_url}/rooftop_sites/{site_id}/{path}",
+                    solcast_url,
                     params=params,
                 )
 
