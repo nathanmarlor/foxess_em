@@ -92,7 +92,8 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
 
             await self._api.refresh()
 
-            self._api_count += 2
+            api_status = await self._api.api_status()
+            self._api_count = api_status["daily_limit_consumed"]
             self._last_update = datetime.now().astimezone()
 
             _LOGGER.debug("Finished refreshing forecast data, notifying listeners")
