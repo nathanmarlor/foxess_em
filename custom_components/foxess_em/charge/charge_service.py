@@ -1,6 +1,9 @@
 """Charge service"""
 import logging
+from datetime import date
+from datetime import datetime
 from datetime import time
+from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
@@ -49,11 +52,14 @@ class ChargeService(UnloadController):
     def _add_listeners(self) -> None:
 
         # Setup trigger to start just before eco period starts
+        eco_start_setup_time = (
+            datetime.combine(date.today(), self._eco_start_time) - timedelta(minutes=5)
+        ).time()
         eco_start_setup = async_track_utc_time_change(
             self._hass,
             self._eco_start_setup,
-            hour=self._eco_start_time.hour,
-            minute=self._eco_start_time.minute - 5,
+            hour=eco_start_setup_time.hour,
+            minute=eco_start_setup_time.minute,
             second=0,
             local=True,
         )
