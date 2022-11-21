@@ -69,10 +69,7 @@ class BatteryModel:
 
         now = datetime.utcnow()
 
-        forecast = forecast[
-            (forecast["date"] >= now.date())
-            & (forecast["date"] <= (now + timedelta(days=2)).date())
-        ]
+        forecast = forecast[forecast["date"] >= now.date()]
 
         load.reset_index(drop=True, inplace=True)
         forecast.reset_index(drop=True, inplace=True)
@@ -89,6 +86,21 @@ class BatteryModel:
         grid_usage = []
         available_capacity = self._capacity - (self._min_soc * self._capacity)
         for index, _ in merged.iterrows():
+            if merged.iloc[index]["period_start"].time() == self._eco_start_time:
+                eco_start = merged.iloc[index]["period_start"]
+                eco_end = eco_start.replace(
+                    hour=self._eco_end_time.hour,
+                    minute=self._eco_end_time.minute,
+                    second=self._eco_end_time.second,
+                )
+                next_eco_start = merged.iloc[index]["period_start"] + timedelta(days=1)
+                load = merged[
+                    merged["period_start"]
+                    > eco_end & merged["period_start"]
+                    < next_eco_start
+                ]
+                # meh = load.delta.sum()
+
             if merged.iloc[index]["period_start"] >= datetime.now().astimezone():
                 delta = merged.iloc[index]["delta"]
                 new_state = battery + delta
