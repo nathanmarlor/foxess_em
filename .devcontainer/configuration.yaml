@@ -31,3 +31,6 @@ template:
   - sensor:
       - name: "sensor.myenergi_eddi_13195267_green_energy_today"
         state: "1"
+  - sensor:
+      - name: "sensor.pv_power_now"
+        state: "1"

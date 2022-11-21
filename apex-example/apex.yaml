@@ -1,4 +1,5 @@
 all_series_config:
+  curve: smooth
   extend_to: now
   fill_raw: last
   stroke_width: 2
@@ -11,6 +12,8 @@ now:
 series:
   - color: "#AA336A"
     entity: sensor.load_power_new
+  - color: "#006400"
+    entity: sensor.grid_ct
   - color: "#FFA500"
     entity: sensor.pv_power_now
   - color: "#00008B"
@@ -51,3 +54,4 @@ series:
 span:
   start: day
 type: custom:apexcharts-card
+update_interval: 1min
