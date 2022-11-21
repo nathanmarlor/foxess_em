@@ -21,6 +21,7 @@ SENSORS: dict[str, SensorDescription] = {
             "Dawn Charge Needed:": "dawn_charge_needs",
             "Day Charge Needed:": "day_charge_needs",
             "Target %:": "charge_to_perc",
+            "Graphing": "raw_data",
         },
     ),
     "state_at_eco_start": SensorDescription(

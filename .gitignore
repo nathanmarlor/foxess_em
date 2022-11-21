@@ -5,3 +5,4 @@ pythonenv*
 venv
 .venv
 home-assistant_v2.db
+hacs

@@ -61,6 +61,12 @@ class BatteryModel:
 
         return min(_MAX_PERC, round(perc, 0))
 
+    def raw_data(self):
+        """Return raw data in dictionary form"""
+        return self._model[
+            self._model["period_start"] > datetime.now().astimezone()
+        ].to_json(orient="records")
+
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
 

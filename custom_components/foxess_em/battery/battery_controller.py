@@ -94,6 +94,10 @@ class BatteryController(UnloadController, CallbackController):
             self.charge_total() + self.state_at_eco_start()
         )
 
+    def raw_data(self):
+        """Return raw data in dictionary form"""
+        return self._model.raw_data()
+
     def state_at_dawn(self) -> float:
         """Battery state at dawn"""
         dawn = self._model.state_at_dawn()
