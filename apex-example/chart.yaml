@@ -1,0 +1,50 @@
+type: custom:apexcharts-card
+graph_span: 100h
+header:
+  show: false
+span:
+  start: day
+now:
+  show: true
+  label: Now
+all_series_config:
+  stroke_width: 2
+  fill_raw: last
+  extend_to: now
+series:
+  - entity: sensor.load_power_new
+    color: "#FFC0CB"
+  - entity: sensor.pv_power_now
+    color: "#800080"
+  - entity: sensor.foxess_em_raw_data
+    name: Battery
+    color: "#00FF00"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.map((entry) => {
+         return [new Date(entry.period_start), entry.battery];
+       });
+  - entity: sensor.foxess_em_raw_data
+    name: Load
+    color: "#FFC0CB"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.map((entry) => {
+         return [new Date(entry.period_start), entry.load*60];
+       });
+  - entity: sensor.foxess_em_raw_data
+    name: Forecast
+    color: "#800080"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.map((entry) => {
+         return [new Date(entry.period_start), entry.pv_estimate*60];
+       });
+  - entity: sensor.foxess_em_raw_data
+    name: Grid
+    color: "#800080"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.map((entry) => {
+         return [new Date(entry.period_start), entry.grid*60];
+       });

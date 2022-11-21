@@ -21,7 +21,6 @@ SENSORS: dict[str, SensorDescription] = {
             "Dawn Charge Needed:": "dawn_charge_needs",
             "Day Charge Needed:": "day_charge_needs",
             "Target %:": "charge_to_perc",
-            "Graphing": "raw_data",
         },
     ),
     "next_dawn_time": SensorDescription(
@@ -80,6 +79,16 @@ SENSORS: dict[str, SensorDescription] = {
         icon="mdi:battery-outline",
         should_poll=False,
         state_attributes={},
+    ),
+    "raw_data": SensorDescription(
+        key="empty",
+        name="FoxESS EM: Raw Data",
+        icon="mdi:flash",
+        should_poll=False,
+        visible=False,
+        state_attributes={
+            "raw_data": "raw_data",
+        },
     ),
 }
 

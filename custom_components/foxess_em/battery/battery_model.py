@@ -63,8 +63,12 @@ class BatteryModel:
 
     def raw_data(self):
         """Return raw data in dictionary form"""
-        return self._model[
+        filtered = self._model[
             self._model["period_start"] > datetime.now().astimezone()
+        ]
+
+        return filtered[
+            ["period_start", "pv_estimate", "load", "battery", "grid"]
         ].to_json(orient="records")
 
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
@@ -99,7 +103,9 @@ class BatteryModel:
                 if period.time() == self._eco_start_time:
                     # landed on the start of the eco period
                     dawn_charge, day_charge = self._charge_totals(period, index)
-                    battery += max([dawn_charge, day_charge])
+                    total = max([dawn_charge, day_charge])
+                    target = battery + total
+                    battery += max(0, total)
                     # store in dataframe for retrieval later
                     merged.at[index, "charge_dawn"] = dawn_charge
                     merged.at[index, "charge_day"] = day_charge
@@ -107,9 +113,11 @@ class BatteryModel:
                 elif (
                     period.time() > self._eco_start_time
                     and period.time() <= self._eco_end_time
+                    and battery <= target
                 ):
                     # still in eco period, don't update the battery
-                    merged.at[index, "battery"] = merged.at[index - 1, "battery"]
+                    max_battery = max([target, merged.at[index - 1, "battery"]])
+                    merged.at[index, "battery"] = max_battery
                 else:
                     delta = merged.iloc[index]["delta"]
                     new_state = battery + delta

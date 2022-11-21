@@ -180,3 +180,7 @@ class BatteryController(UnloadController, CallbackController):
     def peak_grid_export(self) -> float:
         """Grid export to next eco start"""
         return self._model.peak_grid_export()
+
+    def empty(self) -> int:
+        """Hack for hidden sensors"""
+        return 0
