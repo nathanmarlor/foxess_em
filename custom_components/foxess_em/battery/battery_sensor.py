@@ -80,6 +80,16 @@ SENSORS: dict[str, SensorDescription] = {
         should_poll=False,
         state_attributes={},
     ),
+    "raw_data": SensorDescription(
+        key="empty",
+        name="FoxESS EM: Raw Data",
+        icon="mdi:flash",
+        should_poll=False,
+        visible=False,
+        state_attributes={
+            "raw_data": "raw_data",
+        },
+    ),
 }
 
 

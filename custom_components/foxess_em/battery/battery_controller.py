@@ -94,6 +94,10 @@ class BatteryController(UnloadController, CallbackController):
             self.charge_total() + self.state_at_eco_start()
         )
 
+    def raw_data(self):
+        """Return raw data in dictionary form"""
+        return self._model.raw_data()
+
     def state_at_eco_start(self) -> float:
         """Battery state at start of eco period"""
         return round(self._model.state_at_eco_start(), 2)
@@ -176,3 +180,7 @@ class BatteryController(UnloadController, CallbackController):
     def peak_grid_export(self) -> float:
         """Grid export to next eco start"""
         return self._model.peak_grid_export()
+
+    def empty(self) -> int:
+        """Hack for hidden sensors"""
+        return 0
