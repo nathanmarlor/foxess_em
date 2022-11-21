@@ -11,3 +11,4 @@ class SensorDescription(SensorEntityDescription):
 
     should_poll: bool | None = False
     state_attributes: dict | None = field(default_factory=dict)
+    visible: bool | None = True
