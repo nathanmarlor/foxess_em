@@ -5,4 +5,8 @@ pythonenv*
 venv
 .venv
 home-assistant_v2.db
+<<<<<<< HEAD
 hacs
+=======
+custom_components/hacs
+>>>>>>> main

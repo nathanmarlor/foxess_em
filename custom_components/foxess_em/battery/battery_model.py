@@ -73,86 +73,151 @@ class BatteryModel:
         load = load.groupby(load["time"]).mean()
         load["time"] = load.index.values
 
-        now = datetime.utcnow()
+        # limit forecast values to future only
+        forecast = forecast[forecast["date"] >= datetime.utcnow().date()]
 
-        forecast = forecast[
-            (forecast["date"] >= now.date())
-            & (forecast["date"] <= (now + timedelta(days=2)).date())
-        ]
-
+        # reset indexes
         load.reset_index(drop=True, inplace=True)
         forecast.reset_index(drop=True, inplace=True)
 
+        # merge load and forecast to produce a delta
         merged = pd.merge(load, forecast, how="right", on=["time"])
         merged["delta"] = merged["pv_estimate"] - merged["load"]
 
         merged = merged.reset_index(drop=True)
-
         merged = merged.sort_values(by="period_start")
 
+        # set global model
+        self._model = merged
+
         battery = self.battery_capacity_remaining()
-        battery_states = []
-        grid_usage = []
         available_capacity = self._capacity - (self._min_soc * self._capacity)
         for index, _ in merged.iterrows():
-            if merged.iloc[index]["period_start"] >= datetime.now().astimezone():
-                delta = merged.iloc[index]["delta"]
-                new_state = battery + delta
-                battery = max([0, min([available_capacity, new_state])])
-                battery_states.append(battery)
-                if new_state <= 0 or new_state >= available_capacity:
-                    # import (-) or excess (+)
-                    grid_usage.append(delta)
+            period = merged.iloc[index]["period_start"].to_pydatetime()
+
+            if period > datetime.now().astimezone():
+                if period.time() == self._eco_start_time:
+                    # landed on the start of the eco period
+                    dawn_charge, day_charge = self._charge_totals(period, index)
+                    battery += max([dawn_charge, day_charge])
+                    # store in dataframe for retrieval later
+                    merged.at[index, "charge_dawn"] = dawn_charge
+                    merged.at[index, "charge_day"] = day_charge
+                    merged.at[index, "battery"] = battery
+                elif (
+                    period.time() > self._eco_start_time
+                    and period.time() <= self._eco_end_time
+                ):
+                    # still in eco period, don't update the battery
+                    merged.at[index, "battery"] = merged.at[index - 1, "battery"]
                 else:
-                    # battery usage
-                    grid_usage.append(0)
-            else:
-                grid_usage.append(0)
-                battery_states.append(0)
+                    delta = merged.iloc[index]["delta"]
+                    new_state = battery + delta
+                    battery = max([0, min([available_capacity, new_state])])
+                    merged.at[index, "battery"] = battery
+                    if new_state <= 0 or new_state >= available_capacity:
+                        # import (-) or excess (+)
+                        merged.at[index, "grid"] = delta
+                    else:
+                        # battery usage
+                        merged.at[index, "grid"] = 0
 
-        merged["battery"] = battery_states
-        merged["grid"] = grid_usage
-
-        self._model = merged
         self._ready = True
+
+    def _charge_totals(self, period, index):
+        """Return charge totals for dawn/day"""
+        # calculate start/end of the next peak period
+        eco_end = self._next_eco_end_time(period)
+        next_eco_start = period + timedelta(days=1)
+        # grab all peak values
+        peak = self._model[
+            (self._model["period_start"] > eco_end)
+            & (self._model["period_start"] < next_eco_start)
+        ]
+        # sum forecast and house load
+        forecast_sum = peak.pv_estimate.sum()
+        load_sum = peak.load.sum()
+        dawn_load = self._dawn_load(eco_end)
+        eco_start = self._model.iloc[index - 1].battery
+        dawn_charge = self.dawn_charge_needs(dawn_load, eco_start)
+        day_charge = self.day_charge_needs(forecast_sum, load_sum, eco_start)
+        _LOGGER.debug(
+            f"Period: {period.date()} - EcoStart: {eco_start} Dawn: {dawn_charge} Day: {day_charge}"
+        )
+        return dawn_charge, day_charge
 
     def state_at_eco_start(self) -> float:
         """State at eco end"""
-        return self._state_at_datetime(self._next_eco_start_time())
+        eco_time = self._next_eco_start_time().replace(second=0, microsecond=0)
+        eco_time -= timedelta(minutes=1)
+        return self._model[self._model["period_start"] == eco_time].battery.iloc[0]
 
-    def state_at_eco_end(self) -> float:
-        """State at eco end"""
-        return self._state_at_datetime(self._next_eco_end_time())
+    def dawn_charge(self):
+        """Dawn charge required"""
+        return self._charge_info().iloc[0].charge_dawn
 
-    def state_at_dawn(self) -> float:
-        """State at eco end"""
-        return self._state_at_datetime(self.next_dawn_time())
+    def day_charge(self):
+        """Day charge required"""
+        return self._charge_info().iloc[0].charge_day
 
-    def dawn_load(self) -> float:
+    def _charge_info(self):
+        """Charge info"""
+        return self._model[self._model["period_start"] == self._next_eco_start_time()]
+
+    def _dawn_load(self, eco_end_time) -> float:
         """Dawn load"""
-        dawn_date = datetime.now().astimezone()
-        if self._is_after_todays_eco_start():
-            dawn_date += timedelta(days=1)
-
-        eco_time = dawn_date.replace(
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
-            second=0,
-            microsecond=0,
-        )
-
-        dawn_time = self._dawn_time(dawn_date)
+        dawn_time = self._dawn_time(eco_end_time)
 
         dawn_load = self._model[
-            (
-                (self._model["period_start"] > eco_time)
-                & (self._model["period_start"] < dawn_time)
-            )
+            (self._model["period_start"] > eco_end_time)
+            & (self._model["period_start"] < dawn_time)
         ]
 
         load_sum = abs(dawn_load.delta.sum())
 
         return round(load_sum, 2)
+
+    def _dawn_time(self, date: datetime) -> datetime:
+        """Calculate dawn time"""
+        filtered = self._model[self._model["date"] == date.date()]
+        dawn = filtered[filtered["delta"] > 0]
+
+        if len(dawn) == 0:
+            # Solar never reaches house load... return mid-day
+            return date.replace(hour=12, minute=0, second=0, microsecond=0)
+        else:
+            return dawn.iloc[0].period_start.to_pydatetime()
+
+    def dawn_charge_needs(self, dawn_load, eco_start) -> float:
+        """Dawn charge needs"""
+        dawn_charge_needs = eco_start - dawn_load
+
+        dawn_buffer = self._dawn_buffer - dawn_charge_needs
+
+        ceiling = self.ceiling_charge_total(dawn_buffer, eco_start)
+
+        return round(ceiling, 2)
+
+    def day_charge_needs(
+        self, forecast: float, house_load: float, eco_start: float
+    ) -> float:
+        """Day charge needs"""
+        day_charge_needs = (eco_start - house_load) + forecast
+
+        day_buffer_top_up = self._day_buffer - day_charge_needs
+
+        ceiling = self.ceiling_charge_total(day_buffer_top_up, eco_start)
+
+        return round(ceiling, 2)
+
+    def ceiling_charge_total(self, charge_total: float, eco_start: float) -> float:
+        """Ceiling total charge"""
+        available_capacity = round(
+            self._capacity - (self._min_soc * self._capacity) - eco_start,
+            2,
+        )
+
+        return min(available_capacity, charge_total)
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
@@ -170,62 +235,6 @@ class BatteryModel:
         """Calculate dawn time"""
         now = datetime.now().astimezone()
         return self._dawn_time(now)
-
-    def _dawn_time(self, date: datetime) -> datetime:
-        """Calculate dawn time"""
-        filtered = self._model[self._model["date"] == date.date()]
-        dawn = filtered[filtered["delta"] > 0]
-
-        if len(dawn) == 0:
-            # Solar never reaches house load... return mid-day
-            return date.replace(hour=12, minute=0, second=0, microsecond=0)
-        else:
-            return self._model.iloc[dawn["period_start"].idxmin()].period_start
-
-    def dawn_charge_needs(self) -> float:
-        """Dawn charge needs"""
-
-        eco_start = self.state_at_eco_start()
-        dawn_load = self.dawn_load()
-
-        dawn_charge_needs = eco_start - dawn_load
-
-        dawn_buffer_top_up = self._dawn_buffer - dawn_charge_needs
-
-        ceiling = self.ceiling_charge_total(dawn_buffer_top_up)
-
-        return round(ceiling, 2)
-
-    def day_charge_needs(
-        self,
-        forecast_today: float,
-        forecast_tomorrow: float,
-        house_load: float,
-    ) -> float:
-        """Day charge needs"""
-        if self._is_after_todays_eco_start():
-            forecast = forecast_tomorrow
-        else:
-            forecast = forecast_today
-
-        day_charge_needs = (self.state_at_eco_start() - house_load) + forecast
-
-        day_buffer_top_up = self._day_buffer - day_charge_needs
-
-        ceiling = self.ceiling_charge_total(day_buffer_top_up)
-
-        return round(ceiling, 2)
-
-    def ceiling_charge_total(self, charge_total: float) -> float:
-        """Ceiling total charge"""
-        available_capacity = round(
-            self._capacity
-            - (self._min_soc * self._capacity)
-            - self.state_at_eco_start(),
-            2,
-        )
-
-        return min(available_capacity, charge_total)
 
     def battery_depleted_time(self) -> datetime:
         """Time battery capacity is 0"""
@@ -271,25 +280,6 @@ class BatteryModel:
 
         return round(grid_export.grid.sum(), 2)
 
-    def _state_at_datetime(self, state_time: datetime) -> float:
-        """Battery and forecast remaining meets load until dawn"""
-        state_time = state_time.replace(second=0, microsecond=0)
-        return self._model[self._model["period_start"] == state_time].battery.iloc[0]
-
-    def _next_eco_end_time(self) -> datetime:
-        """Next eco end time"""
-        now = datetime.now().astimezone()
-        eco_end = now.replace(
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
-            second=0,
-            microsecond=0,
-        )
-        if now > eco_end:
-            eco_end += timedelta(days=1)
-
-        return eco_end
-
     def _next_eco_start_time(self) -> datetime:
         """Next eco start time"""
         now = datetime.now().astimezone()
@@ -304,13 +294,15 @@ class BatteryModel:
 
         return eco_start
 
-    def _is_after_todays_eco_start(self) -> bool:
-        """Is current time after eco period start"""
-        now = datetime.now().astimezone()
-        eco_start = now.replace(
-            hour=self._eco_start_time.hour,
-            minute=self._eco_start_time.minute,
+    def _next_eco_end_time(self, period) -> datetime:
+        """Next eco end time"""
+        eco_end = period.replace(
+            hour=self._eco_end_time.hour,
+            minute=self._eco_end_time.minute,
             second=0,
             microsecond=0,
         )
-        return now > eco_start
+        if period > eco_end:
+            eco_end += timedelta(days=1)
+
+        return eco_end

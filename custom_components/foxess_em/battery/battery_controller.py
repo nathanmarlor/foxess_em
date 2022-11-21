@@ -98,51 +98,31 @@ class BatteryController(UnloadController, CallbackController):
         """Return raw data in dictionary form"""
         return self._model.raw_data()
 
-    def state_at_dawn(self) -> float:
-        """Battery state at dawn"""
-        dawn = self._model.state_at_dawn()
-        return round(dawn, 2)
-
-    def state_at_eco_end(self) -> float:
-        """Battery state at end of eco period"""
-        eco_end = self._model.state_at_eco_end()
-        return round(eco_end, 2)
-
     def state_at_eco_start(self) -> float:
         """Battery state at start of eco period"""
-        battery_value = self._model.state_at_eco_start()
-        return round(battery_value, 2)
-
-    def todays_dawn_time(self) -> datetime:
-        """Return todays dawn time"""
-        return self._model.todays_dawn_time()
-
-    def todays_dawn_time_str(self) -> str:
-        """Return todays dawn time in ISO format"""
-        return self._model.todays_dawn_time().isoformat()
-
-    def next_dawn_time(self) -> datetime:
-        """Return next dawn time"""
-        return self._model.next_dawn_time()
+        return round(self._model.state_at_eco_start(), 2)
 
     def dawn_charge_needs(self) -> float:
         """Dawn charge needs"""
-        return self._model.dawn_charge_needs()
+        return self._model.dawn_charge()
 
     def day_charge_needs(self) -> float:
         """Day charge needs"""
-        house_load = self._average_controller.average_peak_house_load()
-        forecast_today = self._forecast_controller.total_kwh_forecast_today()
-        forecast_tomorrow = self._forecast_controller.total_kwh_forecast_tomorrow()
+        return self._model.day_charge()
 
-        return self._model.day_charge_needs(
-            forecast_today, forecast_tomorrow, house_load
-        )
+    def next_dawn_time(self) -> datetime:
+        """Day charge needs"""
+        return self._model.next_dawn_time()
+
+    def todays_dawn_time_str(self) -> datetime:
+        """Day charge needs"""
+        return self._model.todays_dawn_time().isoformat()
 
     def charge_total(self) -> float:
         """Total kWh required to charge"""
+        eco_start = self.state_at_eco_start()
         if self._full:
-            return self._model.ceiling_charge_total(float("inf"))
+            return self._model.ceiling_charge_total(float("inf"), eco_start)
 
         dawn_charge = self.dawn_charge_needs()
         day_charge = self.day_charge_needs()
@@ -151,7 +131,7 @@ class BatteryController(UnloadController, CallbackController):
 
         if self._boost:
             total += _BOOST
-            total = self._model.ceiling_charge_total(total)
+            total = self._model.ceiling_charge_total(total, eco_start)
 
         return total
 

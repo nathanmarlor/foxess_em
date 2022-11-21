@@ -86,7 +86,7 @@ class SolcastApiClient:
         return history_estimates + live_estimates
 
     async def _fetch_data(
-        self, api_key: str, site_id: str, solcast_url: str, path="error", hours=50
+        self, api_key: str, site_id: str, solcast_url: str, path="error", hours=120
     ) -> dict[str, Any]:
         """fetch data via the Solcast API."""
 
