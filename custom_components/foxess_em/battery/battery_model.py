@@ -67,9 +67,12 @@ class BatteryModel:
             self._model["period_start"] > datetime.now().astimezone()
         ]
 
-        return filtered[
-            ["period_start", "pv_estimate", "load", "battery", "grid"]
-        ].to_json(orient="records")
+        filtered = filtered[["period_start", "pv_estimate", "load", "battery", "grid"]]
+
+        filtered = filtered.set_index("period_start").resample("5Min").mean()
+        filtered["period_start"] = pd.to_datetime(filtered.index.values, utc=True)
+
+        return filtered.to_json(orient="records")
 
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
