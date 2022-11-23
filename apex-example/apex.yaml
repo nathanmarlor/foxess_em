@@ -1,57 +1,110 @@
 all_series_config:
-  curve: smooth
   extend_to: now
   fill_raw: last
   stroke_width: 2
-graph_span: 100h
+apex_config:
+  legend:
+    show: false
+  stroke:
+    dashArray:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 3
+      - 3
+      - 3
+      - 3
+graph_span: 25h
 header:
   show: false
 now:
   label: Now
   show: true
 series:
-  - color: "#AA336A"
+  - color: "#FFCCCB"
     entity: sensor.load_power_new
-  - color: "#006400"
+    group_by:
+      duration: 5min
+      func: avg
+  - color: "#90EE90"
     entity: sensor.grid_ct
-  - color: "#FFA500"
+    group_by:
+      duration: 5min
+      func: avg
+  - color: "#FFD580"
     entity: sensor.pv_power_now
-  - color: "#00008B"
-    entity: sensor.battery_soc
-    transform: return ((x / 100) * 10.4) - (0.11 * 10.4)
-  - color: "#00008B"
+    group_by:
+      duration: 5min
+      func: avg
+  - color: "#ADD8E6"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
-      return data.map((entry) => {
+      return data.forecast.map((entry) => {
          return [new Date(entry.period_start), entry.battery];
        });
     entity: sensor.foxess_em_raw_data
-    name: Battery
-  - color: "#AA336A"
+    name: Battery (Estimated)
+  - color: "#FFCCCB"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
-      return data.map((entry) => {
+      return data.forecast.map((entry) => {
          return [new Date(entry.period_start), entry.load*60];
        });
     entity: sensor.foxess_em_raw_data
-    name: Load
-  - color: "#FFA500"
+    name: Load (Estimated)
+  - color: "#FFD580"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
-      return data.map((entry) => {
+      return data.forecast.map((entry) => {
          return [new Date(entry.period_start), entry.pv_estimate*60];
        });
     entity: sensor.foxess_em_raw_data
-    name: Forecast
-  - color: "#006400"
+    name: Solar (Estimated)
+  - color: "#90EE90"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
-      return data.map((entry) => {
+      return data.forecast.map((entry) => {
          return [new Date(entry.period_start), entry.grid*60];
        });
     entity: sensor.foxess_em_raw_data
-    name: Grid
+    name: Grid (Estimated)
+  - color: "#ADD8E6"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.history.map((entry) => {
+         return [new Date(entry.period_start), entry.battery];
+       });
+    entity: sensor.foxess_em_raw_data
+    name: Battery (Estimated)
+  - color: "#FFCCCB"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.history.map((entry) => {
+         return [new Date(entry.period_start), entry.load*60];
+       });
+    entity: sensor.foxess_em_raw_data
+    name: Load (Estimated)
+  - color: "#FFD580"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.history.map((entry) => {
+         return [new Date(entry.period_start), entry.pv_estimate*60];
+       });
+    entity: sensor.foxess_em_raw_data
+    name: Solar (Estimated)
+  - color: "#90EE90"
+    data_generator: |
+      const data = JSON.parse(entity.attributes.raw_data)
+      return data.history.map((entry) => {
+         return [new Date(entry.period_start), entry.grid*60];
+       });
+    entity: sensor.foxess_em_raw_data
+    name: Grid (Estimated)
 span:
   start: day
 type: custom:apexcharts-card
-update_interval: 1min
+update_interval: 1Min
