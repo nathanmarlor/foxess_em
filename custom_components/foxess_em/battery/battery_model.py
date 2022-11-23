@@ -85,49 +85,27 @@ class BatteryModel:
 
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
+        now = datetime.now().astimezone()
 
-        load = load.groupby(load["time"]).mean()
-        load["time"] = load.index.values
-
-        # limit forecast values to future only
-        forecast = forecast[forecast["date"] >= datetime.utcnow().date()]
-
-        # reset indexes
-        load.reset_index(drop=True, inplace=True)
-        forecast.reset_index(drop=True, inplace=True)
-
-        # merge load and forecast to produce a delta
-        load_forecast = pd.merge(load, forecast, how="right", on=["time"])
-        load_forecast["delta"] = load_forecast["pv_estimate"] - load_forecast["load"]
-
-        load_forecast = load_forecast.reset_index(drop=True)
-        load_forecast = load_forecast.sort_values(by="period_start")
+        load_forecast = self._merge_dataframes(load, forecast)
 
         # first refresh
         if self._model is None:
             self._model = load_forecast
 
-        now = datetime.now().astimezone()
-        # get all future values
-        future = load_forecast[load_forecast["period_start"] > now]
-        # keep original values including load, pv, grid etc
-        hist = self._model[
-            (self._model["period_start"] <= now)
-            & (self._model["period_start"] > (now - timedelta(days=3)))
-        ]
-        # set global model
-        self._model = hist.append(future)
+        self._model = self._update_model_forecasts(load_forecast, now)
 
-        battery = self.battery_capacity_remaining()
         min_soc = None
+        battery = self.battery_capacity_remaining()
         available_capacity = self._capacity - (self._min_soc * self._capacity)
         for index, _ in self._model.iterrows():
             period = self._model.iloc[index]["period_start"].to_pydatetime()
             if period >= now:
 
                 if (
-                    period.time() > self._eco_start_time
-                    and period.time() <= self._eco_end_time
+                    self._in_between(
+                        period.time(), self._eco_start_time, self._eco_end_time
+                    )
                     and min_soc is None
                 ):
                     _, _, _, min_soc = self._charge_totals(period, battery)
@@ -142,8 +120,9 @@ class BatteryModel:
                     self._model.at[index, "charge_dawn"] = dawn_charge
                     self._model.at[index, "charge_day"] = day_charge
                 elif (
-                    period.time() > self._eco_start_time
-                    and period.time() <= self._eco_end_time
+                    self._in_between(
+                        period.time(), self._eco_start_time, self._eco_end_time
+                    )
                     and battery < min_soc
                 ):
                     # hold SoC in off-peak period
@@ -192,6 +171,45 @@ class BatteryModel:
         )
 
         return dawn_charge, day_charge, total, min_soc
+
+    def _update_model_forecasts(self, load_forecast, now):
+        # get all future values
+        future = load_forecast[load_forecast["period_start"] > now]
+        # keep original values including load, pv, grid etc
+        hist = self._model[
+            (self._model["period_start"] <= now)
+            & (self._model["period_start"] > (now - timedelta(days=3)))
+        ]
+        # set global model
+        return hist.append(future)
+
+    def _in_between(self, now, start, end):
+        """In between two times"""
+        if start <= end:
+            return start <= now < end
+        else:  # over midnight e.g., 23:30-04:15
+            return now >= start or now < end
+
+    def _merge_dataframes(self, load, forecast):
+        """Merge load and forecast dataframes"""
+        load = load.groupby(load["time"]).mean()
+        load["time"] = load.index.values
+
+        # limit forecast values to future only
+        forecast = forecast[forecast["date"] >= datetime.utcnow().date()]
+
+        # reset indexes
+        load.reset_index(drop=True, inplace=True)
+        forecast.reset_index(drop=True, inplace=True)
+
+        # merge load and forecast to produce a delta
+        load_forecast = pd.merge(load, forecast, how="right", on=["time"])
+        load_forecast["delta"] = load_forecast["pv_estimate"] - load_forecast["load"]
+
+        load_forecast = load_forecast.reset_index(drop=True)
+        load_forecast = load_forecast.sort_values(by="period_start")
+
+        return load_forecast
 
     def state_at_eco_start(self) -> float:
         """State at eco end"""
