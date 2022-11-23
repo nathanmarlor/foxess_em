@@ -25,6 +25,12 @@ now:
   label: Now
   show: true
 series:
+  - color: "#ADD8E6"
+    entity: sensor.battery_soc
+    group_by:
+      duration: 5min
+      func: avg
+    transform: return ((x / 100) * 10.4) - (0.11 * 10.4)
   - color: "#FFCCCB"
     entity: sensor.load_power_new
     group_by:
