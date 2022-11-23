@@ -107,7 +107,6 @@ class BatteryModel:
         if self._model is None:
             self._model = load_forecast
 
-        # set global model
         now = datetime.now().astimezone()
         # get all future values
         future = load_forecast[load_forecast["period_start"] > now]
@@ -116,6 +115,7 @@ class BatteryModel:
             (self._model["period_start"] <= now)
             & (self._model["period_start"] > (now - timedelta(days=3)))
         ]
+        # set global model
         self._model = hist.append(future)
 
         battery = self.battery_capacity_remaining()
@@ -123,36 +123,36 @@ class BatteryModel:
         for index, _ in self._model.iterrows():
             period = self._model.iloc[index]["period_start"].to_pydatetime()
 
-            if period > datetime.now().astimezone():
+            if period > now:
                 if period.time() == self._eco_start_time:
                     # landed on the start of the eco period
                     dawn_charge, day_charge = self._charge_totals(period, index)
                     total = max([dawn_charge, day_charge])
-                    target = battery + total
+                    min_soc = battery + total
                     battery += max(0, total)
                     # store in dataframe for retrieval later
                     self._model.at[index, "charge_dawn"] = dawn_charge
                     self._model.at[index, "charge_day"] = day_charge
-                    self._model.at[index, "battery"] = battery
                 elif (
                     period.time() > self._eco_start_time
                     and period.time() <= self._eco_end_time
-                    and battery <= target
+                    and battery <= min_soc
                 ):
-                    # still in eco period, don't update the battery
-                    max_battery = max([target, self._model.at[index - 1, "battery"]])
-                    self._model.at[index, "battery"] = max_battery
+                    # hold SoC in off-peak period
+                    battery = min_soc
                 else:
                     delta = self._model.iloc[index]["delta"]
                     new_state = battery + delta
                     battery = max([0, min([available_capacity, new_state])])
-                    self._model.at[index, "battery"] = battery
+
                     if new_state <= 0 or new_state >= available_capacity:
                         # import (-) or excess (+)
                         self._model.at[index, "grid"] = delta
                     else:
                         # battery usage
                         self._model.at[index, "grid"] = 0
+
+                self._model.at[index, "battery"] = battery
 
         self._ready = True
 
