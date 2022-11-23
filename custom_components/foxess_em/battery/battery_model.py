@@ -125,22 +125,23 @@ class BatteryModel:
             period = self._model.iloc[index]["period_start"].to_pydatetime()
             if period >= now:
 
-                if min_soc is None:
-                    _, _, total = self._charge_totals(period, battery)
-                    min_soc = battery + total
+                if (
+                    period.time() > self._eco_start_time
+                    and period.time() <= self._eco_end_time
+                    and min_soc is None
+                ):
+                    _, _, _, min_soc = self._charge_totals(period, battery)
 
                 if period.time() == self._eco_start_time:
                     # landed on the start of the eco period
-                    dawn_charge, day_charge, total = self._charge_totals(
+                    dawn_charge, day_charge, total, min_soc = self._charge_totals(
                         period, battery
                     )
-                    min_soc = battery + total
                     battery += max(0, total)
                     # store in dataframe for retrieval later
                     self._model.at[index, "charge_dawn"] = dawn_charge
                     self._model.at[index, "charge_day"] = day_charge
-
-                if (
+                elif (
                     period.time() > self._eco_start_time
                     and period.time() <= self._eco_end_time
                     and battery < min_soc
@@ -185,11 +186,12 @@ class BatteryModel:
         dawn_charge = self.dawn_charge_needs(dawn_load, battery)
         day_charge = self.day_charge_needs(forecast_sum, load_sum, battery)
         total = max([dawn_charge, day_charge])
+        min_soc = battery + total
         _LOGGER.debug(
-            f"Period: {period.date()} - EcoStart: {battery} Dawn: {dawn_charge} Day: {day_charge}"
+            f"Period: {period.date()} - EcoStart: {battery} MinSoC: {min_soc} Dawn: {dawn_charge} Day: {day_charge}"
         )
 
-        return dawn_charge, day_charge, total
+        return dawn_charge, day_charge, total, min_soc
 
     def state_at_eco_start(self) -> float:
         """State at eco end"""
