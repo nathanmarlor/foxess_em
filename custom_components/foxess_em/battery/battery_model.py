@@ -119,24 +119,31 @@ class BatteryModel:
         self._model = hist.append(future)
 
         battery = self.battery_capacity_remaining()
+        min_soc = None
         available_capacity = self._capacity - (self._min_soc * self._capacity)
         for index, _ in self._model.iterrows():
             period = self._model.iloc[index]["period_start"].to_pydatetime()
+            if period >= now:
 
-            if period > now:
+                if min_soc is None:
+                    _, _, total = self._charge_totals(period, battery)
+                    min_soc = battery + total
+
                 if period.time() == self._eco_start_time:
                     # landed on the start of the eco period
-                    dawn_charge, day_charge = self._charge_totals(period, index)
-                    total = max([dawn_charge, day_charge])
+                    dawn_charge, day_charge, total = self._charge_totals(
+                        period, battery
+                    )
                     min_soc = battery + total
                     battery += max(0, total)
                     # store in dataframe for retrieval later
                     self._model.at[index, "charge_dawn"] = dawn_charge
                     self._model.at[index, "charge_day"] = day_charge
-                elif (
+
+                if (
                     period.time() > self._eco_start_time
                     and period.time() <= self._eco_end_time
-                    and battery <= min_soc
+                    and battery < min_soc
                 ):
                     # hold SoC in off-peak period
                     battery = min_soc
@@ -144,7 +151,6 @@ class BatteryModel:
                     delta = self._model.iloc[index]["delta"]
                     new_state = battery + delta
                     battery = max([0, min([available_capacity, new_state])])
-
                     if new_state <= 0 or new_state >= available_capacity:
                         # import (-) or excess (+)
                         self._model.at[index, "grid"] = delta
@@ -156,11 +162,17 @@ class BatteryModel:
 
         self._ready = True
 
-    def _charge_totals(self, period, index):
+    def _charge_totals(self, period, battery):
         """Return charge totals for dawn/day"""
         # calculate start/end of the next peak period
-        eco_end = self._next_eco_end_time(period)
-        next_eco_start = period + timedelta(days=1)
+        eco_start = period.replace(
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute,
+            second=0,
+            microsecond=0,
+        )
+        eco_end = self._next_eco_end_time(eco_start)
+        next_eco_start = eco_start + timedelta(days=1)
         # grab all peak values
         peak = self._model[
             (self._model["period_start"] > eco_end)
@@ -170,13 +182,14 @@ class BatteryModel:
         forecast_sum = peak.pv_estimate.sum()
         load_sum = peak.load.sum()
         dawn_load = self._dawn_load(eco_end)
-        eco_start = self._model.iloc[index - 1].battery
-        dawn_charge = self.dawn_charge_needs(dawn_load, eco_start)
-        day_charge = self.day_charge_needs(forecast_sum, load_sum, eco_start)
+        dawn_charge = self.dawn_charge_needs(dawn_load, battery)
+        day_charge = self.day_charge_needs(forecast_sum, load_sum, battery)
+        total = max([dawn_charge, day_charge])
         _LOGGER.debug(
-            f"Period: {period.date()} - EcoStart: {eco_start} Dawn: {dawn_charge} Day: {day_charge}"
+            f"Period: {period.date()} - EcoStart: {battery} Dawn: {dawn_charge} Day: {day_charge}"
         )
-        return dawn_charge, day_charge
+
+        return dawn_charge, day_charge, total
 
     def state_at_eco_start(self) -> float:
         """State at eco end"""
