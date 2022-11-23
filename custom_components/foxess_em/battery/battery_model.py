@@ -1,4 +1,5 @@
 """Battery model"""
+import json
 import logging
 from datetime import datetime
 from datetime import time
@@ -63,16 +64,24 @@ class BatteryModel:
 
     def raw_data(self):
         """Return raw data in dictionary form"""
-        filtered = self._model[
-            self._model["period_start"] > datetime.now().astimezone()
-        ]
+        now = datetime.now().astimezone()
 
-        filtered = filtered[["period_start", "pv_estimate", "load", "battery", "grid"]]
+        filtered = self._model[
+            ["period_start", "pv_estimate", "load", "battery", "grid"]
+        ]
 
         filtered = filtered.set_index("period_start").resample("5Min").mean()
         filtered["period_start"] = pd.to_datetime(filtered.index.values, utc=True)
 
-        return filtered.to_json(orient="records")
+        hist = filtered[filtered["period_start"] <= now]
+        future = filtered[filtered["period_start"] > now]
+
+        raw_data = {
+            "history": json.loads(hist.to_json(orient="records")),
+            "forecast": json.loads(future.to_json(orient="records")),
+        }
+
+        return json.dumps(raw_data)
 
     def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
         """Calculate battery model"""
@@ -88,19 +97,31 @@ class BatteryModel:
         forecast.reset_index(drop=True, inplace=True)
 
         # merge load and forecast to produce a delta
-        merged = pd.merge(load, forecast, how="right", on=["time"])
-        merged["delta"] = merged["pv_estimate"] - merged["load"]
+        load_forecast = pd.merge(load, forecast, how="right", on=["time"])
+        load_forecast["delta"] = load_forecast["pv_estimate"] - load_forecast["load"]
 
-        merged = merged.reset_index(drop=True)
-        merged = merged.sort_values(by="period_start")
+        load_forecast = load_forecast.reset_index(drop=True)
+        load_forecast = load_forecast.sort_values(by="period_start")
+
+        # first refresh
+        if self._model is None:
+            self._model = load_forecast
 
         # set global model
-        self._model = merged
+        now = datetime.now().astimezone()
+        # get all future values
+        future = load_forecast[load_forecast["period_start"] > now]
+        # keep original values including load, pv, grid etc
+        hist = self._model[
+            (self._model["period_start"] <= now)
+            & (self._model["period_start"] > (now - timedelta(days=3)))
+        ]
+        self._model = hist.append(future)
 
         battery = self.battery_capacity_remaining()
         available_capacity = self._capacity - (self._min_soc * self._capacity)
-        for index, _ in merged.iterrows():
-            period = merged.iloc[index]["period_start"].to_pydatetime()
+        for index, _ in self._model.iterrows():
+            period = self._model.iloc[index]["period_start"].to_pydatetime()
 
             if period > datetime.now().astimezone():
                 if period.time() == self._eco_start_time:
@@ -110,28 +131,28 @@ class BatteryModel:
                     target = battery + total
                     battery += max(0, total)
                     # store in dataframe for retrieval later
-                    merged.at[index, "charge_dawn"] = dawn_charge
-                    merged.at[index, "charge_day"] = day_charge
-                    merged.at[index, "battery"] = battery
+                    self._model.at[index, "charge_dawn"] = dawn_charge
+                    self._model.at[index, "charge_day"] = day_charge
+                    self._model.at[index, "battery"] = battery
                 elif (
                     period.time() > self._eco_start_time
                     and period.time() <= self._eco_end_time
                     and battery <= target
                 ):
                     # still in eco period, don't update the battery
-                    max_battery = max([target, merged.at[index - 1, "battery"]])
-                    merged.at[index, "battery"] = max_battery
+                    max_battery = max([target, self._model.at[index - 1, "battery"]])
+                    self._model.at[index, "battery"] = max_battery
                 else:
-                    delta = merged.iloc[index]["delta"]
+                    delta = self._model.iloc[index]["delta"]
                     new_state = battery + delta
                     battery = max([0, min([available_capacity, new_state])])
-                    merged.at[index, "battery"] = battery
+                    self._model.at[index, "battery"] = battery
                     if new_state <= 0 or new_state >= available_capacity:
                         # import (-) or excess (+)
-                        merged.at[index, "grid"] = delta
+                        self._model.at[index, "grid"] = delta
                     else:
                         # battery usage
-                        merged.at[index, "grid"] = 0
+                        self._model.at[index, "grid"] = 0
 
         self._ready = True
 
