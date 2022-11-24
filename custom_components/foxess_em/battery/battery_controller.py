@@ -15,6 +15,7 @@ from .battery_model import BatteryModel
 
 _LOGGER = logging.getLogger(__name__)
 _BOOST = 1
+_FULL = float("inf")
 
 
 class BatteryController(UnloadController, CallbackController):
@@ -73,7 +74,10 @@ class BatteryController(UnloadController, CallbackController):
         try:
             load = self._average_controller.resample_data()
             forecast = self._forecast_controller.resample_data()
-            self._model.refresh_battery_model(forecast, load)
+            # setup boosts
+            boost = _BOOST if self._boost else 0
+            full = _FULL if self._full else 0
+            self._model.refresh_battery_model(forecast, load, max([boost, full]))
 
             self._last_update = datetime.now().astimezone()
 
@@ -120,20 +124,7 @@ class BatteryController(UnloadController, CallbackController):
 
     def charge_total(self) -> float:
         """Total kWh required to charge"""
-        eco_start = self.state_at_eco_start()
-        if self._full:
-            return self._model.ceiling_charge_total(float("inf"), eco_start)
-
-        dawn_charge = self.dawn_charge_needs()
-        day_charge = self.day_charge_needs()
-
-        total = max([dawn_charge, day_charge])
-
-        if self._boost:
-            total += _BOOST
-            total = self._model.ceiling_charge_total(total, eco_start)
-
-        return total
+        return self._model.total_charge()
 
     def battery_last_update(self) -> datetime:
         """Battery last update"""
@@ -154,7 +145,7 @@ class BatteryController(UnloadController, CallbackController):
     def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
         self._boost = status
-        self._notify_listeners()
+        self.refresh()
 
     def boost_status(self) -> bool:
         """Boost status"""
@@ -163,7 +154,7 @@ class BatteryController(UnloadController, CallbackController):
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
         self._full = status
-        self._notify_listeners()
+        self.refresh()
 
     def full_status(self) -> bool:
         """Full status"""

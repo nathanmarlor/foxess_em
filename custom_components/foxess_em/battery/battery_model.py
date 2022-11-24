@@ -83,7 +83,9 @@ class BatteryModel:
 
         return json.dumps(raw_data)
 
-    def refresh_battery_model(self, forecast: pd.DataFrame, load: pd.DataFrame) -> None:
+    def refresh_battery_model(
+        self, forecast: pd.DataFrame, load: pd.DataFrame, boost: float
+    ) -> None:
         """Calculate battery model"""
         now = datetime.now().astimezone()
 
@@ -93,6 +95,8 @@ class BatteryModel:
             self._model = load_forecast
 
         load_forecast = load_forecast.sort_values(by="period_start")
+        self._setup_boost(load_forecast, boost)
+
         future = load_forecast[load_forecast["period_start"] > now]
 
         min_soc = None
@@ -110,13 +114,15 @@ class BatteryModel:
                 _, _, _, min_soc = self._charge_totals(load_forecast, period, battery)
             if period.time() == self._eco_start_time:
                 # landed on the start of the eco period
+                boost = load_forecast.iloc[index]["boost"]
                 dawn_charge, day_charge, total, min_soc = self._charge_totals(
-                    load_forecast, period, battery
+                    load_forecast, period, battery, boost
                 )
-                battery += max(0, total)
+                battery += total
                 # store in dataframe for retrieval later
                 load_forecast.at[index, "charge_dawn"] = dawn_charge
                 load_forecast.at[index, "charge_day"] = day_charge
+                load_forecast.at[index, "total"] = total
             elif (
                 self._in_between(
                     period.time(), self._eco_start_time, self._eco_end_time
@@ -140,7 +146,9 @@ class BatteryModel:
         self._model = self._update_model_forecasts(load_forecast, now)
         self._ready = True
 
-    def _charge_totals(self, model: pd.DataFrame, period: datetime, battery: float):
+    def _charge_totals(
+        self, model: pd.DataFrame, period: datetime, battery: float, boost: float = 0
+    ):
         """Return charge totals for dawn/day"""
         # calculate start/end of the next peak period
         eco_start = period.replace(
@@ -161,8 +169,9 @@ class BatteryModel:
         dawn_load = self._dawn_load(model, eco_end)
         dawn_charge = self.dawn_charge_needs(dawn_load, battery)
         day_charge = self.day_charge_needs(forecast_sum, load_sum, battery)
-        total = max([dawn_charge, day_charge])
-        min_soc = battery + total
+        max_charge = max([dawn_charge, day_charge])
+        total = self.ceiling_charge_total(max(0, max_charge) + boost, battery)
+        min_soc = battery + max_charge if boost == 0 else battery + total
         _LOGGER.debug(
             f"Period: {period.date()} - EcoStart: {battery} MinSoC: {min_soc} Dawn: {dawn_charge} Day: {day_charge}"
         )
@@ -177,6 +186,11 @@ class BatteryModel:
         ]
         # set global model
         return hist.append(future)
+
+    def _setup_boost(self, model, boost):
+        """Setup boosts"""
+        model["boost"] = 0
+        model.loc[model["period_start"] == self._next_eco_start_time(), "boost"] = boost
 
     def _in_between(self, now, start, end):
         """In between two times"""
@@ -210,15 +224,19 @@ class BatteryModel:
 
     def dawn_charge(self):
         """Dawn charge required"""
-        return self._charge_info().iloc[0].charge_dawn
+        return self._charge_info(self._model).iloc[0].charge_dawn
 
     def day_charge(self):
         """Day charge required"""
-        return self._charge_info().iloc[0].charge_day
+        return self._charge_info(self._model).iloc[0].charge_day
 
-    def _charge_info(self):
+    def total_charge(self):
+        """Day charge required"""
+        return self._charge_info(self._model).iloc[0].total
+
+    def _charge_info(self, model: pd.DataFrame):
         """Charge info"""
-        return self._model[self._model["period_start"] == self._next_eco_start_time()]
+        return model[model["period_start"] == self._next_eco_start_time()]
 
     def _dawn_load(self, model, eco_end_time) -> float:
         """Dawn load"""
