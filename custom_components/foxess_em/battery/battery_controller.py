@@ -94,9 +94,7 @@ class BatteryController(UnloadController, CallbackController):
 
     def charge_to_perc(self) -> int:
         """Calculate percentage target"""
-        return self._model.charge_to_perc(
-            self.charge_total() + self.state_at_eco_start()
-        )
+        return self._model.charge_to_perc(self.min_soc())
 
     def raw_data(self):
         """Return raw data in dictionary form"""
@@ -125,6 +123,10 @@ class BatteryController(UnloadController, CallbackController):
     def charge_total(self) -> float:
         """Total kWh required to charge"""
         return self._model.total_charge()
+
+    def min_soc(self) -> float:
+        """Total kWh required to charge"""
+        return self._model.min_soc()
 
     def battery_last_update(self) -> datetime:
         """Battery last update"""

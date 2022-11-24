@@ -123,6 +123,7 @@ class BatteryModel:
                 load_forecast.at[index, "charge_dawn"] = dawn_charge
                 load_forecast.at[index, "charge_day"] = day_charge
                 load_forecast.at[index, "total"] = total
+                load_forecast.at[index, "min_soc"] = min_soc
             elif (
                 self._in_between(
                     period.time(), self._eco_start_time, self._eco_end_time
@@ -233,6 +234,10 @@ class BatteryModel:
     def total_charge(self):
         """Day charge required"""
         return self._charge_info(self._model).iloc[0].total
+
+    def min_soc(self):
+        """Day charge required"""
+        return self._charge_info(self._model).iloc[0].min_soc
 
     def _charge_info(self, model: pd.DataFrame):
         """Charge info"""
