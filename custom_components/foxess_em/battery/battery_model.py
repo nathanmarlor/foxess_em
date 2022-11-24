@@ -181,9 +181,9 @@ class BatteryModel:
     def _in_between(self, now, start, end):
         """In between two times"""
         if start <= end:
-            return start <= now < end
+            return start < now <= end
         else:  # over midnight e.g., 23:30-04:15
-            return now >= start or now < end
+            return now > start or now <= end
 
     def _merge_dataframes(self, load: pd.DataFrame, forecast: pd.DataFrame):
         """Merge load and forecast dataframes"""
