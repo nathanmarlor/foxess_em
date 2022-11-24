@@ -187,12 +187,12 @@ class BatteryModel:
         # set global model
         return hist.append(future)
 
-    def _setup_boost(self, model, boost):
+    def _setup_boost(self, model: pd.DataFrame, boost: float):
         """Setup boosts"""
         model["boost"] = 0
         model.loc[model["period_start"] == self._next_eco_start_time(), "boost"] = boost
 
-    def _in_between(self, now, start, end):
+    def _in_between(self, now: time, start: time, end: time):
         """In between two times"""
         if start <= end:
             return start < now <= end
@@ -238,7 +238,7 @@ class BatteryModel:
         """Charge info"""
         return model[model["period_start"] == self._next_eco_start_time()]
 
-    def _dawn_load(self, model, eco_end_time) -> float:
+    def _dawn_load(self, model: pd.DataFrame, eco_end_time: datetime) -> float:
         """Dawn load"""
         dawn_time = self._dawn_time(model, eco_end_time)
 
@@ -250,7 +250,7 @@ class BatteryModel:
 
         return round(load_sum, 2)
 
-    def _dawn_time(self, model, date: datetime) -> datetime:
+    def _dawn_time(self, model: pd.DataFrame, date: datetime) -> datetime:
         """Calculate dawn time"""
         filtered = model[model["date"] == date.date()]
         dawn = filtered[filtered["delta"] > 0]
@@ -261,7 +261,7 @@ class BatteryModel:
         else:
             return dawn.iloc[0].period_start.to_pydatetime()
 
-    def dawn_charge_needs(self, dawn_load, eco_start) -> float:
+    def dawn_charge_needs(self, dawn_load: float, eco_start: float) -> float:
         """Dawn charge needs"""
         dawn_charge_needs = eco_start - dawn_load
 
