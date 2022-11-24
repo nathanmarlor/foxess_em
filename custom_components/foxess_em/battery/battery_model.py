@@ -38,6 +38,7 @@ class BatteryModel:
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
+        self.schedule = {}
 
     def ready(self) -> bool:
         """Model status"""
@@ -99,19 +100,19 @@ class BatteryModel:
 
         future = load_forecast[load_forecast["period_start"] > now]
 
-        min_soc = None
-        battery = self.battery_capacity_remaining()
         available_capacity = self._capacity - (self._min_soc * self._capacity)
+
+        battery = self.battery_capacity_remaining()
+        last_eco_start = self._last_eco_start_time(now)
+        if last_eco_start in self.schedule:
+            # grab the min soc from the last eco start calc, including boost
+            min_soc = self.schedule[last_eco_start]["min_soc"]
+        elif self._in_between(now.time(), self._eco_start_time, self._eco_end_time):
+            # no history and in an eco period, recalulate without knowing boost
+            _, _, _, min_soc = self._charge_totals(load_forecast, now, battery)
 
         for index, _ in future.iterrows():
             period = load_forecast.iloc[index]["period_start"].to_pydatetime()
-            if (
-                self._in_between(
-                    period.time(), self._eco_start_time, self._eco_end_time
-                )
-                and min_soc is None
-            ):
-                _, _, _, min_soc = self._charge_totals(load_forecast, period, battery)
             if period.time() == self._eco_start_time:
                 # landed on the start of the eco period
                 boost = load_forecast.iloc[index]["boost"]
@@ -120,10 +121,12 @@ class BatteryModel:
                 )
                 battery += total
                 # store in dataframe for retrieval later
-                load_forecast.at[index, "charge_dawn"] = dawn_charge
-                load_forecast.at[index, "charge_day"] = day_charge
-                load_forecast.at[index, "total"] = total
-                load_forecast.at[index, "min_soc"] = min_soc
+                self.schedule[period] = {
+                    "dawn": dawn_charge,
+                    "day": day_charge,
+                    "total": total,
+                    "min_soc": min_soc,
+                }
             elif (
                 self._in_between(
                     period.time(), self._eco_start_time, self._eco_end_time
@@ -176,7 +179,6 @@ class BatteryModel:
         _LOGGER.debug(
             f"Period: {period.date()} - EcoStart: {battery} MinSoC: {min_soc} Dawn: {dawn_charge} Day: {day_charge}"
         )
-
         return dawn_charge, day_charge, total, min_soc
 
     def _update_model_forecasts(self, future: pd.DataFrame, now: datetime):
@@ -225,23 +227,23 @@ class BatteryModel:
 
     def dawn_charge(self):
         """Dawn charge required"""
-        return self._charge_info(self._model).iloc[0].charge_dawn
+        return self._charge_info()["dawn"]
 
     def day_charge(self):
         """Day charge required"""
-        return self._charge_info(self._model).iloc[0].charge_day
+        return self._charge_info()["day"]
 
     def total_charge(self):
         """Day charge required"""
-        return self._charge_info(self._model).iloc[0].total
+        return self._charge_info()["total"]
 
     def min_soc(self):
         """Day charge required"""
-        return self._charge_info(self._model).iloc[0].min_soc
+        return self._charge_info()["min_soc"]
 
-    def _charge_info(self, model: pd.DataFrame):
+    def _charge_info(self):
         """Charge info"""
-        return model[model["period_start"] == self._next_eco_start_time()]
+        return self.schedule[self._next_eco_start_time()]
 
     def _dawn_load(self, model: pd.DataFrame, eco_end_time: datetime) -> float:
         """Dawn load"""
@@ -378,7 +380,20 @@ class BatteryModel:
 
         return eco_start
 
-    def _next_eco_end_time(self, period) -> datetime:
+    def _last_eco_start_time(self, period: datetime) -> datetime:
+        """Last eco start time"""
+        eco_start = period.replace(
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute,
+            second=0,
+            microsecond=0,
+        )
+        if eco_start > period:
+            eco_start -= timedelta(days=1)
+
+        return eco_start
+
+    def _next_eco_end_time(self, period: datetime) -> datetime:
         """Next eco end time"""
         eco_end = period.replace(
             hour=self._eco_end_time.hour,
