@@ -325,14 +325,17 @@ class BatteryModel:
             # battery runs past our model, return the last result
             return self._model.iloc[-1].period_start
 
-        return self._model.iloc[battery_depleted["period_start"].idxmin()].period_start
+        return battery_depleted.iloc[0].period_start
 
     def peak_grid_import(self) -> float:
         """Grid usage required to next eco start"""
+        now = datetime.now().astimezone()
         eco_start = self._next_eco_start_time()
 
         grid_use = self._model[
-            (self._model["grid"] < 0) & (self._model["period_start"] < eco_start)
+            (self._model["grid"] < 0)
+            & (self._model["period_start"] > now)
+            & (self._model["period_start"] < eco_start)
         ]
 
         if len(grid_use) == 0:
@@ -342,10 +345,13 @@ class BatteryModel:
 
     def peak_grid_export(self) -> float:
         """Grid usage required to next eco start"""
+        now = datetime.now().astimezone()
         eco_start = self._next_eco_start_time()
 
         grid_export = self._model[
-            (self._model["grid"] > 0) & (self._model["period_start"] < eco_start)
+            (self._model["grid"] > 0)
+            & (self._model["period_start"] > now)
+            & (self._model["period_start"] < eco_start)
         ]
 
         if len(grid_export) == 0:
