@@ -18,9 +18,9 @@ SENSORS: dict[str, SensorDescription] = {
         icon="mdi:flash",
         should_poll=False,
         state_attributes={
-            "Dawn Charge Needed:": "dawn_charge_needs",
-            "Day Charge Needed:": "day_charge_needs",
-            "Target %:": "charge_to_perc",
+            "Dawn Min SoC:": "dawn_charge_needs",
+            "Day Min SoC:": "day_charge_needs",
+            "Min SoC %:": "charge_to_perc",
         },
     ),
     "next_dawn_time": SensorDescription(

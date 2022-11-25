@@ -161,23 +161,28 @@ class BatteryModel:
             second=0,
             microsecond=0,
         )
-        eco_end = self._next_eco_end_time(eco_start)
+        eco_end_time = self._next_eco_end_time(eco_start)
         next_eco_start = eco_start + timedelta(days=1)
         # grab all peak values
         peak = model[
-            (model["period_start"] > eco_end) & (model["period_start"] < next_eco_start)
+            (model["period_start"] > eco_end_time)
+            & (model["period_start"] < next_eco_start)
         ]
         # sum forecast and house load
         forecast_sum = peak.pv_estimate.sum()
         load_sum = peak.load.sum()
-        dawn_load = self._dawn_load(model, eco_end)
-        dawn_charge = self.dawn_charge_needs(dawn_load, battery)
-        day_charge = self.day_charge_needs(forecast_sum, load_sum, battery)
-        max_charge = max([dawn_charge, day_charge])
-        total = self.ceiling_charge_total(max(0, max_charge) + boost, battery)
-        min_soc = battery + max_charge if boost == 0 else battery + total
+        dawn_load = self._dawn_load(model, eco_end_time)
+        dawn_charge = self.dawn_charge_needs(dawn_load)
+        day_charge = self.day_charge_needs(forecast_sum, load_sum)
+        min_soc = max([dawn_charge, day_charge])
+        total = self.ceiling_charge_total(max([0, min_soc - battery]))
+        min_soc = (
+            min_soc
+            if boost == 0
+            else self.ceiling_charge_total(battery + total + boost)
+        )
         _LOGGER.debug(
-            f"Period: {period.date()} - EcoStart: {battery} MinSoC: {min_soc} Dawn: {dawn_charge} Day: {day_charge}"
+            f"Period: {period.date()} - EcoStart: {round(battery, 2)} MinSoC: {min_soc} Dawn: {dawn_charge} Day: {day_charge}"
         )
         return dawn_charge, day_charge, total, min_soc
 
@@ -268,36 +273,22 @@ class BatteryModel:
         else:
             return dawn.iloc[0].period_start.to_pydatetime()
 
-    def dawn_charge_needs(self, dawn_load: float, eco_start: float) -> float:
+    def dawn_charge_needs(self, dawn_load: float) -> float:
         """Dawn charge needs"""
-        dawn_charge_needs = eco_start - dawn_load
+        return round(dawn_load + self._dawn_buffer, 2)
 
-        dawn_buffer = self._dawn_buffer - dawn_charge_needs
-
-        ceiling = self.ceiling_charge_total(dawn_buffer, eco_start)
-
-        return round(ceiling, 2)
-
-    def day_charge_needs(
-        self, forecast: float, house_load: float, eco_start: float
-    ) -> float:
+    def day_charge_needs(self, forecast: float, house_load: float) -> float:
         """Day charge needs"""
-        day_charge_needs = (eco_start - house_load) + forecast
+        return round((house_load + self._day_buffer) - forecast, 2)
 
-        day_buffer_top_up = self._day_buffer - day_charge_needs
-
-        ceiling = self.ceiling_charge_total(day_buffer_top_up, eco_start)
-
-        return round(ceiling, 2)
-
-    def ceiling_charge_total(self, charge_total: float, eco_start: float) -> float:
+    def ceiling_charge_total(self, charge_total: float) -> float:
         """Ceiling total charge"""
         available_capacity = round(
-            self._capacity - (self._min_soc * self._capacity) - eco_start,
+            self._capacity - (self._min_soc * self._capacity),
             2,
         )
 
-        return min(available_capacity, charge_total)
+        return round(min(available_capacity, charge_total), 2)
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
