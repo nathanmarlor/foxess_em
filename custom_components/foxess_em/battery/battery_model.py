@@ -38,7 +38,7 @@ class BatteryModel:
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
-        self.schedule = {}
+        self._schedule = {}
 
     def ready(self) -> bool:
         """Model status"""
@@ -104,9 +104,9 @@ class BatteryModel:
 
         battery = self.battery_capacity_remaining()
         last_eco_start = self._last_eco_start_time(now)
-        if last_eco_start in self.schedule:
+        if last_eco_start in self._schedule:
             # grab the min soc from the last eco start calc, including boost
-            min_soc = self.schedule[last_eco_start]["min_soc"]
+            min_soc = self._schedule[last_eco_start]["min_soc"]
         elif self._in_between(now.time(), self._eco_start_time, self._eco_end_time):
             # no history and in an eco period, recalulate without knowing boost
             _, _, _, min_soc = self._charge_totals(load_forecast, now, battery)
@@ -121,7 +121,8 @@ class BatteryModel:
                 )
                 battery += total
                 # store in dataframe for retrieval later
-                self.schedule[period] = {
+                self._schedule[period] = {
+                    "eco_end": self._next_eco_end_time(period),
                     "dawn": dawn_charge,
                     "day": day_charge,
                     "total": total,
@@ -242,13 +243,17 @@ class BatteryModel:
         """Day charge required"""
         return self._charge_info()["total"]
 
+    def get_schedule(self):
+        """Return charge schedule"""
+        return self._schedule
+
     def min_soc(self):
         """Day charge required"""
         return self._charge_info()["min_soc"]
 
     def _charge_info(self):
         """Charge info"""
-        return self.schedule[self._next_eco_start_time()]
+        return self._schedule[self._next_eco_start_time()]
 
     def _dawn_load(self, model: pd.DataFrame, eco_end_time: datetime) -> float:
         """Dawn load"""
