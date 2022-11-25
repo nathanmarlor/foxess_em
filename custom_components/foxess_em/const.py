@@ -13,7 +13,8 @@ ICON = "mdi:format-quote-close"
 # Platforms
 SENSOR = "sensor"
 SWITCH = "switch"
-PLATFORMS = [SENSOR, SWITCH]
+CALENDAR = "calendar"
+PLATFORMS = [SENSOR, SWITCH, CALENDAR]
 ATTR_ENTRY_TYPE = "entry_type"
 
 # Configuration and options
