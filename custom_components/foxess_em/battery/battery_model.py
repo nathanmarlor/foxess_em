@@ -173,10 +173,11 @@ class BatteryModel:
         dawn_load = self._dawn_load(model, eco_end_time)
         dawn_charge = self.dawn_charge_needs(dawn_load)
         day_charge = self.day_charge_needs(forecast_sum, load_sum)
+        max_charge = self.ceiling_charge_total(max([dawn_charge, day_charge]))
         min_soc = (
-            self.ceiling_charge_total(max([dawn_charge, day_charge]))
+            max_charge
             if boost == 0
-            else self.ceiling_charge_total(battery + boost)
+            else self.ceiling_charge_total(max([battery, max_charge]) + boost)
         )
         total = self.ceiling_charge_total(max([0, min_soc - battery]))
         # store in dataframe for retrieval later
