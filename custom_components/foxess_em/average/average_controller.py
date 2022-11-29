@@ -61,6 +61,7 @@ class AverageController(UnloadController, CallbackController):
 
     async def async_refresh(self, *args) -> None:  # pylint: disable=unused-argument
         """Refresh data"""
+        _LOGGER.debug("Refreshing averages model")
 
         await self._model.refresh()
         self._last_update = datetime.now().astimezone()

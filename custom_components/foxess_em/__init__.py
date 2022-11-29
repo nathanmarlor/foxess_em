@@ -7,10 +7,11 @@ https://github.com/nathanmarlor/foxess_em
 import asyncio
 import logging
 from datetime import time
-from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config
+from homeassistant.core import CoreState
+from homeassistant.core import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -37,8 +38,6 @@ from .forecast.forecast_controller import ForecastController
 from .forecast.solcast_api import SolcastApiClient
 from .fox.fox_api import FoxApiClient
 from .fox.fox_cloud_service import FoxCloudService
-
-SCAN_INTERVAL = timedelta(minutes=90)
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
@@ -120,6 +119,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         }
     }
 
+    await _refresh_controllers(
+        hass, average_controller, forecast_controller, battery_controller
+    )
+
     hass.services.async_register(
         DOMAIN, "start_force_charge", fox_service.start_force_charge
     )
@@ -131,6 +134,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         async_reload_entry
     )
     return True
+
+
+async def _refresh_controllers(hass: HomeAssistant, average, forecast, battery):
+    """Refresh all controllers"""
+
+    if hass.state is CoreState.running:
+        # Prime history for sensor creation
+        await average.async_refresh()
+        await forecast.async_refresh()
+        await battery.async_refresh()
+
+        # Add callbacks into battery controller for updates
+        forecast.add_update_listener(battery)
+        average.add_update_listener(battery)
+    else:
+        hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STARTED,
+            _refresh_controllers(hass, average, forecast, battery),
+        )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

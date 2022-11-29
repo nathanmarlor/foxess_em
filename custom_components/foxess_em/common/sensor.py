@@ -1,7 +1,11 @@
 """Sensor"""
 import logging
+from typing import Any
 
+from attr import dataclass
 from custom_components.foxess_em.common.callback_controller import CallbackController
+from homeassistant.components.sensor import ExtraStoredData
+from homeassistant.components.sensor import RestoreEntity
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -16,7 +20,7 @@ from .sensor_desc import SensorDescription
 _LOGGER = logging.getLogger(__name__)
 
 
-class Sensor(SensorEntity):
+class Sensor(SensorEntity, RestoreEntity):
     """Sensor class."""
 
     def __init__(
@@ -87,6 +91,11 @@ class Sensor(SensorEntity):
         """
         return self._entity_description.should_poll
 
+    @property
+    def extra_restore_state_data(self) -> ExtraStoredData:
+        """Return specific state data to be restored."""
+        return SensorExtraData(self._attr_extra_state_attributes)
+
     def update_callback(self) -> None:
         """Schedule a state update."""
         self.schedule_update_ha_state(True)
@@ -95,3 +104,23 @@ class Sensor(SensorEntity):
         """Add update callback after being added to hass."""
         await super().async_added_to_hass()
         self._controller.add_update_listener(self)
+        state = await self.async_get_last_extra_data()
+        if not state:
+            return
+        self._attr_extra_state_attributes = state.as_dict()
+
+
+@dataclass
+class SensorExtraData(ExtraStoredData):
+    """Object to hold extra stored data."""
+
+    attributes: dict[str, Any] | None
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return a dict representation of additional data."""
+        return self.attributes
+
+    @classmethod
+    def from_dict(cls, restored: dict[str, Any]):
+        """Save a dict representation of additional data"""
+        return cls(restored)
