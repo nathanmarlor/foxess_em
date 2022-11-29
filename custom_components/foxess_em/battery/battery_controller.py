@@ -74,10 +74,7 @@ class BatteryController(UnloadController, CallbackController):
         try:
             load = self._average_controller.resample_data()
             forecast = self._forecast_controller.resample_data()
-            # setup boosts
-            boost = _BOOST if self._boost else 0
-            full = _FULL if self._full else 0
-            self._model.refresh_battery_model(forecast, load, max([boost, full]))
+            self._model.refresh_battery_model(forecast, load)
 
             self._last_update = datetime.now().astimezone()
 
@@ -96,7 +93,7 @@ class BatteryController(UnloadController, CallbackController):
         """Calculate percentage target"""
         return self._model.charge_to_perc(self.min_soc())
 
-    def get_schedule(self, start: datetime, end: datetime):
+    def get_schedule(self):
         """Return charge schedule"""
         return self._model.get_schedule()
 
@@ -151,6 +148,7 @@ class BatteryController(UnloadController, CallbackController):
     def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
         self._boost = status
+        self._model.set_boost(_BOOST)
         self.refresh()
 
     def boost_status(self) -> bool:
@@ -160,6 +158,7 @@ class BatteryController(UnloadController, CallbackController):
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
         self._full = status
+        self._model.set_boost(_FULL)
         self.refresh()
 
     def full_status(self) -> bool:

@@ -90,6 +90,16 @@ SENSORS: dict[str, SensorDescription] = {
             "raw_data": "raw_data",
         },
     ),
+    "schedule": SensorDescription(
+        key="empty",
+        name="FoxESS EM: Schedule",
+        icon="mdi:calendar",
+        should_poll=False,
+        visible=False,
+        state_attributes={
+            "schedule": "get_schedule",
+        },
+    ),
 }
 
 
