@@ -99,6 +99,7 @@ SENSORS: dict[str, SensorDescription] = {
         state_attributes={
             "schedule": "get_schedule",
         },
+        store_attributes=True,
     ),
 }
 

@@ -14,8 +14,6 @@ from ..util.exceptions import NoDataError
 from .battery_model import BatteryModel
 
 _LOGGER = logging.getLogger(__name__)
-_BOOST = 1
-_FULL = float("inf")
 
 
 class BatteryController(UnloadController, CallbackController):
@@ -50,8 +48,6 @@ class BatteryController(UnloadController, CallbackController):
         self._forecast_controller = forecast_controller
         self._average_controller = average_controller
         self._last_update = None
-        self._boost = False
-        self._full = False
 
         # Refresh on SoC change
         battery_refresh = async_track_state_change(
@@ -147,23 +143,21 @@ class BatteryController(UnloadController, CallbackController):
 
     def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
-        self._boost = status
-        self._model.set_boost(_BOOST)
+        self._model.set_boost_full_charge_status("boost_status", status)
         self.refresh()
 
     def boost_status(self) -> bool:
         """Boost status"""
-        return self._boost
+        return self._model.get_boost_full_charge_status("boost_status")
 
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
-        self._full = status
-        self._model.set_boost(_FULL)
+        self._model.set_boost_full_charge_status("full_status", status)
         self.refresh()
 
     def full_status(self) -> bool:
         """Full status"""
-        return self._full
+        return self._model.get_boost_full_charge_status("full_status")
 
     def battery_depleted(self) -> datetime:
         """Time battery capacity is 0"""
