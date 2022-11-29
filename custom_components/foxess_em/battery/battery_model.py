@@ -13,6 +13,8 @@ from ..util.exceptions import NoDataError
 _LOGGER = logging.getLogger(__name__)
 _MAX_PERC = 100
 _SCHEDULE = "sensor.foxess_em_schedule"
+_BOOST = 1
+_FULL = 1000
 
 
 class BatteryModel:
@@ -115,7 +117,7 @@ class BatteryModel:
             period = load_forecast.iloc[index]["period_start"].to_pydatetime()
             if period.time() == self._eco_start_time:
                 # landed on the start of the eco period
-                boost = self._get_boost()
+                boost = self._get_total_additional_charge(period)
                 total, min_soc = self._charge_totals(
                     load_forecast, period, battery, boost
                 )
@@ -144,7 +146,11 @@ class BatteryModel:
         self._ready = True
 
     def _charge_totals(
-        self, model: pd.DataFrame, period: datetime, battery: float, boost: float = 0
+        self,
+        model: pd.DataFrame,
+        period: datetime,
+        battery: float,
+        boost: float = 0,
     ):
         """Return charge totals for dawn/day"""
         # calculate start/end of the next peak period
@@ -185,6 +191,11 @@ class BatteryModel:
             "day": day_charge,
             "total": total,
             "min_soc": min_soc,
+            "boost": boost,
+            "boost_status": self.get_boost_full_charge_status(
+                "boost_status", eco_start
+            ),
+            "full_status": self.get_boost_full_charge_status("full_status", eco_start),
         }
         _LOGGER.debug(f"Schedule: {self._schedule[eco_str]}")
         return total, min_soc
@@ -198,17 +209,31 @@ class BatteryModel:
         # set global model
         return hist.append(future)
 
-    def set_boost(self, boost: float):
-        """Setup boosts"""
-        self._schedule[self._next_eco_start_time_str()]["boost"] = boost
+    def _get_total_additional_charge(self, period: datetime):
+        """Get all additional charge"""
+        boost = self.get_boost_full_charge_status("boost_status", period)
+        full = self.get_boost_full_charge_status("full_status", period)
 
-    def _get_boost(self):
+        boost = _BOOST if boost is True else 0
+        full = _FULL if full is True else 0
+
+        return max([boost, full])
+
+    def set_boost_full_charge_status(self, charge_type: str, full: bool):
         """Setup boosts"""
-        sched = self._schedule[self._next_eco_start_time_str()]
-        if "boost" in sched:
-            return sched["boost"]
+        self._schedule[self._next_eco_start_time_str()][charge_type] = full
+
+    def get_boost_full_charge_status(self, charge_type: str, period: datetime = None):
+        """Get additional charge"""
+        eco_str = period or self._next_eco_start_time()
+        eco_str = eco_str.isoformat()
+
+        if eco_str not in self._schedule:
+            return False
+        elif charge_type not in self._schedule[eco_str]:
+            return False
         else:
-            return 0
+            return self._schedule[eco_str][charge_type]
 
     def _get_schedule(self):
         """Get persisted schedule from states"""

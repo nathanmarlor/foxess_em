@@ -94,7 +94,8 @@ class Sensor(SensorEntity, RestoreEntity):
     @property
     def extra_restore_state_data(self) -> ExtraStoredData:
         """Return specific state data to be restored."""
-        return SensorExtraData(self._attr_extra_state_attributes)
+        if self._entity_description.store_attributes:
+            return SensorExtraData(self._attr_extra_state_attributes)
 
     def update_callback(self) -> None:
         """Schedule a state update."""
@@ -104,10 +105,11 @@ class Sensor(SensorEntity, RestoreEntity):
         """Add update callback after being added to hass."""
         await super().async_added_to_hass()
         self._controller.add_update_listener(self)
-        state = await self.async_get_last_extra_data()
-        if not state:
-            return
-        self._attr_extra_state_attributes = state.as_dict()
+        if self._entity_description.store_attributes:
+            state = await self.async_get_last_extra_data()
+            if not state:
+                return
+            self._attr_extra_state_attributes = state.as_dict()
 
 
 @dataclass
