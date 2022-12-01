@@ -128,7 +128,7 @@ class BatteryController(UnloadController, CallbackController):
 
     def _schedule_info(self) -> float:
         """Schedule info"""
-        return self._schedule.get(self._peak_utils.next_eco_start_time())
+        return self._schedule.get(self._peak_utils.next_eco_start())
 
     def next_dawn_time(self) -> datetime:
         """Day charge needs"""
@@ -157,27 +157,27 @@ class BatteryController(UnloadController, CallbackController):
     def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
         self._schedule.set_boost(
-            self._peak_utils.next_eco_start_time(), "boost_status", status
+            self._peak_utils.next_eco_start(), "boost_status", status
         )
         self.refresh()
 
     def boost_status(self) -> bool:
         """Boost status"""
         return self._schedule.get_boost(
-            self._peak_utils.next_eco_start_time(), "boost_status"
+            self._peak_utils.next_eco_start(), "boost_status"
         )
 
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
         self._schedule.set_boost(
-            self._peak_utils.next_eco_start_time(), "full_status", status
+            self._peak_utils.next_eco_start(), "full_status", status
         )
         self.refresh()
 
     def full_status(self) -> bool:
         """Full status"""
         return self._schedule.get_boost(
-            self._peak_utils.next_eco_start_time(), "full_status"
+            self._peak_utils.next_eco_start(), "full_status"
         )
 
     def battery_depleted(self) -> datetime:

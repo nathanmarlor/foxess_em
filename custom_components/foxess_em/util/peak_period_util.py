@@ -16,14 +16,7 @@ class PeakPeriodUtils:
         """In peak period"""
         return self._in_between(period, self._eco_start_time, self._eco_end_time)
 
-    def _in_between(self, now: time, start: time, end: time):
-        """In between two times"""
-        if start <= end:
-            return start < now <= end
-        else:  # over midnight e.g., 23:30-04:15
-            return now > start or now <= end
-
-    def next_eco_start_time(self) -> datetime:
+    def next_eco_start(self) -> datetime:
         """Next eco start time"""
         now = datetime.now().astimezone()
         eco_start = now.replace(
@@ -37,7 +30,7 @@ class PeakPeriodUtils:
 
         return eco_start
 
-    def last_eco_start_time(self, period: datetime) -> datetime:
+    def last_eco_start(self, period: datetime) -> datetime:
         """Last eco start time"""
         eco_start = period.replace(
             hour=self._eco_start_time.hour,
@@ -50,7 +43,7 @@ class PeakPeriodUtils:
 
         return eco_start
 
-    def next_eco_end_time(self, period: datetime) -> datetime:
+    def next_eco_end(self, period: datetime) -> datetime:
         """Next eco end time"""
         eco_end = period.replace(
             hour=self._eco_end_time.hour,
@@ -62,3 +55,10 @@ class PeakPeriodUtils:
             eco_end += timedelta(days=1)
 
         return eco_end
+
+    def _in_between(self, now: time, start: time, end: time):
+        """In between two times"""
+        if start <= end:
+            return start < now <= end
+        else:  # over midnight e.g., 23:30-04:15
+            return now > start or now <= end
