@@ -6,13 +6,15 @@ from datetime import time
 from datetime import timedelta
 
 import pandas as pd
+from custom_components.foxess_em.battery.battery_util import BatteryUtils
+from custom_components.foxess_em.battery.schedule import Schedule
+from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.core import HomeAssistant
 
 from ..util.exceptions import NoDataError
 
 _LOGGER = logging.getLogger(__name__)
-_MAX_PERC = 100
-_SCHEDULE = "sensor.foxess_em_schedule"
+
 _BOOST = 1
 _FULL = 1000
 
@@ -30,6 +32,9 @@ class BatteryModel:
         eco_start_time: time,
         eco_end_time: time,
         battery_soc: str,
+        schedule: Schedule,
+        peak_utils: PeakPeriodUtils,
+        battery_utils: BatteryUtils,
     ) -> None:
         self._hass = hass
         self._model = None
@@ -41,30 +46,13 @@ class BatteryModel:
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
-        self._schedule = {}
+        self._schedule = schedule
+        self._peak_utils = peak_utils
+        self._battery_utils = battery_utils
 
     def ready(self) -> bool:
         """Model status"""
         return self._ready
-
-    def battery_capacity_remaining(self) -> float:
-        """Usable capacity remaining"""
-        battery_state = self._hass.states.get(self._battery_soc)
-        if battery_state is None:
-            raise NoDataError("Battery state is invalid")
-        if battery_state.state in ["unknown", "unavailable"]:
-            raise NoDataError("Battery state is unknown")
-
-        battery_soc = int(battery_state.state)
-        battery_capacity = (battery_soc / 100) * self._capacity
-
-        return battery_capacity - (self._min_soc * self._capacity)
-
-    def charge_to_perc(self, charge: float) -> float:
-        """Convert kWh to percentage of charge"""
-        perc = ((charge / self._capacity) + self._min_soc) * 100
-
-        return min(_MAX_PERC, round(perc, 0))
 
     def raw_data(self):
         """Return raw data in dictionary form"""
@@ -91,8 +79,6 @@ class BatteryModel:
         """Calculate battery model"""
         now = datetime.now().astimezone()
 
-        self._schedule = self._get_schedule()
-
         load_forecast = self._merge_dataframes(load, forecast)
 
         if self._model is None:
@@ -104,12 +90,12 @@ class BatteryModel:
 
         available_capacity = self._capacity - (self._min_soc * self._capacity)
 
-        battery = self.battery_capacity_remaining()
-        last_eco_start = self._last_eco_start_time_str(now)
-        if last_eco_start in self._schedule:
+        battery = self._battery_capacity_remaining()
+        last_schedule = self._schedule.get(self._peak_utils.last_eco_start_time(now))
+        if last_schedule is not None:
             # grab the min soc from the last eco start calc, including boost
-            min_soc = self._schedule[last_eco_start]["min_soc"]
-        elif self._in_between(now.time(), self._eco_start_time, self._eco_end_time):
+            min_soc = last_schedule["min_soc"]
+        elif self._peak_utils.in_peak(now.time()):
             # no history and in an eco period, recalulate without knowing boost
             _, min_soc = self._charge_totals(load_forecast, now, battery)
 
@@ -122,12 +108,7 @@ class BatteryModel:
                     load_forecast, period, battery, boost
                 )
                 battery += total
-            elif (
-                self._in_between(
-                    period.time(), self._eco_start_time, self._eco_end_time
-                )
-                and battery < min_soc
-            ):
+            elif self._peak_utils.in_peak(period.time()) and battery < min_soc:
                 # hold SoC in off-peak period
                 battery = min_soc
             else:
@@ -160,7 +141,7 @@ class BatteryModel:
             second=0,
             microsecond=0,
         )
-        eco_end_time = self._next_eco_end_time(eco_start)
+        eco_end_time = self._peak_utils.next_eco_end_time(eco_start)
         next_eco_start = eco_start + timedelta(days=1)
         # grab all peak values
         peak = model[
@@ -171,35 +152,50 @@ class BatteryModel:
         forecast_sum = peak.pv_estimate.sum()
         load_sum = peak.load.sum()
         dawn_load = self._dawn_load(model, eco_end_time)
-        dawn_charge = self.dawn_charge_needs(dawn_load)
-        day_charge = self.day_charge_needs(forecast_sum, load_sum)
-        max_charge = self.ceiling_charge_total(max([dawn_charge, day_charge]))
+        dawn_charge = self._dawn_charge_needs(dawn_load)
+        day_charge = self._day_charge_needs(forecast_sum, load_sum)
+        max_charge = self._battery_utils.ceiling_charge_total(
+            max([dawn_charge, day_charge])
+        )
         min_soc = (
             max_charge
             if boost == 0
-            else self.ceiling_charge_total(max([battery, max_charge]) + boost)
+            else self._battery_utils.ceiling_charge_total(
+                max([battery, max_charge]) + boost
+            )
         )
-        total = self.ceiling_charge_total(max([0, min_soc - battery]))
+        total = self._battery_utils.ceiling_charge_total(max([0, min_soc - battery]))
         # store in dataframe for retrieval later
-        eco_str = eco_start.isoformat()
-        self._schedule[eco_str] = {
-            "eco_start": eco_start,
-            "eco_end": self._next_eco_end_time(eco_start),
-            "battery": battery,
-            "load": load_sum,
-            "forecast": forecast_sum,
-            "dawn": dawn_charge,
-            "day": day_charge,
-            "total": total,
-            "min_soc": min_soc,
-            "boost": boost,
-            "boost_status": self.get_boost_full_charge_status(
-                "boost_status", eco_start
-            ),
-            "full_status": self.get_boost_full_charge_status("full_status", eco_start),
-        }
-        _LOGGER.debug(f"Schedule: {self._schedule[eco_str]}")
+        self._schedule.upsert(
+            eco_start,
+            {
+                "eco_start": eco_start,
+                "eco_end": self._peak_utils.next_eco_end_time(eco_start),
+                "battery": battery,
+                "load": load_sum,
+                "forecast": forecast_sum,
+                "dawn": dawn_charge,
+                "day": day_charge,
+                "total": total,
+                "min_soc": min_soc,
+                "boost": boost,
+            },
+        )
+
         return total, min_soc
+
+    def _battery_capacity_remaining(self) -> float:
+        """Usable capacity remaining"""
+        battery_state = self._hass.states.get(self._battery_soc)
+        if battery_state is None:
+            raise NoDataError("Battery state is invalid")
+        if battery_state.state in ["unknown", "unavailable"]:
+            raise NoDataError("Battery state is unknown")
+
+        battery_soc = int(battery_state.state)
+        battery_capacity = (battery_soc / 100) * self._capacity
+
+        return battery_capacity - (self._min_soc * self._capacity)
 
     def _update_model_forecasts(self, future: pd.DataFrame, now: datetime):
         # keep original values including load, pv, grid etc
@@ -212,46 +208,13 @@ class BatteryModel:
 
     def _get_total_additional_charge(self, period: datetime):
         """Get all additional charge"""
-        boost = self.get_boost_full_charge_status("boost_status", period)
-        full = self.get_boost_full_charge_status("full_status", period)
+        boost = self._schedule.get_boost(period, "boost_status")
+        full = self._schedule.get_boost(period, "full_status")
 
         boost = _BOOST if boost is True else 0
         full = _FULL if full is True else 0
 
         return max([boost, full])
-
-    def set_boost_full_charge_status(self, charge_type: str, full: bool):
-        """Setup boosts"""
-        self._schedule[self._next_eco_start_time_str()][charge_type] = full
-
-    def get_boost_full_charge_status(self, charge_type: str, period: datetime = None):
-        """Get additional charge"""
-        eco_str = period or self._next_eco_start_time()
-        eco_str = eco_str.isoformat()
-
-        if eco_str not in self._schedule:
-            return False
-        elif charge_type not in self._schedule[eco_str]:
-            return False
-        else:
-            return self._schedule[eco_str][charge_type]
-
-    def _get_schedule(self):
-        """Get persisted schedule from states"""
-
-        schedule = self._hass.states.get(_SCHEDULE)
-
-        if schedule is not None and "schedule" in schedule.attributes:
-            return schedule.attributes["schedule"]
-        else:
-            return {}
-
-    def _in_between(self, now: time, start: time, end: time):
-        """In between two times"""
-        if start <= end:
-            return start < now <= end
-        else:  # over midnight e.g., 23:30-04:15
-            return now > start or now <= end
 
     def _merge_dataframes(self, load: pd.DataFrame, forecast: pd.DataFrame):
         """Merge load and forecast dataframes"""
@@ -272,33 +235,11 @@ class BatteryModel:
 
     def state_at_eco_start(self) -> float:
         """State at eco end"""
-        eco_time = self._next_eco_start_time().replace(second=0, microsecond=0)
+        eco_time = self._peak_utils.next_eco_start_time().replace(
+            second=0, microsecond=0
+        )
         eco_time -= timedelta(minutes=1)
         return self._model[self._model["period_start"] == eco_time].battery.iloc[0]
-
-    def dawn_charge(self):
-        """Dawn charge required"""
-        return self._charge_info()["dawn"]
-
-    def day_charge(self):
-        """Day charge required"""
-        return self._charge_info()["day"]
-
-    def total_charge(self):
-        """Day charge required"""
-        return self._charge_info()["total"]
-
-    def get_schedule(self):
-        """Return charge schedule"""
-        return self._schedule
-
-    def min_soc(self):
-        """Day charge required"""
-        return self._charge_info()["min_soc"]
-
-    def _charge_info(self):
-        """Charge info"""
-        return self._schedule[self._next_eco_start_time_str()]
 
     def _dawn_load(self, model: pd.DataFrame, eco_end_time: datetime) -> float:
         """Dawn load"""
@@ -323,22 +264,13 @@ class BatteryModel:
         else:
             return dawn.iloc[0].period_start.to_pydatetime()
 
-    def dawn_charge_needs(self, dawn_load: float) -> float:
+    def _dawn_charge_needs(self, dawn_load: float) -> float:
         """Dawn charge needs"""
         return round(dawn_load + self._dawn_buffer, 2)
 
-    def day_charge_needs(self, forecast: float, house_load: float) -> float:
+    def _day_charge_needs(self, forecast: float, house_load: float) -> float:
         """Day charge needs"""
         return round((house_load + self._day_buffer) - forecast, 2)
-
-    def ceiling_charge_total(self, charge_total: float) -> float:
-        """Ceiling total charge"""
-        available_capacity = round(
-            self._capacity - (self._min_soc * self._capacity),
-            2,
-        )
-
-        return round(min(available_capacity, charge_total), 2)
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
@@ -360,7 +292,7 @@ class BatteryModel:
     def battery_depleted_time(self) -> datetime:
         """Time battery capacity is 0"""
 
-        if self.battery_capacity_remaining() == 0:
+        if self._battery_capacity_remaining() == 0:
             # battery is already empty, prevent constant time updates and set sensor to unknown
             return None
 
@@ -378,7 +310,7 @@ class BatteryModel:
     def peak_grid_import(self) -> float:
         """Grid usage required to next eco start"""
         now = datetime.now().astimezone()
-        eco_start = self._next_eco_start_time()
+        eco_start = self._peak_utils.next_eco_start_time()
 
         grid_use = self._model[
             (self._model["grid"] < 0)
@@ -394,7 +326,7 @@ class BatteryModel:
     def peak_grid_export(self) -> float:
         """Grid usage required to next eco start"""
         now = datetime.now().astimezone()
-        eco_start = self._next_eco_start_time()
+        eco_start = self._peak_utils.next_eco_start_time()
 
         grid_export = self._model[
             (self._model["grid"] > 0)
@@ -406,55 +338,3 @@ class BatteryModel:
             return 0
 
         return round(grid_export.grid.sum(), 2)
-
-    def _next_eco_start_time_str(self) -> datetime:
-        """Next eco start time"""
-        return self._next_eco_start_time().isoformat()
-
-    def _next_eco_start_time(self) -> datetime:
-        """Next eco start time"""
-        now = datetime.now().astimezone()
-        eco_start = now.replace(
-            hour=self._eco_start_time.hour,
-            minute=self._eco_start_time.minute,
-            second=0,
-            microsecond=0,
-        )
-        if now > eco_start:
-            eco_start += timedelta(days=1)
-
-        return eco_start
-
-    def _last_eco_start_time_str(self, period: datetime) -> datetime:
-        """Last eco start time string"""
-        return self._last_eco_start_time(period).isoformat()
-
-    def _last_eco_start_time(self, period: datetime) -> datetime:
-        """Last eco start time"""
-        eco_start = period.replace(
-            hour=self._eco_start_time.hour,
-            minute=self._eco_start_time.minute,
-            second=0,
-            microsecond=0,
-        )
-        if eco_start > period:
-            eco_start -= timedelta(days=1)
-
-        return eco_start
-
-    def _next_eco_end_time_str(self, period: datetime) -> datetime:
-        """Next eco end time string"""
-        return self._next_eco_end_time(period).isoformat()
-
-    def _next_eco_end_time(self, period: datetime) -> datetime:
-        """Next eco end time"""
-        eco_end = period.replace(
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
-            second=0,
-            microsecond=0,
-        )
-        if period > eco_end:
-            eco_end += timedelta(days=1)
-
-        return eco_end

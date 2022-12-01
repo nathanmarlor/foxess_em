@@ -8,6 +8,8 @@ import asyncio
 import logging
 from datetime import time
 
+from custom_components.foxess_em.battery.schedule import Schedule
+from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config
 from homeassistant.core import CoreState
@@ -82,10 +84,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     fox_client = FoxApiClient(session, fox_username, fox_password)
 
     # Initialise controllers and services
+    peak_utils = PeakPeriodUtils(eco_start_time, eco_end_time)
+
     forecast_controller = ForecastController(hass, solcast_client)
     average_controller = AverageController(
         hass, eco_start_time, eco_end_time, house_power, aux_power
     )
+    schedule = Schedule(hass)
     battery_controller = BatteryController(
         hass,
         forecast_controller,
@@ -97,6 +102,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         eco_start_time,
         eco_end_time,
         battery_soc,
+        schedule,
+        peak_utils,
     )
     fox_service = FoxCloudService(fox_client)
     charge_service = ChargeService(
@@ -120,7 +127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     }
 
     await _refresh_controllers(
-        hass, average_controller, forecast_controller, battery_controller
+        hass, average_controller, forecast_controller, battery_controller, schedule
     )
 
     hass.services.async_register(
@@ -136,11 +143,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 
-async def _refresh_controllers(hass: HomeAssistant, average, forecast, battery):
+async def _refresh_controllers(
+    hass: HomeAssistant,
+    average: AverageController,
+    forecast: ForecastController,
+    battery: BatteryController,
+    schedule: Schedule,
+):
     """Refresh all controllers"""
 
     if hass.state is CoreState.running:
         # Prime history for sensor creation
+        schedule.load()
         await average.async_refresh()
         await forecast.async_refresh()
         await battery.async_refresh()
@@ -151,7 +165,7 @@ async def _refresh_controllers(hass: HomeAssistant, average, forecast, battery):
     else:
         hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STARTED,
-            _refresh_controllers(hass, average, forecast, battery),
+            _refresh_controllers(hass, average, forecast, battery, schedule),
         )
 
 

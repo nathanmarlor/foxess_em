@@ -3,6 +3,9 @@ import logging
 from datetime import datetime
 from datetime import time
 
+from custom_components.foxess_em.battery.battery_util import BatteryUtils
+from custom_components.foxess_em.battery.schedule import Schedule
+from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
 
@@ -31,10 +34,15 @@ class BatteryController(UnloadController, CallbackController):
         eco_start_time: time,
         eco_end_time: time,
         battery_soc: str,
+        schedule: Schedule,
+        peak_utils: PeakPeriodUtils,
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
         self._hass = hass
+        self._schedule = schedule
+        self._peak_utils = peak_utils
+        self._battery_utils = BatteryUtils(capacity, min_soc)
         self._model = BatteryModel(
             hass,
             min_soc,
@@ -44,6 +52,9 @@ class BatteryController(UnloadController, CallbackController):
             eco_start_time,
             eco_end_time,
             battery_soc,
+            schedule,
+            peak_utils,
+            self._battery_utils,
         )
         self._forecast_controller = forecast_controller
         self._average_controller = average_controller
@@ -87,11 +98,11 @@ class BatteryController(UnloadController, CallbackController):
 
     def charge_to_perc(self) -> int:
         """Calculate percentage target"""
-        return self._model.charge_to_perc(self.min_soc())
+        return self._battery_utils.charge_to_perc(self.min_soc())
 
     def get_schedule(self):
         """Return charge schedule"""
-        return self._model.get_schedule()
+        return self._schedule.get_all()
 
     def raw_data(self):
         """Return raw data in dictionary form"""
@@ -103,11 +114,23 @@ class BatteryController(UnloadController, CallbackController):
 
     def dawn_charge_needs(self) -> float:
         """Dawn charge needs"""
-        return self._model.dawn_charge()
+        return self._schedule_info()["dawn"]
 
     def day_charge_needs(self) -> float:
         """Day charge needs"""
-        return self._model.day_charge()
+        return self._schedule_info()["day"]
+
+    def charge_total(self) -> float:
+        """Total kWh required to charge"""
+        return self._schedule_info()["total"]
+
+    def min_soc(self) -> float:
+        """Total kWh required to charge"""
+        return self._schedule_info()["min_soc"]
+
+    def _schedule_info(self) -> float:
+        """Schedule info"""
+        return self._schedule.get(self._peak_utils.next_eco_start_time())
 
     def next_dawn_time(self) -> datetime:
         """Day charge needs"""
@@ -116,14 +139,6 @@ class BatteryController(UnloadController, CallbackController):
     def todays_dawn_time_str(self) -> datetime:
         """Day charge needs"""
         return self._model.todays_dawn_time().isoformat()
-
-    def charge_total(self) -> float:
-        """Total kWh required to charge"""
-        return self._model.total_charge()
-
-    def min_soc(self) -> float:
-        """Total kWh required to charge"""
-        return self._model.min_soc()
 
     def battery_last_update(self) -> datetime:
         """Battery last update"""
@@ -143,21 +158,29 @@ class BatteryController(UnloadController, CallbackController):
 
     def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
-        self._model.set_boost_full_charge_status("boost_status", status)
+        self._schedule.set_boost(
+            self._peak_utils.next_eco_start_time(), "boost_status", status
+        )
         self.refresh()
 
     def boost_status(self) -> bool:
         """Boost status"""
-        return self._model.get_boost_full_charge_status("boost_status")
+        return self._schedule.get_boost(
+            self._peak_utils.next_eco_start_time(), "boost_status"
+        )
 
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
-        self._model.set_boost_full_charge_status("full_status", status)
+        self._schedule.set_boost(
+            self._peak_utils.next_eco_start_time(), "full_status", status
+        )
         self.refresh()
 
     def full_status(self) -> bool:
         """Full status"""
-        return self._model.get_boost_full_charge_status("full_status")
+        return self._schedule.get_boost(
+            self._peak_utils.next_eco_start_time(), "full_status"
+        )
 
     def battery_depleted(self) -> datetime:
         """Time battery capacity is 0"""
