@@ -100,7 +100,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         dawn_buffer,
         day_buffer,
         eco_start_time,
-        eco_end_time,
         battery_soc,
         schedule,
         peak_utils,
