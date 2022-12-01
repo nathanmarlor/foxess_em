@@ -30,7 +30,6 @@ class BatteryModel:
         dawn_buffer: float,
         day_buffer: float,
         eco_start_time: time,
-        eco_end_time: time,
         battery_soc: str,
         schedule: Schedule,
         peak_utils: PeakPeriodUtils,
@@ -44,7 +43,6 @@ class BatteryModel:
         self._dawn_buffer = dawn_buffer
         self._day_buffer = day_buffer
         self._eco_start_time = eco_start_time
-        self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
         self._schedule = schedule
         self._peak_utils = peak_utils
@@ -184,55 +182,6 @@ class BatteryModel:
 
         return total, min_soc
 
-    def _battery_capacity_remaining(self) -> float:
-        """Usable capacity remaining"""
-        battery_state = self._hass.states.get(self._battery_soc)
-        if battery_state is None:
-            raise NoDataError("Battery state is invalid")
-        if battery_state.state in ["unknown", "unavailable"]:
-            raise NoDataError("Battery state is unknown")
-
-        battery_soc = int(battery_state.state)
-        battery_capacity = (battery_soc / 100) * self._capacity
-
-        return battery_capacity - (self._min_soc * self._capacity)
-
-    def _update_model_forecasts(self, future: pd.DataFrame, now: datetime):
-        # keep original values including load, pv, grid etc
-        hist = self._model[
-            (self._model["period_start"] <= now)
-            & (self._model["period_start"] > (now - timedelta(days=3)))
-        ]
-        # set global model
-        return hist.append(future)
-
-    def _get_total_additional_charge(self, period: datetime):
-        """Get all additional charge"""
-        boost = self._schedule.get_boost(period, "boost_status")
-        full = self._schedule.get_boost(period, "full_status")
-
-        boost = _BOOST if boost is True else 0
-        full = _FULL if full is True else 0
-
-        return max([boost, full])
-
-    def _merge_dataframes(self, load: pd.DataFrame, forecast: pd.DataFrame):
-        """Merge load and forecast dataframes"""
-        load = load.groupby(load["time"]).mean()
-        load["time"] = load.index.values
-
-        # reset indexes
-        load.reset_index(drop=True, inplace=True)
-        forecast.reset_index(drop=True, inplace=True)
-
-        # merge load and forecast to produce a delta
-        load_forecast = pd.merge(load, forecast, how="right", on=["time"])
-        load_forecast["delta"] = load_forecast["pv_estimate"] - load_forecast["load"]
-
-        load_forecast.reset_index(drop=True, inplace=True)
-
-        return load_forecast
-
     def state_at_eco_start(self) -> float:
         """State at eco end"""
         eco_time = self._peak_utils.next_eco_start_time().replace(
@@ -240,37 +189,6 @@ class BatteryModel:
         )
         eco_time -= timedelta(minutes=1)
         return self._model[self._model["period_start"] == eco_time].battery.iloc[0]
-
-    def _dawn_load(self, model: pd.DataFrame, eco_end_time: datetime) -> float:
-        """Dawn load"""
-        dawn_time = self._dawn_time(model, eco_end_time)
-
-        dawn_load = model[
-            (model["period_start"] > eco_end_time) & (model["period_start"] < dawn_time)
-        ]
-
-        load_sum = abs(dawn_load.delta.sum())
-
-        return round(load_sum, 2)
-
-    def _dawn_time(self, model: pd.DataFrame, date: datetime) -> datetime:
-        """Calculate dawn time"""
-        filtered = model[model["date"] == date.date()]
-        dawn = filtered[filtered["delta"] > 0]
-
-        if len(dawn) == 0:
-            # Solar never reaches house load... return mid-day
-            return date.replace(hour=12, minute=0, second=0, microsecond=0)
-        else:
-            return dawn.iloc[0].period_start.to_pydatetime()
-
-    def _dawn_charge_needs(self, dawn_load: float) -> float:
-        """Dawn charge needs"""
-        return round(dawn_load + self._dawn_buffer, 2)
-
-    def _day_charge_needs(self, forecast: float, house_load: float) -> float:
-        """Day charge needs"""
-        return round((house_load + self._day_buffer) - forecast, 2)
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
@@ -338,3 +256,83 @@ class BatteryModel:
             return 0
 
         return round(grid_export.grid.sum(), 2)
+
+    def _battery_capacity_remaining(self) -> float:
+        """Usable capacity remaining"""
+        battery_state = self._hass.states.get(self._battery_soc)
+        if battery_state is None:
+            raise NoDataError("Battery state is invalid")
+        if battery_state.state in ["unknown", "unavailable"]:
+            raise NoDataError("Battery state is unknown")
+
+        battery_soc = int(battery_state.state)
+        battery_capacity = (battery_soc / 100) * self._capacity
+
+        return battery_capacity - (self._min_soc * self._capacity)
+
+    def _update_model_forecasts(self, future: pd.DataFrame, now: datetime):
+        # keep original values including load, pv, grid etc
+        hist = self._model[
+            (self._model["period_start"] <= now)
+            & (self._model["period_start"] > (now - timedelta(days=3)))
+        ]
+        # set global model
+        return hist.append(future)
+
+    def _get_total_additional_charge(self, period: datetime):
+        """Get all additional charge"""
+        boost = self._schedule.get_boost(period, "boost_status")
+        full = self._schedule.get_boost(period, "full_status")
+
+        boost = _BOOST if boost is True else 0
+        full = _FULL if full is True else 0
+
+        return max([boost, full])
+
+    def _merge_dataframes(self, load: pd.DataFrame, forecast: pd.DataFrame):
+        """Merge load and forecast dataframes"""
+        load = load.groupby(load["time"]).mean()
+        load["time"] = load.index.values
+
+        # reset indexes
+        load.reset_index(drop=True, inplace=True)
+        forecast.reset_index(drop=True, inplace=True)
+
+        # merge load and forecast to produce a delta
+        load_forecast = pd.merge(load, forecast, how="right", on=["time"])
+        load_forecast["delta"] = load_forecast["pv_estimate"] - load_forecast["load"]
+
+        load_forecast.reset_index(drop=True, inplace=True)
+
+        return load_forecast
+
+    def _dawn_load(self, model: pd.DataFrame, eco_end_time: datetime) -> float:
+        """Dawn load"""
+        dawn_time = self._dawn_time(model, eco_end_time)
+
+        dawn_load = model[
+            (model["period_start"] > eco_end_time) & (model["period_start"] < dawn_time)
+        ]
+
+        load_sum = abs(dawn_load.delta.sum())
+
+        return round(load_sum, 2)
+
+    def _dawn_time(self, model: pd.DataFrame, date: datetime) -> datetime:
+        """Calculate dawn time"""
+        filtered = model[model["date"] == date.date()]
+        dawn = filtered[filtered["delta"] > 0]
+
+        if len(dawn) == 0:
+            # Solar never reaches house load... return mid-day
+            return date.replace(hour=12, minute=0, second=0, microsecond=0)
+        else:
+            return dawn.iloc[0].period_start.to_pydatetime()
+
+    def _dawn_charge_needs(self, dawn_load: float) -> float:
+        """Dawn charge needs"""
+        return round(dawn_load + self._dawn_buffer, 2)
+
+    def _day_charge_needs(self, forecast: float, house_load: float) -> float:
+        """Day charge needs"""
+        return round((house_load + self._day_buffer) - forecast, 2)
