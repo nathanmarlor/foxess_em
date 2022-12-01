@@ -279,13 +279,21 @@ class BatteryModel:
 
     def _get_total_additional_charge(self, period: datetime):
         """Get all additional charge"""
-        boost = self._schedule.get_boost(period, "boost_status")
-        full = self._schedule.get_boost(period, "full_status")
+        boost = self._get_boost(period, "boost_status")
+        full = self._get_boost(period, "full_status")
 
         boost = _BOOST if boost is True else 0
         full = _FULL if full is True else 0
 
         return max([boost, full])
+
+    def _get_boost(self, index: datetime, charge_type: str) -> bool:
+        """Retrieve schedule item"""
+        schedule = self._schedule.get(index)
+        if schedule is not None and charge_type in schedule:
+            return schedule[charge_type]
+
+        return False
 
     def _merge_dataframes(self, load: pd.DataFrame, forecast: pd.DataFrame):
         """Merge load and forecast dataframes"""

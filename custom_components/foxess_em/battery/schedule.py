@@ -48,20 +48,3 @@ class Schedule:
             return self._schedule[index]
         else:
             return None
-
-    def get_boost(self, index: datetime, charge_type: str) -> bool:
-        """Retrieve schedule item"""
-        index = index.isoformat()
-
-        if index not in self._schedule:
-            return False
-        elif charge_type not in self._schedule[index]:
-            return False
-        else:
-            return self._schedule[index][charge_type]
-
-    def set_boost(self, index: datetime, charge_type: str, status: bool) -> bool:
-        """Set boost status"""
-        index = index.isoformat()
-
-        self._schedule[index][charge_type] = status

@@ -156,29 +156,33 @@ class BatteryController(UnloadController, CallbackController):
 
     def set_boost(self, status: bool) -> None:
         """Set boost on/off"""
-        self._schedule.set_boost(
-            self._peak_utils.next_eco_start(), "boost_status", status
+        self._schedule.upsert(
+            self._peak_utils.next_eco_start(), {"boost_status": status}
         )
         self.refresh()
 
     def boost_status(self) -> bool:
         """Boost status"""
-        return self._schedule.get_boost(
-            self._peak_utils.next_eco_start(), "boost_status"
-        )
+        return self._get_boost(self._peak_utils.next_eco_start(), "boost_status")
 
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
-        self._schedule.set_boost(
-            self._peak_utils.next_eco_start(), "full_status", status
+        self._schedule.upsert(
+            self._peak_utils.next_eco_start(), {"full_status": status}
         )
         self.refresh()
 
     def full_status(self) -> bool:
         """Full status"""
-        return self._schedule.get_boost(
-            self._peak_utils.next_eco_start(), "full_status"
-        )
+        return self._get_boost(self._peak_utils.next_eco_start(), "full_status")
+
+    def _get_boost(self, index: datetime, charge_type: str) -> bool:
+        """Retrieve schedule item"""
+        schedule = self._schedule.get(index)
+        if schedule is not None and charge_type in schedule:
+            return schedule[charge_type]
+
+        return False
 
     def battery_depleted(self) -> datetime:
         """Time battery capacity is 0"""
