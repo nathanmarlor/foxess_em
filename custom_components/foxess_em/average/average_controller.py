@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
+from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
@@ -17,7 +18,7 @@ from .tracked_sensor import TrackedSensor
 _LOGGER = logging.getLogger(__name__)
 
 
-class AverageController(UnloadController, CallbackController):
+class AverageController(UnloadController, CallbackController, HassLoadController):
     """Class to manage history retrieval"""
 
     def __init__(
@@ -30,6 +31,7 @@ class AverageController(UnloadController, CallbackController):
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
+        HassLoadController.__init__(self, hass, self.async_refresh)
         self._hass = hass
         self._last_update = None
 

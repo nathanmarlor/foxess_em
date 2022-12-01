@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
+from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.event import async_track_utc_time_change
@@ -24,12 +25,13 @@ _HOURS_OF_SUNLIGHT = 14
 _MINUTES = _HOURS_OF_SUNLIGHT * 60
 
 
-class ForecastController(UnloadController, CallbackController):
+class ForecastController(UnloadController, CallbackController, HassLoadController):
     """Class to manage forecast retrieval"""
 
     def __init__(self, hass: HomeAssistant, api: SolcastApiClient) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
+        HassLoadController.__init__(self, hass, self.async_refresh)
         self._hass = hass
         self._api = ForecastModel(api)
         self._api_count = 0
