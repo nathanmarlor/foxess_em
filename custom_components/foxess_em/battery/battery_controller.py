@@ -5,6 +5,7 @@ from datetime import time
 
 from custom_components.foxess_em.battery.battery_util import BatteryUtils
 from custom_components.foxess_em.battery.schedule import Schedule
+from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
@@ -19,7 +20,7 @@ from .battery_model import BatteryModel
 _LOGGER = logging.getLogger(__name__)
 
 
-class BatteryController(UnloadController, CallbackController):
+class BatteryController(UnloadController, CallbackController, HassLoadController):
     """Battery controller"""
 
     def __init__(
@@ -38,6 +39,7 @@ class BatteryController(UnloadController, CallbackController):
     ) -> None:
         UnloadController.__init__(self)
         CallbackController.__init__(self)
+        HassLoadController.__init__(self, hass, self.async_refresh)
         self._hass = hass
         self._schedule = schedule
         self._peak_utils = peak_utils
@@ -68,7 +70,7 @@ class BatteryController(UnloadController, CallbackController):
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(self) -> None:
+    async def async_refresh(self, *args) -> None:
         """Async refresh"""
         self.refresh()
 

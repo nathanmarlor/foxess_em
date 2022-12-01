@@ -12,8 +12,6 @@ from custom_components.foxess_em.battery.schedule import Schedule
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config
-from homeassistant.core import CoreState
-from homeassistant.core import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -125,9 +123,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         }
     }
 
-    await _refresh_controllers(
-        hass, average_controller, forecast_controller, battery_controller, schedule
-    )
+    # Add callbacks into battery controller for updates
+    forecast_controller.add_update_listener(battery_controller)
+    average_controller.add_update_listener(battery_controller)
 
     hass.services.async_register(
         DOMAIN, "start_force_charge", fox_service.start_force_charge
@@ -140,32 +138,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         async_reload_entry
     )
     return True
-
-
-async def _refresh_controllers(
-    hass: HomeAssistant,
-    average: AverageController,
-    forecast: ForecastController,
-    battery: BatteryController,
-    schedule: Schedule,
-):
-    """Refresh all controllers"""
-
-    if hass.state is CoreState.running:
-        # Prime history for sensor creation
-        schedule.load()
-        await average.async_refresh()
-        await forecast.async_refresh()
-        await battery.async_refresh()
-
-        # Add callbacks into battery controller for updates
-        forecast.add_update_listener(battery)
-        average.add_update_listener(battery)
-    else:
-        hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STARTED,
-            _refresh_controllers(hass, average, forecast, battery, schedule),
-        )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
