@@ -89,7 +89,7 @@ class BatteryModel:
         available_capacity = self._capacity - (self._min_soc * self._capacity)
 
         battery = self._battery_capacity_remaining()
-        last_schedule = self._schedule.get(self._peak_utils.last_eco_start_time(now))
+        last_schedule = self._schedule.get(self._peak_utils.last_eco_start(now))
         if last_schedule is not None:
             # grab the min soc from the last eco start calc, including boost
             min_soc = last_schedule["min_soc"]
@@ -139,7 +139,7 @@ class BatteryModel:
             second=0,
             microsecond=0,
         )
-        eco_end_time = self._peak_utils.next_eco_end_time(eco_start)
+        eco_end_time = self._peak_utils.next_eco_end(eco_start)
         next_eco_start = eco_start + timedelta(days=1)
         # grab all peak values
         peak = model[
@@ -168,7 +168,7 @@ class BatteryModel:
             eco_start,
             {
                 "eco_start": eco_start,
-                "eco_end": self._peak_utils.next_eco_end_time(eco_start),
+                "eco_end": self._peak_utils.next_eco_end(eco_start),
                 "battery": battery,
                 "load": load_sum,
                 "forecast": forecast_sum,
@@ -184,9 +184,7 @@ class BatteryModel:
 
     def state_at_eco_start(self) -> float:
         """State at eco end"""
-        eco_time = self._peak_utils.next_eco_start_time().replace(
-            second=0, microsecond=0
-        )
+        eco_time = self._peak_utils.next_eco_start()
         eco_time -= timedelta(minutes=1)
         return self._model[self._model["period_start"] == eco_time].battery.iloc[0]
 
@@ -228,7 +226,7 @@ class BatteryModel:
     def peak_grid_import(self) -> float:
         """Grid usage required to next eco start"""
         now = datetime.now().astimezone()
-        eco_start = self._peak_utils.next_eco_start_time()
+        eco_start = self._peak_utils.next_eco_start()
 
         grid_use = self._model[
             (self._model["grid"] < 0)
@@ -244,7 +242,7 @@ class BatteryModel:
     def peak_grid_export(self) -> float:
         """Grid usage required to next eco start"""
         now = datetime.now().astimezone()
-        eco_start = self._peak_utils.next_eco_start_time()
+        eco_start = self._peak_utils.next_eco_start()
 
         grid_export = self._model[
             (self._model["grid"] > 0)
