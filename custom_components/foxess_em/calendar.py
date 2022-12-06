@@ -48,7 +48,7 @@ class FoxESSCalendar(CalendarEntity):
     ) -> list[CalendarEvent]:
         """Return all events within a time window"""
 
-        events = self._controller.get_schedule()
+        events = self._controller.get_schedule(start_date, end_date)
 
         calendar_events = []
         for key in events:
