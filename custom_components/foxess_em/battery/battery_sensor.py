@@ -89,6 +89,7 @@ SENSORS: dict[str, SensorDescription] = {
         state_attributes={
             "raw_data": "raw_data",
         },
+        enabled=False,
     ),
     "schedule": SensorDescription(
         key="empty",
