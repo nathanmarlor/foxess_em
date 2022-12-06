@@ -133,6 +133,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.services.async_register(
         DOMAIN, "stop_force_charge", fox_service.stop_force_charge
     )
+    hass.services.async_register(
+        DOMAIN, "clear_schedule", battery_controller.clear_schedule
+    )
 
     hass.data[DOMAIN][entry.entry_id]["unload"] = entry.add_update_listener(
         async_reload_entry
