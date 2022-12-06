@@ -128,6 +128,11 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         """Total kWh required to charge"""
         return self._schedule_info()["min_soc"]
 
+    def clear_schedule(self, *args) -> None:
+        """Clear schedule"""
+        self._schedule.clear()
+        self.refresh()
+
     def _schedule_info(self) -> float:
         """Schedule info"""
         return self._schedule.get(self._peak_utils.next_eco_start())

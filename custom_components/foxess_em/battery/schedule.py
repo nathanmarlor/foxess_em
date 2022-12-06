@@ -68,6 +68,10 @@ class Schedule(HassLoadController, UnloadController):
         else:
             return None
 
+    def clear(self) -> None:
+        """Reset all schedule items"""
+        self._schedule.clear()
+
     def _housekeeping(self, *args) -> None:
         """Clean up schedule"""
         two_weeks_ago = datetime.now().astimezone() - timedelta(days=14)
