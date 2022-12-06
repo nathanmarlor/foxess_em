@@ -108,15 +108,12 @@ Description of sensors:
 
 Notes:
 
-- a negative capacity value indicates surplus charge available
 - all capacity values are forward looking to the next period once past the eco-start time</br>
 
 | Sensor                       | Description                                                                            | Attributes                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Capacity: Battery Empty Time | Forecasted time battery will be depleted (Unknown if battery is empty)                 |                                                                             |
-| Capacity: Charge Needed      | Charge needed for the next off-peak period                                             | Dawn charge needed </br> Day charge needed </br> Target %                   |
-| Capacity: Dawn               | Forecasted battery capacity at dawn                                                    |                                                                             |
-| Capacity: Eco End            | Forecasted battery capacity at the end of the off-peak period                          |                                                                             |
+| Capacity: Charge Needed      | Charge needed for the next off-peak period                                             | Dawn charge needed </br> Day charge needed </br> Min SoC                    |
 | Capacity: Eco Start          | Forecasted battery capacity at the start of the off-peak period                        |                                                                             |
 | Capacity: Next Dawn Time     | Forecasted next dawn time (i.e. solar output > house load)                             |                                                                             |
 | Capacity: Peak Grid Export   | Forecasted solar export to grid until the next off-peak period                         |                                                                             |
@@ -128,6 +125,8 @@ Notes:
 | Last Update                  | Last update time                                                                       | Battery last update</br> Forecast last update</br> Average last update</br> |
 | Load: Daily                  | Total load, averaged over the last 2 complete days                                     |                                                                             |
 | Load: Peak                   | Peak only load (i.e. outside of the Go period), averaged over the last 2 complete days |                                                                             |
+| FoxESS EM: Schedule          | Entity to persist the schedule                                                         | Schedule stored as JSON                                                     |
+| FoxESS EM: Raw Data          | Entity to persist the the raw data for graphing purposes                               | Raw data stored as JSON - disabled by default                               |
 
 </details>
 
@@ -145,6 +144,32 @@ Description of switches:
 </details>
 
 ## Extras
+
+<details>
+    <summary><b>Graphing</b></summary>
+
+<b>Important! Before following this guide add the following to your configuration.yaml to prevent the HA database becoming bloated</b>
+
+```
+recorder:
+  exclude:
+    entities:
+      - sensor.foxess_em_raw_data
+```
+
+- Enable the FoxESS Raw Data entity from the entity settings:
+
+![Service](images/raw-data-entity.png)</p>
+
+- Install Apex Charts from HACS
+- Use the templated example in the /apex-example folder
+
+![Raw Data Graph](images/raw-data-graph.png)</p>
+
+Dashed = predicted / Solid = actual</br>
+Battery = blue / Load = pink / Solar = orange / Grid = green
+
+</details>
 
 <details>
     <summary><b>Energy Dashboard Forecast</b></summary>
