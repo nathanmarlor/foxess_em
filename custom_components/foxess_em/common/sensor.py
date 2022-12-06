@@ -37,6 +37,7 @@ class Sensor(SensorEntity, RestoreEntity):
         self._attributes = {}
         self._attr_extra_state_attributes = {}
         self._attr_entity_registry_visible_default = entity_description.visible
+        self._attr_entity_registry_enabled_default = entity_description.enabled
 
         self._attr_device_info = {
             ATTR_IDENTIFIERS: {(DOMAIN, entry.entry_id)},
