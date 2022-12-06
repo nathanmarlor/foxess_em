@@ -100,9 +100,18 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         """Calculate percentage target"""
         return self._battery_utils.charge_to_perc(self.min_soc())
 
-    def get_schedule(self):
+    def get_schedule(self, start: datetime = None, end: datetime = None):
         """Return charge schedule"""
-        return self._schedule.get_all()
+        schedule = self._schedule.get_all()
+
+        if start is None or end is None:
+            return schedule
+
+        return {
+            k: v
+            for k, v in schedule.items()
+            if datetime.fromisoformat(k) > start and datetime.fromisoformat(k) < end
+        }
 
     def raw_data(self):
         """Return raw data in dictionary form"""
