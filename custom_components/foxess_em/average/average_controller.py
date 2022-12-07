@@ -29,9 +29,6 @@ class AverageController(UnloadController, CallbackController, HassLoadController
         house_power: str,
         aux_power: list[str],
     ) -> None:
-        UnloadController.__init__(self)
-        CallbackController.__init__(self)
-        HassLoadController.__init__(self, hass, self.async_refresh)
         self._hass = hass
         self._last_update = None
 
@@ -46,6 +43,11 @@ class AverageController(UnloadController, CallbackController, HassLoadController
         }
 
         self._model = AverageModel(hass, entities, eco_start_time, eco_end_time)
+
+        # Setup mixins
+        UnloadController.__init__(self)
+        CallbackController.__init__(self)
+        HassLoadController.__init__(self, hass, self.async_refresh)
 
         # Refresh every hour on the half hour
         midnight_refresh = async_track_utc_time_change(

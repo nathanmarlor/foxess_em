@@ -37,9 +37,6 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         schedule: Schedule,
         peak_utils: PeakPeriodUtils,
     ) -> None:
-        UnloadController.__init__(self)
-        CallbackController.__init__(self)
-        HassLoadController.__init__(self, hass, self.async_refresh)
         self._hass = hass
         self._schedule = schedule
         self._peak_utils = peak_utils
@@ -59,6 +56,11 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         self._forecast_controller = forecast_controller
         self._average_controller = average_controller
         self._last_update = None
+
+        # Setup mixins
+        UnloadController.__init__(self)
+        CallbackController.__init__(self)
+        HassLoadController.__init__(self, hass, self.async_refresh)
 
         # Refresh on SoC change
         battery_refresh = async_track_state_change(

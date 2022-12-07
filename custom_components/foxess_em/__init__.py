@@ -140,6 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id]["unload"] = entry.add_update_listener(
         async_reload_entry
     )
+
     return True
 
 

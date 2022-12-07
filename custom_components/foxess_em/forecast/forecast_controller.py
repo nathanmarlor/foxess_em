@@ -29,13 +29,15 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
     """Class to manage forecast retrieval"""
 
     def __init__(self, hass: HomeAssistant, api: SolcastApiClient) -> None:
-        UnloadController.__init__(self)
-        CallbackController.__init__(self)
-        HassLoadController.__init__(self, hass, self.async_refresh)
         self._hass = hass
         self._api = ForecastModel(api)
         self._api_count = 0
         self._last_update = None
+
+        # Setup mixins
+        UnloadController.__init__(self)
+        CallbackController.__init__(self)
+        HassLoadController.__init__(self, hass, self.async_refresh)
 
         async_call_later(hass, 5, self.setup_refresh)
 
