@@ -18,10 +18,12 @@ class Schedule(HassLoadController, UnloadController):
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Get persisted schedule from states"""
-        UnloadController.__init__(self)
-        HassLoadController.__init__(self, hass, self.load)
         self._hass = hass
         self._schedule = {}
+
+        # Setup mixins
+        UnloadController.__init__(self)
+        HassLoadController.__init__(self, hass, self.load)
 
         # Housekeeping on schedule
         housekeeping = async_track_utc_time_change(
@@ -34,7 +36,7 @@ class Schedule(HassLoadController, UnloadController):
         )
         self._unload_listeners.append(housekeeping)
 
-    def load(self, *args) -> None:
+    async def load(self, *args) -> None:
         """Load schedule from state"""
         schedule = self._hass.states.get(_SCHEDULE)
 
