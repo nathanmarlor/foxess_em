@@ -1,6 +1,7 @@
 """Forecast controller"""
 import logging
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
@@ -17,6 +18,8 @@ from .solcast_api import SolcastApiClient
 _LOGGER = logging.getLogger(__name__)
 _CALLS = 2
 _API_BUFFER = _CALLS * 2
+_START_HOUR = 6
+_HOURS = 12
 
 
 class ForecastController(UnloadController, CallbackController, HassLoadController):
@@ -45,37 +48,53 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
             listener()
         self._refresh_listeners.clear()
 
+        now = datetime.now().astimezone()
+        default_start = now.replace(hour=_START_HOUR, minute=0, second=0, microsecond=0)
+        default_end = default_start + timedelta(hours=_HOURS)
+        actual_start = max(now, default_start)
+
         sites = await self._api.sites()
 
         sites = len(sites["sites"])
         _LOGGER.debug(f"Creating refresh schedule for {sites} sites")
 
-        api_available = int((self._api_limit - self._api_count - _API_BUFFER) / _CALLS)
+        api_available = int(
+            (self._api_limit - self._api_count - _API_BUFFER) / (_CALLS * sites)
+        )
         _LOGGER.debug(f"Calculated {api_available} available refreshes")
 
-        now = datetime.now().astimezone()
-        default_start = now.replace(hour=6, minute=0, second=0, microsecond=0)
-        default_end = default_start + timedelta(hours=14)
-        actual_start = max(now, default_start)
+        self._add_refresh(
+            now.replace(hour=_START_HOUR, minute=0, second=0, microsecond=0).time()
+        )
+
+        if api_available == 0 or now > default_end:
+            return
+
+        if now < default_start:  # default first refresh is used
+            api_available -= 1
 
         minutes_diff = int((default_end - actual_start).seconds / 60)
         interval = int(minutes_diff / api_available)
-        for h in range(interval, minutes_diff, interval):
-            update_time = (actual_start + timedelta(minutes=h)).time()
-            _LOGGER.debug(f"Setting up forecast refresh at {update_time}")
+        for i in range(1, api_available + 1):
+            update_time = (actual_start + timedelta(minutes=interval * i)).time()
+            self._add_refresh(update_time)
 
-            forecast_update = async_track_utc_time_change(
-                self._hass,
-                self.async_refresh,
-                hour=update_time.hour,
-                minute=update_time.minute,
-                second=0,
-                local=True,
-            )
-            self._refresh_listeners.append(forecast_update)
-            self._unload_listeners.append(forecast_update)
+    def _add_refresh(self, refresh_time: time) -> None:
+        """Add a forecast refresh"""
+        _LOGGER.debug(f"Setting up forecast refresh at {refresh_time}")
 
-    async def _setup_reset(self, *args):
+        forecast_update = async_track_utc_time_change(
+            self._hass,
+            self.async_refresh,
+            hour=refresh_time.hour,
+            minute=refresh_time.minute,
+            second=0,
+            local=True,
+        )
+        self._refresh_listeners.append(forecast_update)
+        self._unload_listeners.append(forecast_update)
+
+    async def _setup_reset(self, *args) -> None:
         """Setup refresh intervals"""
         # Reset # of API calls at midnight UTC
         reset_api = async_track_utc_time_change(
