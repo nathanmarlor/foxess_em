@@ -3,7 +3,7 @@
 NAME = "foxess_em"
 DOMAIN = "foxess_em"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.5.0b1"
+VERSION = "1.6.0"
 
 ISSUE_URL = "https://github.com/nathanmarlor/foxess_em/issues"
 
@@ -20,8 +20,8 @@ ATTR_ENTRY_TYPE = "entry_type"
 # Configuration and options
 SOLCAST_API_KEY = "key"
 SOLCAST_SCAN_INTERVAL = "scan_interval"
-SOLCAST_URL = "https://8908cb94-2d3b-4338-a2fb-8115dec23fd3.mock.pstmn.io"
-# SOLCAST_URL = "https://api.solcast.com.au"
+# SOLCAST_URL = "https://e046f926-e20e-4215-a85e-cb656ea1856c.mock.pstmn.io"
+SOLCAST_URL = "https://api.solcast.com.au"
 FOX_USERNAME = "fox_username"
 FOX_PASSWORD = "fox_password"
 

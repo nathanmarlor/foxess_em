@@ -1,12 +1,10 @@
 """Forecast controller"""
 import logging
 from datetime import datetime
-from datetime import time
 from datetime import timedelta
 
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
 
@@ -17,12 +15,8 @@ from .forecast_model import ForecastModel
 from .solcast_api import SolcastApiClient
 
 _LOGGER = logging.getLogger(__name__)
-_API_AVAILABLE = 50
 _CALLS = 2
-_API_BUFFER = 3
-_START_HOUR = 6
-_HOURS_OF_SUNLIGHT = 14
-_MINUTES = _HOURS_OF_SUNLIGHT * 60
+_API_BUFFER = _CALLS * 2
 
 
 class ForecastController(UnloadController, CallbackController, HassLoadController):
@@ -32,33 +26,43 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         self._hass = hass
         self._api = ForecastModel(api)
         self._api_count = 0
+        self._api_limit = 50
         self._last_update = None
+        self._refresh_listeners = []
 
         # Setup mixins
         UnloadController.__init__(self)
         CallbackController.__init__(self)
         HassLoadController.__init__(self, hass, self.async_refresh)
 
-        async_call_later(hass, 5, self.setup_refresh)
+        self._setup_reset()
 
-    async def setup_refresh(self, *args):
+    async def _setup_refresh(self, *args):
         """Setup refresh intervals"""
 
-        sites = await self._api.sites()
-        sites = len(sites["sites"])
+        _LOGGER.debug(f"Clearing {len(self._refresh_listeners)} refresh listeners")
+        for listener in self._refresh_listeners:
+            listener()
+        self._refresh_listeners.clear()
 
+        sites = await self._api.sites()
+
+        sites = len(sites["sites"])
         _LOGGER.debug(f"Creating refresh schedule for {sites} sites")
 
-        api_available = (_API_AVAILABLE - (_API_BUFFER * (sites * _CALLS))) / (
-            sites * _CALLS
-        )
+        api_available = int((self._api_limit - self._api_count - _API_BUFFER) / _CALLS)
+        _LOGGER.debug(f"Calculated {api_available} available refreshes")
 
-        interval = _MINUTES / api_available
-        for h in range(0, _MINUTES, int(interval)):
-            update_time = (
-                datetime.combine(datetime.today(), time(_START_HOUR))
-                + timedelta(minutes=h)
-            ).time()
+        now = datetime.now().astimezone()
+        default_start = now.replace(hour=6, minute=0, second=0, microsecond=0)
+        default_end = default_start + timedelta(hours=14)
+        actual_start = max(now, default_start)
+
+        minutes_diff = int((default_end - actual_start).seconds / 60)
+        interval = int(minutes_diff / api_available)
+        for h in range(interval, minutes_diff, interval):
+            update_time = (actual_start + timedelta(minutes=h)).time()
+            _LOGGER.debug(f"Setting up forecast refresh at {update_time}")
 
             forecast_update = async_track_utc_time_change(
                 self._hass,
@@ -68,8 +72,11 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
                 second=0,
                 local=True,
             )
+            self._refresh_listeners.append(forecast_update)
             self._unload_listeners.append(forecast_update)
 
+    async def _setup_reset(self, *args):
+        """Setup refresh intervals"""
         # Reset # of API calls at midnight UTC
         reset_api = async_track_utc_time_change(
             self._hass,
@@ -91,10 +98,12 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
             _LOGGER.debug("Refreshing forecast data")
 
             await self._api.refresh()
+            self._last_update = datetime.now().astimezone()
 
             api_status = await self._api.api_status()
             self._api_count = api_status["daily_limit_consumed"]
-            self._last_update = datetime.now().astimezone()
+            self._api_limit = api_status["daily_limit"]
+            await self._setup_refresh()
 
             _LOGGER.debug("Finished refreshing forecast data, notifying listeners")
             self._notify_listeners()
