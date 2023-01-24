@@ -71,7 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     house_power = entry.data.get(HOUSE_POWER)
     battery_soc = entry.data.get(BATTERY_SOC)
     aux_power = entry.data.get(AUX_POWER)
-    min_soc = entry.data.get(MIN_SOC)
+    user_min_soc = entry.data.get(MIN_SOC)
     capacity = entry.data.get(BATTERY_CAPACITY)
     dawn_buffer = entry.data.get(DAWN_BUFFER)
     day_buffer = entry.data.get(DAY_BUFFER)
@@ -93,7 +93,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass,
         forecast_controller,
         average_controller,
-        min_soc,
+        user_min_soc,
         capacity,
         dawn_buffer,
         day_buffer,
@@ -102,7 +102,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         schedule,
         peak_utils,
     )
-    fox_service = FoxCloudService(fox_client)
+    fox_service = FoxCloudService(fox_client, user_min_soc)
     charge_service = ChargeService(
         hass,
         battery_controller,
@@ -111,7 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         eco_start_time,
         eco_end_time,
         battery_soc,
-        min_soc,
+        user_min_soc,
     )
 
     hass.data[DOMAIN][entry.entry_id] = {
