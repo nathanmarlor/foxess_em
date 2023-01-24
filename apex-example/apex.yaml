@@ -27,22 +27,30 @@ now:
 series:
   - color: "#ADD8E6"
     entity: sensor.battery_soc
+    name: Battery (Actual)
+    unit: kwh
     group_by:
       duration: 5min
       func: avg
     transform: return ((x / 100) * 10.4) - (0.11 * 10.4)
   - color: "#FFCCCB"
-    entity: sensor.load_power_new
+    entity: sensor.load_power
+    name: Load (Actual)
+    unit: kwh
     group_by:
       duration: 5min
       func: avg
   - color: "#90EE90"
     entity: sensor.grid_ct
+    name: Grid (Actual)
+    unit: kwh
     group_by:
       duration: 5min
       func: avg
   - color: "#FFD580"
     entity: sensor.pv_power_now
+    name: Solar (Actual)
+    unit: kwh
     group_by:
       duration: 5min
       func: avg
@@ -54,6 +62,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Battery (Estimated)
+    unit: kwh
   - color: "#FFCCCB"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -62,6 +71,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Load (Estimated)
+    unit: kwh
   - color: "#FFD580"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -70,6 +80,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Solar (Estimated)
+    unit: kwh
   - color: "#90EE90"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -78,6 +89,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Grid (Estimated)
+    unit: kwh
   - color: "#ADD8E6"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -86,6 +98,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Battery (Estimated)
+    unit: kwh
   - color: "#FFCCCB"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -94,6 +107,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Load (Estimated)
+    unit: kwh
   - color: "#FFD580"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -102,6 +116,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Solar (Estimated)
+    unit: kwh
   - color: "#90EE90"
     data_generator: |
       const data = JSON.parse(entity.attributes.raw_data)
@@ -110,6 +125,7 @@ series:
        });
     entity: sensor.foxess_em_raw_data
     name: Grid (Estimated)
+    unit: kwh
 span:
   start: day
 type: custom:apexcharts-card
