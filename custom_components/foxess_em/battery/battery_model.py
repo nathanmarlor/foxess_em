@@ -327,7 +327,7 @@ class BatteryModel:
     def _dawn_time(self, model: pd.DataFrame, date: datetime) -> datetime:
         """Calculate dawn time"""
         filtered = model[model["date"] == date.date()]
-        dawn = filtered[filtered["delta"] > 0]
+        dawn = filtered[(filtered["delta"] > 0) & (filtered["load"] > 0)]
 
         if len(dawn) == 0:
             # Solar never reaches house load... return mid-day
