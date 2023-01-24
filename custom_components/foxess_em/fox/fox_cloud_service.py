@@ -16,9 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 class FoxCloudService:
     """Fox Cloud service"""
 
-    def __init__(self, api: FoxApiClient) -> None:
+    def __init__(self, api: FoxApiClient, user_min_soc: int = 11) -> None:
         """Init Fox Cloud service"""
         self._api = api
+        self._user_min_soc = user_min_soc
         self._device_sn = None
 
     async def start_force_charge(self, *args) -> None:
@@ -81,7 +82,7 @@ class FoxCloudService:
 
     def _build_min_soc_query(self, device_sn: str, soc: int) -> dict:
         """Build min SoC query object"""
-        return {"sn": device_sn, "minGridSoc": soc, "minSoc": soc}
+        return {"sn": device_sn, "minGridSoc": soc, "minSoc": self._user_min_soc * 100}
 
     def _build_charge_start_query(self, device_sn: str) -> dict:
         """Build device query object"""
