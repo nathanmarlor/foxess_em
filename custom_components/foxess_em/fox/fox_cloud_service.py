@@ -4,9 +4,8 @@ from datetime import datetime
 from datetime import time
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.event import async_track_utc_time_change
+from homeassistant.helpers.event import async_call_later
 
-from ..common.unload_controller import UnloadController
 from ..fox.fox_api import FoxApiClient
 from ..util.exceptions import NoDataError
 
@@ -18,7 +17,7 @@ _MIN_SOC = "/device/battery/soc/set"
 _LOGGER = logging.getLogger(__name__)
 
 
-class FoxCloudService(UnloadController):
+class FoxCloudService:
     """Fox Cloud service"""
 
     def __init__(
@@ -30,14 +29,15 @@ class FoxCloudService(UnloadController):
         user_min_soc: int = 11,
     ) -> None:
         """Init Fox Cloud service"""
-        UnloadController.__init__(self)
         self._hass = hass
         self._api = api
         self._off_peak_start = off_peak_start
         self._off_peak_end = off_peak_end
         self._user_min_soc = user_min_soc
         self._device_sn = None
-        self._off_peak_listener = None
+
+        if hass is not None:
+            async_call_later(hass, 5, self.start_force_charge_off_peak)
 
     async def start_force_charge_now(self, *args) -> None:
         """Start force charge now"""
@@ -45,46 +45,46 @@ class FoxCloudService(UnloadController):
         start = now.replace(hour=0, minute=1).time()
         stop = now.replace(hour=23, minute=59).time()
 
-        await self._start_force_charge(start, stop)
+        device_sn = await self.device_serial_number()
+        query = self._build_single_charge_query(device_sn, True, start, stop)
+
+        await self._start_force_charge(query)
 
     async def start_force_charge_off_peak(self, *args) -> None:
         """Start force charge off peak"""
+        device_sn = await self.device_serial_number()
         if self._off_peak_start > self._off_peak_end:
-            _LOGGER.debug("Setting charge to midnight first")
+            # Off-peak period crosses midnight
             before_midnight = time(hour=23, minute=59)
-            await self._start_force_charge(self._off_peak_start, before_midnight)
-            # Setup trigger to reset times after midnight
-            midnight = async_track_utc_time_change(
-                self._hass,
-                self._finish_force_charge_off_peak,
-                hour=before_midnight.hour,
-                minute=before_midnight.minute,
-                second=0,
-                local=True,
+            after_midnight = time(hour=0, minute=1)
+
+            query = self._build_double_charge_query(
+                device_sn,
+                True,
+                self._off_peak_start,
+                before_midnight,
+                after_midnight,
+                self._off_peak_end,
             )
-            self._off_peak_listener = midnight
-            self._unload_listeners.append(midnight)
         else:
-            await self._start_force_charge(self._off_peak_start, self._off_peak_end)
 
-    async def _finish_force_charge_off_peak(self, *args) -> None:
-        """Finish force charge off peak"""
-        _LOGGER.debug("Finishing charge from midnight to eco end")
-        self._off_peak_listener()
-        self._unload_listeners.remove(self._off_peak_listener)
+            query = self._build_single_charge_query(
+                device_sn,
+                True,
+                self._off_peak_start,
+                self._off_peak_end,
+            )
 
-        after_midnight = time(hour=0, minute=1)
-        await self._start_force_charge(after_midnight, self._off_peak_end)
+        await self._start_force_charge(query)
 
-    async def _start_force_charge(self, start, stop) -> None:
+    async def _start_force_charge(self, query: dict) -> None:
         """Start force charge"""
         _LOGGER.debug("Requesting start force charge from Fox Cloud")
 
         try:
-            device_sn = await self.device_serial_number()
             await self._api.async_post_data(
                 f"{_BASE_URL}{_SET_TIMES}",
-                self._build_charge_start_stop_query(device_sn, True, start, stop),
+                query,
             )
         except NoDataError as ex:
             _LOGGER.error(ex)
@@ -95,14 +95,17 @@ class FoxCloudService(UnloadController):
 
         try:
             device_sn = await self.device_serial_number()
+
+            query = self._build_single_charge_query(
+                device_sn,
+                False,
+                self._off_peak_start,
+                self._off_peak_end,
+            )
+
             await self._api.async_post_data(
                 f"{_BASE_URL}{_SET_TIMES}",
-                self._build_charge_start_stop_query(
-                    device_sn,
-                    False,
-                    self._off_peak_start,
-                    self._off_peak_end,
-                ),
+                query,
             )
         except NoDataError as ex:
             _LOGGER.error(ex)
@@ -145,7 +148,7 @@ class FoxCloudService(UnloadController):
         """Build min SoC query object"""
         return {"sn": device_sn, "minGridSoc": soc, "minSoc": self._user_min_soc * 100}
 
-    def _build_charge_start_stop_query(
+    def _build_single_charge_query(
         self, device_sn: str, start_stop: bool, start_time: time, end_time: time
     ) -> dict:
         """Build device query object"""
@@ -172,6 +175,51 @@ class FoxCloudService(UnloadController):
                     "enableGrid": False,
                     "startTime": {"hour": 0, "minute": 0},
                     "endTime": {"hour": 0, "minute": 0},
+                },
+            ],
+        }
+
+        return query
+
+    def _build_double_charge_query(
+        self,
+        device_sn: str,
+        start_stop: bool,
+        first_start_time: time,
+        first_end_time: time,
+        second_start_time: time,
+        second_end_time: time,
+    ) -> dict:
+        """Build device query object"""
+
+        query = {
+            "sn": device_sn,
+            "times": [
+                {
+                    "tip": "",
+                    "enableCharge": start_stop,
+                    "enableGrid": start_stop,
+                    "startTime": {
+                        "hour": str(first_start_time.hour).zfill(2),
+                        "minute": str(first_start_time.minute).zfill(2),
+                    },
+                    "endTime": {
+                        "hour": str(first_end_time.hour).zfill(2),
+                        "minute": str(first_end_time.minute).zfill(2),
+                    },
+                },
+                {
+                    "tip": "",
+                    "enableCharge": start_stop,
+                    "enableGrid": start_stop,
+                    "startTime": {
+                        "hour": str(second_start_time.hour).zfill(2),
+                        "minute": str(second_start_time.minute).zfill(2),
+                    },
+                    "endTime": {
+                        "hour": str(second_end_time.hour).zfill(2),
+                        "minute": str(second_end_time.minute).zfill(2),
+                    },
                 },
             ],
         }

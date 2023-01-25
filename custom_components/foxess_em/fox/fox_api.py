@@ -55,6 +55,8 @@ class FoxApiClient:
                 response = await self._session.post(
                     url, json=params, headers=self._token
                 )
+            # Leave 1 second between subsequent Fox calls
+            await asyncio.sleep(1)
         except Exception as ex:
             raise NoDataError(f"Fox Cloud API error: {ex}")
 
