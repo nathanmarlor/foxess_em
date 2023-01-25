@@ -102,7 +102,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         schedule,
         peak_utils,
     )
-    fox_service = FoxCloudService(fox_client, user_min_soc)
+    fox_service = FoxCloudService(
+        hass, fox_client, eco_start_time, eco_end_time, user_min_soc
+    )
     charge_service = ChargeService(
         hass,
         battery_controller,
@@ -128,7 +130,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     average_controller.add_update_listener(battery_controller)
 
     hass.services.async_register(
-        DOMAIN, "start_force_charge", fox_service.start_force_charge
+        DOMAIN, "start_force_charge", fox_service.start_force_charge_now
     )
     hass.services.async_register(
         DOMAIN, "stop_force_charge", fox_service.stop_force_charge

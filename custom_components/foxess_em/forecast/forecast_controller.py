@@ -43,10 +43,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
     async def _setup_refresh(self, *args):
         """Setup refresh intervals"""
 
-        _LOGGER.debug(f"Clearing {len(self._refresh_listeners)} refresh listeners")
-        for listener in self._refresh_listeners:
-            listener()
-        self._refresh_listeners.clear()
+        self._clear_listeners()
 
         now = datetime.now().astimezone()
         default_start = now.replace(hour=_START_HOUR, minute=0, second=0, microsecond=0)
@@ -78,6 +75,16 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         for i in range(1, api_available + 1):
             update_time = (actual_start + timedelta(minutes=interval * i)).time()
             self._add_refresh(update_time)
+
+    def _clear_listeners(self):
+        """Clear all listeners"""
+        _LOGGER.debug(f"Clearing {len(self._refresh_listeners)} refresh listeners")
+        for listener in self._refresh_listeners:
+            listener()
+            # Remove any dangling references in unload listeners
+            if listener in self._unload_listeners:
+                self._unload_listeners.remove(listener)
+        self._refresh_listeners.clear()
 
     def _add_refresh(self, refresh_time: time) -> None:
         """Add a forecast refresh"""
