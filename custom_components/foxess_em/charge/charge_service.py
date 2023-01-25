@@ -124,7 +124,7 @@ class ChargeService(UnloadController):
         """Battery SoC has not yet met desired percentage"""
         _LOGGER.debug(f"Starting force charge to {self._perc_target}")
         self._charge_active = True
-        await self._fox.start_force_charge()
+        await self._fox.start_force_charge_off_peak()
 
     async def _stop_force_charge(
         self, *args

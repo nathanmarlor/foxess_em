@@ -229,7 +229,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             session = async_create_clientsession(self.hass)
             api = FoxApiClient(session, fox_username, fox_password)
-            service = FoxCloudService(api)
+            service = FoxCloudService(None, api, None, None)
             result = await service.device_serial_number()
             if result is not None:
                 return True
