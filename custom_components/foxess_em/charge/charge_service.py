@@ -90,14 +90,14 @@ class ChargeService(UnloadController):
     async def _eco_start_setup(self, *args) -> None:  # pylint: disable=unused-argument
         """Set target SoC"""
 
-        _LOGGER.debug("Resetting any existing Fox Cloud force charge/min SoC settings")
-        await self._fox.stop_force_charge()
-        await self._fox.set_min_soc(self._original_soc * 100)
-
         _LOGGER.debug("Calculating optimal battery SoC")
         await self._forecast_controller.async_refresh()
         self._charge_required = self._battery_controller.charge_total()
         self._perc_target = self._battery_controller.charge_to_perc()
+
+        _LOGGER.debug("Resetting any existing Fox Cloud force charge/min SoC settings")
+        await self._start_force_charge()
+        await self._fox.set_min_soc(self._original_soc * 100)
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
@@ -107,12 +107,11 @@ class ChargeService(UnloadController):
 
         self._start_listening()
 
-        if self._charge_required > 0:
-            await self._start_force_charge()
-        else:
+        if self._charge_required <= 0:
             _LOGGER.debug(
                 f"Allowing battery to continue discharge until {self._perc_target}"
             )
+            await self._stop_force_charge()
 
         _LOGGER.debug("Resetting switches")
         self._battery_controller.set_boost(False)
@@ -121,16 +120,14 @@ class ChargeService(UnloadController):
     async def _start_force_charge(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
-        """Battery SoC has not yet met desired percentage"""
-        _LOGGER.debug(f"Starting force charge to {self._perc_target}")
+        """Set Fox force charge settings to True"""
         self._charge_active = True
         await self._fox.start_force_charge_off_peak()
 
     async def _stop_force_charge(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
-        """Battery SoC has met desired percentage"""
-        _LOGGER.debug("Stopping force charge")
+        """Set Fox force charge settings to False"""
         self._charge_active = False
         await self._fox.stop_force_charge()
 
@@ -139,8 +136,8 @@ class ChargeService(UnloadController):
 
         self._stop_listening()
 
-        if self._charge_active:
-            await self._stop_force_charge()
+        # Reset Fox force charge to enabled
+        await self._start_force_charge()
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
