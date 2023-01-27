@@ -64,11 +64,13 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
             now.replace(hour=_START_HOUR, minute=0, second=0, microsecond=0).time()
         )
 
-        if api_available == 0 or now > default_end:
-            return
-
-        if now < default_start:  # default first refresh is used
+        # default first refresh is used
+        if now < default_start:
             api_available -= 1
+
+        # no api calls left or somehow landed after the final refresh
+        if api_available < 1 or now > default_end:
+            return
 
         minutes_diff = int((default_end - actual_start).seconds / 60)
         interval = int(minutes_diff / api_available)

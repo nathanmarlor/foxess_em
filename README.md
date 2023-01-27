@@ -182,6 +182,10 @@ Battery = blue / Load = pink / Solar = orange / Grid = green
 <details>
     <summary><b>Service Calls</b></summary>
 
+- Start force charge now
+- Start force charge at off-peak
+- Stop force charge
+
 ![Service](images/service.png)</p>
 
 </details>

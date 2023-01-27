@@ -46,7 +46,7 @@ class FoxCloudService:
         stop = now.replace(hour=23, minute=59).time()
 
         device_sn = await self.device_serial_number()
-        query = self._build_single_charge_query(device_sn, True, start, stop)
+        query = self._build_start_single_charge_query(device_sn, start, stop)
 
         await self._start_force_charge(query)
 
@@ -55,22 +55,16 @@ class FoxCloudService:
         device_sn = await self.device_serial_number()
         if self._off_peak_start > self._off_peak_end:
             # Off-peak period crosses midnight
-            before_midnight = time(hour=23, minute=59)
-            after_midnight = time(hour=0, minute=1)
 
-            query = self._build_double_charge_query(
+            query = self._build_start_double_charge_query(
                 device_sn,
-                True,
                 self._off_peak_start,
-                before_midnight,
-                after_midnight,
                 self._off_peak_end,
             )
         else:
 
-            query = self._build_single_charge_query(
+            query = self._build_start_single_charge_query(
                 device_sn,
-                True,
                 self._off_peak_start,
                 self._off_peak_end,
             )
@@ -96,12 +90,7 @@ class FoxCloudService:
         try:
             device_sn = await self.device_serial_number()
 
-            query = self._build_single_charge_query(
-                device_sn,
-                False,
-                self._off_peak_start,
-                self._off_peak_end,
-            )
+            query = self._build_stop_charge_query(device_sn)
 
             await self._api.async_post_data(
                 f"{_BASE_URL}{_SET_TIMES}",
@@ -148,18 +137,43 @@ class FoxCloudService:
         """Build min SoC query object"""
         return {"sn": device_sn, "minGridSoc": soc, "minSoc": self._user_min_soc * 100}
 
-    def _build_single_charge_query(
-        self, device_sn: str, start_stop: bool, start_time: time, end_time: time
-    ) -> dict:
-        """Build device query object"""
+    def _build_stop_charge_query(self, device_sn: str) -> dict:
+        """Build stop charge query"""
 
         query = {
             "sn": device_sn,
             "times": [
                 {
                     "tip": "",
-                    "enableCharge": start_stop,
-                    "enableGrid": start_stop,
+                    "enableCharge": False,
+                    "enableGrid": False,
+                    "startTime": {"hour": 0, "minute": 0},
+                    "endTime": {"hour": 0, "minute": 0},
+                },
+                {
+                    "tip": "",
+                    "enableCharge": False,
+                    "enableGrid": False,
+                    "startTime": {"hour": 0, "minute": 0},
+                    "endTime": {"hour": 0, "minute": 0},
+                },
+            ],
+        }
+
+        return query
+
+    def _build_start_single_charge_query(
+        self, device_sn: str, start_time: time, end_time: time
+    ) -> dict:
+        """Build single time charg query"""
+
+        query = {
+            "sn": device_sn,
+            "times": [
+                {
+                    "tip": "",
+                    "enableCharge": True,
+                    "enableGrid": True,
                     "startTime": {
                         "hour": str(start_time.hour).zfill(2),
                         "minute": str(start_time.minute).zfill(2),
@@ -181,44 +195,44 @@ class FoxCloudService:
 
         return query
 
-    def _build_double_charge_query(
+    def _build_start_double_charge_query(
         self,
         device_sn: str,
-        start_stop: bool,
-        first_start_time: time,
-        first_end_time: time,
-        second_start_time: time,
-        second_end_time: time,
+        start_time: time,
+        stop_time: time,
     ) -> dict:
-        """Build device query object"""
+        """Build double time charge query"""
+
+        before_midnight = time(hour=23, minute=59)
+        after_midnight = time(hour=0, minute=1)
 
         query = {
             "sn": device_sn,
             "times": [
                 {
                     "tip": "",
-                    "enableCharge": start_stop,
-                    "enableGrid": start_stop,
+                    "enableCharge": True,
+                    "enableGrid": True,
                     "startTime": {
-                        "hour": str(first_start_time.hour).zfill(2),
-                        "minute": str(first_start_time.minute).zfill(2),
+                        "hour": str(start_time.hour).zfill(2),
+                        "minute": str(start_time.minute).zfill(2),
                     },
                     "endTime": {
-                        "hour": str(first_end_time.hour).zfill(2),
-                        "minute": str(first_end_time.minute).zfill(2),
+                        "hour": str(before_midnight.hour).zfill(2),
+                        "minute": str(before_midnight.minute).zfill(2),
                     },
                 },
                 {
                     "tip": "",
-                    "enableCharge": start_stop,
-                    "enableGrid": start_stop,
+                    "enableCharge": True,
+                    "enableGrid": True,
                     "startTime": {
-                        "hour": str(second_start_time.hour).zfill(2),
-                        "minute": str(second_start_time.minute).zfill(2),
+                        "hour": str(after_midnight.hour).zfill(2),
+                        "minute": str(after_midnight.minute).zfill(2),
                     },
                     "endTime": {
-                        "hour": str(second_end_time.hour).zfill(2),
-                        "minute": str(second_end_time.minute).zfill(2),
+                        "hour": str(stop_time.hour).zfill(2),
+                        "minute": str(stop_time.minute).zfill(2),
                     },
                 },
             ],

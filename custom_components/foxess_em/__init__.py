@@ -130,7 +130,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     average_controller.add_update_listener(battery_controller)
 
     hass.services.async_register(
-        DOMAIN, "start_force_charge", fox_service.start_force_charge_now
+        DOMAIN, "start_force_charge_now", fox_service.start_force_charge_now
+    )
+    hass.services.async_register(
+        DOMAIN, "start_force_charge_off_peak", fox_service.start_force_charge_off_peak
     )
     hass.services.async_register(
         DOMAIN, "stop_force_charge", fox_service.stop_force_charge
