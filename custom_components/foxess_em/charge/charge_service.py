@@ -1,4 +1,5 @@
 """Charge service"""
+import asyncio
 import logging
 from datetime import date
 from datetime import datetime
@@ -177,8 +178,14 @@ class ChargeService(UnloadController):
 
         if status:
             self.unload()
+            asyncio.run_coroutine_threadsafe(
+                self._fox.stop_force_charge(), self._hass.loop
+            )
         else:
             self._add_listeners()
+            asyncio.run_coroutine_threadsafe(
+                self._fox.start_force_charge_off_peak(), self._hass.loop
+            )
 
     def disable_status(self) -> bool:
         """Disable status"""

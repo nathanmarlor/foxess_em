@@ -1,6 +1,7 @@
 """Home Assistant switch"""
 import logging
 
+from homeassistant.components.sensor import RestoreEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_IDENTIFIERS
@@ -16,7 +17,7 @@ from ..const import SWITCH
 _LOGGER = logging.getLogger(__name__)
 
 
-class Switch(SwitchEntity):
+class Switch(SwitchEntity, RestoreEntity):
     """Battery switch class."""
 
     def __init__(
@@ -64,3 +65,13 @@ class Switch(SwitchEntity):
         """Return true if the switch is on."""
         is_on = getattr(self._controller, self._switch_desc.is_on)
         return is_on()
+
+    async def async_added_to_hass(self) -> None:
+        """Add update callback after being added to hass."""
+        await super().async_added_to_hass()
+        state = await self.async_get_last_state()
+        if state and self._switch_desc.store_state:
+            if state.state:
+                await self.async_turn_on()
+            else:
+                await self.async_turn_off()

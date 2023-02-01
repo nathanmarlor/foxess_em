@@ -176,7 +176,6 @@ class BatteryModel:
                 "day": day_charge,
                 "total": total,
                 "min_soc": min_soc,
-                "boost": boost,
             },
         )
 
