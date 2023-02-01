@@ -71,7 +71,7 @@ class Switch(SwitchEntity, RestoreEntity):
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
         if state and self._switch_desc.store_state:
-            if state.state:
+            if state.state == "on":
                 await self.async_turn_on()
-            else:
+            elif state.state == "off":
                 await self.async_turn_off()
