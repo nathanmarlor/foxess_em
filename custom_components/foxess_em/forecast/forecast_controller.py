@@ -103,7 +103,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         self._refresh_listeners.append(forecast_update)
         self._unload_listeners.append(forecast_update)
 
-    async def _setup_reset(self, *args) -> None:
+    def _setup_reset(self, *args) -> None:
         """Setup refresh intervals"""
         # Reset # of API calls at midnight UTC
         reset_api = async_track_utc_time_change(

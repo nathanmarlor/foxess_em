@@ -10,3 +10,4 @@ class SwitchDescription(SwitchEntityDescription):
 
     is_on: str | None = None
     switch: str | None = None
+    store_state: bool | None = False

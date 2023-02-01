@@ -4,7 +4,6 @@ from datetime import datetime
 from datetime import time
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.event import async_call_later
 
 from ..fox.fox_api import FoxApiClient
 from ..util.exceptions import NoDataError
@@ -35,9 +34,6 @@ class FoxCloudService:
         self._off_peak_end = off_peak_end
         self._user_min_soc = user_min_soc
         self._device_sn = None
-
-        if hass is not None:
-            async_call_later(hass, 5, self.start_force_charge_off_peak)
 
     async def start_force_charge_now(self, *args) -> None:
         """Start force charge now"""

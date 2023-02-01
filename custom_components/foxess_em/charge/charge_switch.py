@@ -14,6 +14,7 @@ _SWITCHES: dict[str, SwitchDescription] = {
         icon="mdi:sync-off",
         is_on="disable_status",
         switch="set_disable",
+        store_state=True,
     ),
 }
 

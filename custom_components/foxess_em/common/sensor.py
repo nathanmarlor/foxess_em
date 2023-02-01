@@ -106,11 +106,11 @@ class Sensor(SensorEntity, RestoreEntity):
         """Add update callback after being added to hass."""
         await super().async_added_to_hass()
         self._controller.add_update_listener(self)
-        if self._entity_description.store_attributes:
-            state = await self.async_get_last_extra_data()
-            if not state:
-                return
-            self._attr_extra_state_attributes = state.as_dict()
+        state = await self.async_get_last_state()
+        if self._entity_description.store_attributes and state.attributes:
+            self._attr_extra_state_attributes = dict(state.attributes)
+        if self._entity_description.store_state:
+            self._attr_state = state.state
 
 
 @dataclass

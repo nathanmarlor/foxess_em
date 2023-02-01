@@ -14,3 +14,4 @@ class SensorDescription(SensorEntityDescription):
     visible: bool | None = True
     enabled: bool | None = True
     store_attributes: bool | None = False
+    store_state: bool | None = False
