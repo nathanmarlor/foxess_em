@@ -12,6 +12,7 @@ _BASE_URL = "https://www.foxesscloud.com/c/v0"
 _SET_TIMES = "/device/battery/time/set"
 _DEVICE = "/device/list"
 _MIN_SOC = "/device/battery/soc/set"
+_SETTINGS = "/device/setting/set"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class FoxCloudService:
         self._off_peak_end = off_peak_end
         self._user_min_soc = user_min_soc
         self._device_sn = None
+        self._device_id = None
 
     async def start_force_charge_now(self, *args) -> None:
         """Start force charge now"""
@@ -109,6 +111,30 @@ class FoxCloudService:
         except NoDataError as ex:
             _LOGGER.error(ex)
 
+    async def set_charge_current(self, charge_current: float, *args) -> None:
+        """Set charge current"""
+        _LOGGER.debug(f"Sending charge current of {charge_current}A to Fox Cloud")
+
+        try:
+            device_id = await self.device_id()
+            await self._api.async_post_data(
+                f"{_BASE_URL}{_SETTINGS}",
+                self._build_charge_query(device_id, charge_current),
+            )
+        except NoDataError as ex:
+            _LOGGER.error(ex)
+
+    async def device_id(self) -> None:
+        """Get device serial number"""
+        if self._device_id is None:
+            device = await self._api.async_post_data(
+                f"{_BASE_URL}{_DEVICE}", self._build_device_query()
+            )
+            self._device_id = device["devices"][0]["deviceID"]
+            _LOGGER.debug(f"Retrieved Fox device ID: {self._device_id}")
+
+        return self._device_id
+
     async def device_serial_number(self) -> None:
         """Get device serial number"""
         if self._device_sn is None:
@@ -127,6 +153,14 @@ class FoxCloudService:
             "currentPage": 1,
             "total": 0,
             "condition": {"queryDate": {"begin": 0, "end": 0}},
+        }
+
+    def _build_charge_query(self, device_id: str, charge_current: float) -> dict:
+        """Build device charge object"""
+        return {
+            "id": device_id,
+            "key": "h111__basic2__00",
+            "values": {"h111__basic2__00": str(charge_current)},
         }
 
     def _build_min_soc_query(self, device_sn: str, soc: int) -> dict:
@@ -161,7 +195,7 @@ class FoxCloudService:
     def _build_start_single_charge_query(
         self, device_sn: str, start_time: time, end_time: time
     ) -> dict:
-        """Build single time charg query"""
+        """Build single time charge query"""
 
         query = {
             "sn": device_sn,
