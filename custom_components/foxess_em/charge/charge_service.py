@@ -16,6 +16,7 @@ from ..forecast.forecast_controller import ForecastController
 from ..fox.fox_cloud_service import FoxCloudService
 
 _LOGGER = logging.getLogger(__name__)
+_CHARGE = 18  # nominal charge in A
 
 
 class ChargeService(UnloadController):
@@ -137,8 +138,9 @@ class ChargeService(UnloadController):
 
         self._stop_listening()
 
-        # Reset Fox force charge to enabled
+        # Reset Fox force charge to enabled and reset charge current
         await self._start_force_charge()
+        await self._fox.set_charge_current(_CHARGE)
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
@@ -146,7 +148,12 @@ class ChargeService(UnloadController):
     async def _battery_soc_change(
         self, entity, old_state, new_state
     ):  # pylint: disable=unused-argument
+
         new_state = float(new_state.state)
+
+        if new_state > 90:
+            target_current = ((100 - new_state) / 10) * _CHARGE
+            await self._fox.set_charge_current(target_current)
 
         if (new_state >= self._perc_target) and self._charge_active:
             await self._stop_force_charge()
