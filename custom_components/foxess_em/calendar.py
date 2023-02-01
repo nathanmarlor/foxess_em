@@ -53,11 +53,16 @@ class FoxESSCalendar(CalendarEntity):
         calendar_events = []
         for key in events:
             values = events[key]
-            summary = "Charge: " + str(round(values["total"], 2))
-            summary += " Start Capacity: " + str(round(values["battery"], 2))
-            summary += " Forecast: " + str(round(values["forecast"], 2))
-            summary += " Load: " + str(round(values["load"], 2))
-            summary += " Min SoC: " + str(round(values["min_soc"], 2))
-            calendar_events.append(CalendarEvent(key, values["eco_end"], summary))
+            charge = str(round(values["total"], 2))
+            summary = f"Charge: {charge} / "
+            summary += f"Start Capacity: {str(round(values['battery'], 2))} / "
+            summary += f"Forecast: {str(round(values['forecast'], 2))} / "
+            summary += f"Load: {str(round(values['load'], 2))} / "
+            summary += f"Min SoC: {str(round(values['min_soc'], 2))}"
+            calendar_events.append(
+                CalendarEvent(
+                    key, values["eco_end"], f"FoxESS Charge: {charge}", summary
+                )
+            )
 
         return calendar_events
