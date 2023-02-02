@@ -34,8 +34,7 @@ class FoxCloudService:
         self._off_peak_start = off_peak_start
         self._off_peak_end = off_peak_end
         self._user_min_soc = user_min_soc
-        self._device_sn = None
-        self._device_id = None
+        self._device_info = None
 
     async def start_force_charge_now(self, *args) -> None:
         """Start force charge now"""
@@ -43,14 +42,16 @@ class FoxCloudService:
         start = now.replace(hour=0, minute=1).time()
         stop = now.replace(hour=23, minute=59).time()
 
-        device_sn = await self.device_serial_number()
+        device_info = await self.device_info()
+        device_sn = device_info["deviceSN"]
         query = self._build_start_single_charge_query(device_sn, start, stop)
 
         await self._start_force_charge(query)
 
     async def start_force_charge_off_peak(self, *args) -> None:
         """Start force charge off peak"""
-        device_sn = await self.device_serial_number()
+        device_info = await self.device_info()
+        device_sn = device_info["deviceSN"]
         if self._off_peak_start > self._off_peak_end:
             # Off-peak period crosses midnight
 
@@ -86,7 +87,8 @@ class FoxCloudService:
         _LOGGER.debug("Requesting stop force charge from Fox Cloud")
 
         try:
-            device_sn = await self.device_serial_number()
+            device_info = await self.device_info()
+            device_sn = device_info["deviceSN"]
 
             query = self._build_stop_charge_query(device_sn)
 
@@ -104,7 +106,8 @@ class FoxCloudService:
         _LOGGER.debug("Sending min SoC to Fox Cloud")
 
         try:
-            device_sn = await self.device_serial_number()
+            device_info = await self.device_info()
+            device_sn = device_info["deviceSN"]
             await self._api.async_post_data(
                 f"{_BASE_URL}{_MIN_SOC}", self._build_min_soc_query(device_sn, soc)
             )
@@ -116,7 +119,8 @@ class FoxCloudService:
         _LOGGER.debug(f"Sending charge current of {charge_current}A to Fox Cloud")
 
         try:
-            device_id = await self.device_id()
+            device_info = await self.device_info()
+            device_id = device_info["deviceID"]
             await self._api.async_post_data(
                 f"{_BASE_URL}{_SETTINGS}",
                 self._build_charge_query(device_id, charge_current),
@@ -124,27 +128,16 @@ class FoxCloudService:
         except NoDataError as ex:
             _LOGGER.error(ex)
 
-    async def device_id(self) -> None:
+    async def device_info(self) -> None:
         """Get device serial number"""
-        if self._device_id is None:
+        if self._device_info is None:
             device = await self._api.async_post_data(
                 f"{_BASE_URL}{_DEVICE}", self._build_device_query()
             )
-            self._device_id = device["devices"][0]["deviceID"]
-            _LOGGER.debug(f"Retrieved Fox device ID: {self._device_id}")
+            self._device_info = device["devices"][0]
+            _LOGGER.debug(f"Retrieved Fox device info: {self._device_info}")
 
-        return self._device_id
-
-    async def device_serial_number(self) -> None:
-        """Get device serial number"""
-        if self._device_sn is None:
-            device = await self._api.async_post_data(
-                f"{_BASE_URL}{_DEVICE}", self._build_device_query()
-            )
-            self._device_sn = device["devices"][0]["deviceSN"]
-            _LOGGER.debug(f"Retrieved Fox device serial number: {self._device_sn}")
-
-        return self._device_sn
+        return self._device_info
 
     def _build_device_query(self) -> dict:
         """Build device query object"""

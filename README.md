@@ -83,6 +83,7 @@ Enter your desired battery parameters:
 - **Day Buffer**: As above, but for the day
 - **Battery Capacity**: Capacity of battery in kWh
 - **Minimum SoC**: Minimum State of Charge as set in the FoxESS App
+- **Charge Rate**: Nominal charge rate in A - for a 3.6kw inverter this should be ~18A
 
 ![Battery Params](images/config-step-3.png)
 
@@ -135,11 +136,12 @@ Notes:
 
 Description of switches:
 
-| Switch              | Description                                                                              |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| Boost Charge (+1kW) | Adds 1kW to the charge needed sensor. Resets after the charge period.                    |
-| Disable Auto Charge | Prevents the integration from changing FoxESS settings to auto-charge or setting Min-SoC |
-| Full Charge         | Fully charges the battery during off-peak. Resets after the charge period.               |
+| Switch                | Description                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| Boost Charge (+1kW)   | Adds 1kW to the charge needed sensor. Resets after the charge period.                      |
+| Disable Auto Charge   | Prevents the integration from changing FoxESS settings to auto-charge or setting Min-SoC   |
+| Full Charge           | Fully charges the battery during off-peak. Resets after the charge period.                 |
+| Custom Charge Profile | Uses a custom charge profile which reduces charge current when > 90% to aid with balancing |
 
 </details>
 

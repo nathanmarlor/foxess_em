@@ -16,7 +16,6 @@ from ..forecast.forecast_controller import ForecastController
 from ..fox.fox_cloud_service import FoxCloudService
 
 _LOGGER = logging.getLogger(__name__)
-_CHARGE = 18  # nominal charge in A
 
 
 class ChargeService(UnloadController):
@@ -32,6 +31,7 @@ class ChargeService(UnloadController):
         eco_end_time: time,
         battery_soc: str,
         original_soc: int,
+        charge_rate: float,
     ) -> None:
         """Init charge service"""
         UnloadController.__init__(self)
@@ -43,11 +43,13 @@ class ChargeService(UnloadController):
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
         self._original_soc = original_soc
+        self._charge_rate = charge_rate
         self._cancel_listeners = []
         self._charge_active = False
         self._perc_target = 0
         self._charge_required = 0
         self._disable = False
+        self._custom_charge_profile = False
 
         self._add_listeners()
 
@@ -100,6 +102,7 @@ class ChargeService(UnloadController):
         _LOGGER.debug("Resetting any existing Fox Cloud force charge/min SoC settings")
         await self._start_force_charge()
         await self._fox.set_min_soc(self._original_soc * 100)
+        await self._fox.set_charge_current(self._charge_rate)
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
@@ -140,7 +143,7 @@ class ChargeService(UnloadController):
 
         # Reset Fox force charge to enabled and reset charge current
         await self._start_force_charge()
-        await self._fox.set_charge_current(_CHARGE)
+        await self._fox.set_charge_current(self._charge_rate)
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
@@ -151,8 +154,8 @@ class ChargeService(UnloadController):
 
         new_state = float(new_state.state)
 
-        if new_state > 90:
-            target_current = ((100 - new_state) / 10) * _CHARGE
+        if self._custom_charge_profile and new_state > 90:
+            target_current = ((100 - new_state) / 15) * self._charge_rate
             await self._fox.set_charge_current(target_current)
 
         if (new_state >= self._perc_target) and self._charge_active:
@@ -197,3 +200,11 @@ class ChargeService(UnloadController):
     def disable_status(self) -> bool:
         """Disable status"""
         return self._disable
+
+    def set_custom_charge_profile(self, status: bool) -> None:
+        """Set custom charge profile on/off"""
+        self._custom_charge_profile = status
+
+    def custom_charge_profile_status(self) -> bool:
+        """Disable status"""
+        return self._custom_charge_profile

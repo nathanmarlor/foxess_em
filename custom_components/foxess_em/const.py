@@ -3,7 +3,7 @@
 NAME = "foxess_em"
 DOMAIN = "foxess_em"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.6.1b4"
+VERSION = "1.6.1b5"
 
 ISSUE_URL = "https://github.com/nathanmarlor/foxess_em/issues"
 
@@ -35,6 +35,7 @@ DAY_BUFFER = "day_buffer"
 MIN_SOC = "min_soc"
 BATTERY_CAPACITY = "capacity"
 BATTERY_SOC = "battery_soc"
+CHARGE_RATE = "charge_rate"
 
 # Defaults
 DEFAULT_NAME = DOMAIN
