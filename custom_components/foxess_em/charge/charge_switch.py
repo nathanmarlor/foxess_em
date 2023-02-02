@@ -16,6 +16,14 @@ _SWITCHES: dict[str, SwitchDescription] = {
         switch="set_disable",
         store_state=True,
     ),
+    "custom_charge_profile": SwitchDescription(
+        key="custom_charge_profile",
+        name="Custom Charge Profile",
+        icon="mdi:chart-line",
+        is_on="custom_charge_profile_status",
+        switch="set_custom_charge_profile",
+        store_state=True,
+    ),
 }
 
 

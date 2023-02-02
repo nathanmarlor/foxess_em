@@ -16,6 +16,7 @@ from ..foxess_em.const import MIN_SOC
 from .const import AUX_POWER
 from .const import BATTERY_CAPACITY
 from .const import BATTERY_SOC
+from .const import CHARGE_RATE
 from .const import DOMAIN
 from .const import ECO_END_TIME
 from .const import ECO_START_TIME
@@ -100,6 +101,10 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     MIN_SOC,
                     default=self._data.get(MIN_SOC, 0.11) * 100,
                 ): vol.All(vol.Coerce(float), vol.Range(min=10, max=99)),
+                vol.Required(
+                    CHARGE_RATE,
+                    default=self._data.get(CHARGE_RATE, 18),
+                ): vol.All(vol.Coerce(float), vol.Range(min=1, max=99)),
             }
         )
 
