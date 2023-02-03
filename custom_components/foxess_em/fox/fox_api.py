@@ -8,7 +8,7 @@ import async_timeout
 
 from ..util.exceptions import NoDataError
 
-_TIMEOUT = 20
+_TIMEOUT = 30
 _LOGIN = "https://www.foxesscloud.com/c/v0/user/login"
 _FOX_OK = 0
 _FOX_INVALID_TOKEN = 41808
