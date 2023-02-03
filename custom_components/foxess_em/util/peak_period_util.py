@@ -1,4 +1,5 @@
 """"Datetime utilities"""
+from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
@@ -62,3 +63,14 @@ class PeakPeriodUtils:
             return start < now <= end
         else:  # over midnight e.g., 23:30-04:15
             return now > start or now <= end
+
+    def time_window(self) -> timedelta:
+        """Calculate off-peak time window"""
+        today = date.today()
+        start = datetime.combine(today, self._eco_start_time)
+        end = datetime.combine(today, self._eco_end_time)
+
+        if start > end:
+            end = end + timedelta(days=1)
+
+        return end - start

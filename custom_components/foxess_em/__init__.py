@@ -113,6 +113,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         battery_controller,
         forecast_controller,
         fox_service,
+        peak_utils,
         eco_start_time,
         eco_end_time,
         battery_soc,

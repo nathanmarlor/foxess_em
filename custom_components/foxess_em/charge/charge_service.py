@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
+from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
 from homeassistant.helpers.event import async_track_utc_time_change
@@ -16,6 +17,8 @@ from ..forecast.forecast_controller import ForecastController
 from ..fox.fox_cloud_service import FoxCloudService
 
 _LOGGER = logging.getLogger(__name__)
+_VOLTS = 240
+_CHARGE_BUFFER = timedelta(minutes=30)
 
 
 class ChargeService(UnloadController):
@@ -27,6 +30,7 @@ class ChargeService(UnloadController):
         battery_controller: BatteryController,
         forecast_controller: ForecastController,
         fox: FoxCloudService,
+        peak_utils: PeakPeriodUtils,
         eco_start_time: time,
         eco_end_time: time,
         battery_soc: str,
@@ -39,19 +43,19 @@ class ChargeService(UnloadController):
         self._battery_controller = battery_controller
         self._forecast_controller = forecast_controller
         self._fox = fox
+        self._peak_utils = peak_utils
         self._eco_start_time = eco_start_time
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
         self._original_soc = original_soc
-        self._charge_rate = charge_rate
+        self._user_charge_rate = charge_rate
+        self._target_charge_rate = charge_rate
         self._cancel_listeners = []
         self._charge_active = False
         self._perc_target = 0
         self._charge_required = 0
         self._disable = False
         self._custom_charge_profile = False
-
-        self._add_listeners()
 
     def _add_listeners(self) -> None:
 
@@ -100,9 +104,21 @@ class ChargeService(UnloadController):
         self._perc_target = self._battery_controller.charge_to_perc()
 
         _LOGGER.debug("Resetting any existing Fox Cloud force charge/min SoC settings")
-        await self._start_force_charge()
+        await self._start_force_charge_off_peak()
         await self._fox.set_min_soc(self._original_soc * 100)
-        await self._fox.set_charge_current(self._charge_rate)
+
+        window = self._peak_utils.time_window()
+        if self._custom_charge_profile:
+            hours = (window - _CHARGE_BUFFER).total_seconds() / 3600
+            target_charge_rate = round(
+                ((self._charge_required / _VOLTS) * 1000) / hours, 2
+            )
+            self._target_charge_rate = min([self._user_charge_rate, target_charge_rate])
+        else:
+            self._target_charge_rate = self._user_charge_rate
+
+        _LOGGER.debug(f"Charging at {self._target_charge_rate}A for {window}")
+        await self._fox.set_charge_current(self._target_charge_rate)
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
@@ -122,7 +138,7 @@ class ChargeService(UnloadController):
         self._battery_controller.set_boost(False)
         self._battery_controller.set_full(False)
 
-    async def _start_force_charge(
+    async def _start_force_charge_off_peak(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
         """Set Fox force charge settings to True"""
@@ -142,8 +158,8 @@ class ChargeService(UnloadController):
         self._stop_listening()
 
         # Reset Fox force charge to enabled and reset charge current
-        await self._start_force_charge()
-        await self._fox.set_charge_current(self._charge_rate)
+        await self._start_force_charge_off_peak()
+        await self._fox.set_charge_current(self._user_charge_rate)
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
@@ -155,13 +171,16 @@ class ChargeService(UnloadController):
         new_state = float(new_state.state)
 
         if self._custom_charge_profile and new_state > 90:
-            target_current = ((100 - new_state) / 15) * self._charge_rate
-            await self._fox.set_charge_current(target_current)
+            step_down_charge = round(
+                ((100 - new_state) / 15) * self._user_charge_rate, 2
+            )
+            target_charge_rate = min([step_down_charge, self._target_charge_rate])
+            await self._fox.set_charge_current(target_charge_rate)
 
         if (new_state >= self._perc_target) and self._charge_active:
             await self._stop_force_charge()
         elif new_state < self._perc_target and not self._charge_active:
-            await self._start_force_charge()
+            await self._start_force_charge_off_peak()
 
     def _start_listening(self):
         # Setup trigger to stop charge when target percentage is met
