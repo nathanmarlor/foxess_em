@@ -108,7 +108,7 @@ class ChargeService(UnloadController):
         await self._fox.set_min_soc(self._original_soc * 100)
 
         window = self._peak_utils.time_window()
-        if self._custom_charge_profile:
+        if self._charge_required > 0 and self._custom_charge_profile:
             hours = (window - _CHARGE_BUFFER).total_seconds() / 3600
             target_charge_rate = round(
                 ((self._charge_required / _VOLTS) * 1000) / hours, 2
