@@ -117,7 +117,7 @@ class ChargeService(UnloadController):
         else:
             self._target_charge_rate = self._user_charge_rate
 
-        _LOGGER.debug(f"Charging at {self._target_charge_rate}A for {window}")
+        _LOGGER.debug(f"Charge rate set to {self._target_charge_rate}A for {window}")
         await self._fox.set_charge_current(self._target_charge_rate)
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
@@ -172,7 +172,7 @@ class ChargeService(UnloadController):
 
         if self._custom_charge_profile and new_state > 90:
             step_down_charge = round(
-                ((100 - new_state) / 15) * self._user_charge_rate, 2
+                ((100 - new_state) / 10) * self._user_charge_rate, 2
             )
             target_charge_rate = min([step_down_charge, self._target_charge_rate])
             await self._fox.set_charge_current(target_charge_rate)
