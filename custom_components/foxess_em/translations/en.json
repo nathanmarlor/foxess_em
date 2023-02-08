@@ -26,7 +26,8 @@
           "day_buffer": "Day Buffer (kWh)",
           "capacity": "Battery Capacity (kWh)",
           "min_soc": "Minimum SoC (%)",
-          "charge_rate": "Charge Rate (A)"
+          "charge_amps": "Charge Rate (A)",
+          "battery_volts": "Battery Volts (V)"
         }
       },
       "power": {
@@ -75,7 +76,8 @@
           "day_buffer": "Day Buffer (kWh)",
           "capacity": "Battery Capacity (kWh)",
           "min_soc": "Minimum SoC (%)",
-          "charge_rate": "Charge Rate (A)"
+          "charge_amps": "Charge Rate (A)",
+          "battery_volts": "Battery Volts (V)"
         }
       },
       "power": {

@@ -17,7 +17,6 @@ from ..forecast.forecast_controller import ForecastController
 from ..fox.fox_cloud_service import FoxCloudService
 
 _LOGGER = logging.getLogger(__name__)
-_VOLTS = 240
 _CHARGE_BUFFER = timedelta(minutes=30)
 
 
@@ -35,7 +34,8 @@ class ChargeService(UnloadController):
         eco_end_time: time,
         battery_soc: str,
         original_soc: int,
-        charge_rate: float,
+        charge_amps: float,
+        battery_volts: float,
     ) -> None:
         """Init charge service"""
         UnloadController.__init__(self)
@@ -48,9 +48,10 @@ class ChargeService(UnloadController):
         self._eco_end_time = eco_end_time
         self._battery_soc = battery_soc
         self._original_soc = original_soc
-        self._user_charge_rate = charge_rate
-        self._target_charge_rate = charge_rate
-        self._cancel_listeners = []
+        self._user_charge_amps = charge_amps
+        self._target_charge_amps = charge_amps
+        self._battery_volts = battery_volts
+        self._cancel_listener = None
         self._charge_active = False
         self._perc_target = 0
         self._charge_required = 0
@@ -111,14 +112,14 @@ class ChargeService(UnloadController):
         if self._charge_required > 0 and self._custom_charge_profile:
             hours = (window - _CHARGE_BUFFER).total_seconds() / 3600
             target_charge_rate = round(
-                ((self._charge_required / _VOLTS) * 1000) / hours, 2
+                ((self._charge_required / self._battery_volts) * 1000) / hours, 2
             )
-            self._target_charge_rate = min([self._user_charge_rate, target_charge_rate])
+            self._target_charge_amps = min([self._user_charge_amps, target_charge_rate])
         else:
-            self._target_charge_rate = self._user_charge_rate
+            self._target_charge_amps = self._user_charge_amps
 
-        _LOGGER.debug(f"Charge rate set to {self._target_charge_rate}A for {window}")
-        await self._fox.set_charge_current(self._target_charge_rate)
+        _LOGGER.debug(f"Charge rate set to {self._target_charge_amps}A for {window}")
+        await self._fox.set_charge_current(self._target_charge_amps)
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
@@ -159,7 +160,7 @@ class ChargeService(UnloadController):
 
         # Reset Fox force charge to enabled and reset charge current
         await self._start_force_charge_off_peak()
-        await self._fox.set_charge_current(self._user_charge_rate)
+        await self._fox.set_charge_current(self._user_charge_amps)
 
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
@@ -172,10 +173,10 @@ class ChargeService(UnloadController):
 
         if self._custom_charge_profile and new_state > 90:
             step_down_charge = round(
-                ((100 - new_state) / 10) * self._user_charge_rate, 2
+                ((100 - new_state) / 10) * self._user_charge_amps, 2
             )
-            target_charge_rate = min([step_down_charge, self._target_charge_rate])
-            await self._fox.set_charge_current(target_charge_rate)
+            target_charge_amps = min([step_down_charge, self._target_charge_amps])
+            await self._fox.set_charge_current(target_charge_amps)
 
         if (new_state >= self._perc_target) and self._charge_active:
             await self._stop_force_charge()
@@ -189,17 +190,15 @@ class ChargeService(UnloadController):
             self._battery_soc,
             self._battery_soc_change,
         )
-        self._cancel_listeners.append(track_charge)
+        self._cancel_listener = track_charge
         self._unload_listeners.append(track_charge)
 
     def _stop_listening(self):
         # Stop listening for updates
-        for listener in self._cancel_listeners:
-            listener()
-            # Remove any dangling references in unload listeners
-            if listener in self._unload_listeners:
-                self._unload_listeners.remove(listener)
-        self._cancel_listeners.clear()
+        self._cancel_listener()
+        # Remove any dangling references in unload listeners
+        if self._cancel_listener in self._unload_listeners:
+            self._unload_listeners.remove(self._cancel_listener)
 
     def set_disable(self, status: bool) -> None:
         """Set disable on/off"""
@@ -211,6 +210,7 @@ class ChargeService(UnloadController):
                 self._fox.stop_force_charge(), self._hass.loop
             )
         else:
+            self._start_listening()
             self._add_listeners()
             asyncio.run_coroutine_threadsafe(
                 self._fox.start_force_charge_off_peak(), self._hass.loop

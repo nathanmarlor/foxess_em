@@ -35,7 +35,8 @@ DAY_BUFFER = "day_buffer"
 MIN_SOC = "min_soc"
 BATTERY_CAPACITY = "capacity"
 BATTERY_SOC = "battery_soc"
-CHARGE_RATE = "charge_rate"
+CHARGE_AMPS = "charge_amps"
+BATTERY_VOLTS = "battery_volts"
 
 # Defaults
 DEFAULT_NAME = DOMAIN
