@@ -21,7 +21,8 @@ from .charge.charge_service import ChargeService
 from .const import AUX_POWER
 from .const import BATTERY_CAPACITY
 from .const import BATTERY_SOC
-from .const import CHARGE_RATE
+from .const import BATTERY_VOLTS
+from .const import CHARGE_AMPS
 from .const import DAWN_BUFFER
 from .const import DAY_BUFFER
 from .const import DOMAIN
@@ -77,7 +78,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     dawn_buffer = entry.data.get(DAWN_BUFFER)
     day_buffer = entry.data.get(DAY_BUFFER)
     # Added for 1.6.1
-    charge_rate = entry.data.get(CHARGE_RATE, 18)
+    charge_amps = entry.data.get(CHARGE_AMPS, 18)
+    battery_volts = entry.data.get(BATTERY_VOLTS, 208)
 
     session = async_get_clientsession(hass)
     solcast_client = SolcastApiClient(solcast_api_key, SOLCAST_URL, session)
@@ -118,7 +120,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         eco_end_time,
         battery_soc,
         user_min_soc,
-        charge_rate,
+        charge_amps,
+        battery_volts,
     )
 
     hass.data[DOMAIN][entry.entry_id] = {
