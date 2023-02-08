@@ -210,7 +210,6 @@ class ChargeService(UnloadController):
                 self._fox.stop_force_charge(), self._hass.loop
             )
         else:
-            self._start_listening()
             self._add_listeners()
             asyncio.run_coroutine_threadsafe(
                 self._fox.start_force_charge_off_peak(), self._hass.loop
