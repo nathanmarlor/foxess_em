@@ -121,7 +121,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
 
     def state_at_eco_start(self) -> float:
         """Battery state at start of eco period"""
-        return round(self._model.state_at_eco_start(), 2)
+        return round(self._schedule_info()["battery"], 2)
 
     def dawn_charge_needs(self) -> float:
         """Dawn charge needs"""
@@ -136,7 +136,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         return self._schedule_info()["total"]
 
     def min_soc(self) -> float:
-        """Total kWh required to charge"""
+        """Total kWh needed in the battery"""
         return self._schedule_info()["min_soc"]
 
     def clear_schedule(self, *args) -> None:

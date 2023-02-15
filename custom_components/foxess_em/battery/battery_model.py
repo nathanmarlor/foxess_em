@@ -146,6 +146,10 @@ class BatteryModel:
             (model["period_start"] > eco_end_time)
             & (model["period_start"] < next_eco_start)
         ]
+        # metadata - import/export
+        grid_import = model[(model["grid"] < 0)].grid.sum()
+        grid_export = model[(model["grid"] > 0)].grid.sum()
+
         # sum forecast and house load
         forecast_sum = peak.pv_estimate.sum()
         load_sum = peak.load.sum()
@@ -176,16 +180,12 @@ class BatteryModel:
                 "day": day_charge,
                 "total": total,
                 "min_soc": min_soc,
+                "import": grid_import,
+                "export": grid_export,
             },
         )
 
         return total, min_soc
-
-    def state_at_eco_start(self) -> float:
-        """State at eco end"""
-        eco_time = self._peak_utils.next_eco_start()
-        eco_time -= timedelta(minutes=1)
-        return self._model[self._model["period_start"] == eco_time].battery.iloc[0]
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
@@ -336,8 +336,8 @@ class BatteryModel:
 
     def _dawn_charge_needs(self, dawn_load: float) -> float:
         """Dawn charge needs"""
-        return round(dawn_load + self._dawn_buffer, 2)
+        return round(max([0, dawn_load + self._dawn_buffer]), 2)
 
     def _day_charge_needs(self, forecast: float, house_load: float) -> float:
         """Day charge needs"""
-        return round((house_load + self._day_buffer) - forecast, 2)
+        return round(max([0, (house_load + self._day_buffer) - forecast]), 2)
