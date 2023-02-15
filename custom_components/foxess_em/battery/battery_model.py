@@ -147,8 +147,8 @@ class BatteryModel:
             & (model["period_start"] < next_eco_start)
         ]
         # metadata - import/export
-        grid_import = model[(model["grid"] < 0)].grid.sum()
-        grid_export = model[(model["grid"] > 0)].grid.sum()
+        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum())
+        grid_export = peak[(peak["grid"] > 0)].grid.sum()
 
         # sum forecast and house load
         forecast_sum = peak.pv_estimate.sum()
