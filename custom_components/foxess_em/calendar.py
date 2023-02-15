@@ -58,7 +58,7 @@ class FoxESSCalendar(CalendarEntity):
             summary += f"Start Capacity: {str(round(values['battery'], 2))} / "
             summary += f"Forecast: {str(round(values['forecast'], 2))} / "
             summary += f"Load: {str(round(values['load'], 2))} / "
-            summary += f"Min SoC: {str(round(values['min_soc'], 2))} /"
+            summary += f"Min SoC: {str(round(values['min_soc'], 2))} / "
             summary += f"Import: {str(round(values['import'], 2))} / "
             summary += f"Export: {str(round(values['export'], 2))} / "
             calendar_events.append(
