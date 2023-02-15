@@ -233,7 +233,7 @@ class BatteryModel:
     def battery_depleted_time(self) -> datetime:
         """Time battery capacity is 0"""
 
-        if self._battery_capacity_remaining() == 0:
+        if self._battery_capacity_remaining() <= 0:
             # battery is already empty, prevent constant time updates and set sensor to unknown
             return None
 
