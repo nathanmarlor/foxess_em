@@ -121,6 +121,11 @@ class BatteryModel:
                     load_forecast.at[index, "grid"] = 0
             load_forecast.at[index, "battery"] = battery
 
+        for index, _ in future.iterrows():
+            period = load_forecast.iloc[index]["period_start"].to_pydatetime()
+            if period.time() == self._eco_start_time:
+                self._add_metadata(load_forecast, period)
+
         self._model = self._update_model_forecasts(load_forecast, now)
         self._ready = True
 
@@ -146,9 +151,6 @@ class BatteryModel:
             (model["period_start"] > eco_end_time)
             & (model["period_start"] < next_eco_start)
         ]
-        # metadata - import/export
-        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum())
-        grid_export = peak[(peak["grid"] > 0)].grid.sum()
 
         # sum forecast and house load
         forecast_sum = peak.pv_estimate.sum()
@@ -180,12 +182,36 @@ class BatteryModel:
                 "day": day_charge,
                 "total": total,
                 "min_soc": min_soc,
-                "import": grid_import,
-                "export": grid_export,
             },
         )
 
         return total, min_soc
+
+    def _add_metadata(self, model: pd.DataFrame, period: datetime):
+        """Added metadata - i.e. grid import/export"""
+        # calculate start/end of the next peak period
+        eco_start = period.replace(
+            hour=self._eco_start_time.hour,
+            minute=self._eco_start_time.minute,
+            second=0,
+            microsecond=0,
+        )
+        eco_end_time = self._peak_utils.next_eco_end(eco_start)
+        next_eco_start = eco_start + timedelta(days=1)
+        # grab all peak values
+        peak = model[
+            (model["period_start"] > eco_end_time)
+            & (model["period_start"] < next_eco_start)
+        ]
+
+        # metadata - import/export
+        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum())
+        grid_export = peak[(peak["grid"] > 0)].grid.sum()
+
+        self._schedule.upsert(
+            eco_start,
+            {"import": grid_import, "export": grid_export},
+        )
 
     def next_dawn_time(self) -> datetime:
         """Calculate dawn time"""
