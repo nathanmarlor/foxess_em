@@ -152,8 +152,8 @@ class FoxCloudService:
         """Build device charge object"""
         return {
             "id": device_id,
-            "key": "h111__basic2__00",
-            "values": {"h111__basic2__00": str(charge_current)},
+            "key": "h112__basic2__00",
+            "values": {"h112__basic2__00": str(charge_current)},
         }
 
     def _build_min_soc_query(self, device_sn: str, soc: int) -> dict:
