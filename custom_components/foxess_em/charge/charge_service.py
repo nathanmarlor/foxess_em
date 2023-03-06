@@ -18,6 +18,7 @@ from ..fox.fox_cloud_service import FoxCloudService
 
 _LOGGER = logging.getLogger(__name__)
 _CHARGE_BUFFER = timedelta(minutes=30)
+_MINIMUM_CHARGE = 1
 
 
 class ChargeService(UnloadController):
@@ -59,7 +60,6 @@ class ChargeService(UnloadController):
         self._custom_charge_profile = False
 
     def _add_listeners(self) -> None:
-
         # Setup trigger to start just before eco period starts
         eco_start_setup_time = (
             datetime.combine(date.today(), self._eco_start_time) - timedelta(minutes=5)
@@ -168,19 +168,20 @@ class ChargeService(UnloadController):
     async def _battery_soc_change(
         self, entity, old_state, new_state
     ):  # pylint: disable=unused-argument
-
         new_state = float(new_state.state)
 
         if self._custom_charge_profile and new_state > 90:
             step_down_charge = round(
                 ((100 - new_state) / 10) * self._user_charge_amps, 2
             )
-            target_charge_amps = min([step_down_charge, self._target_charge_amps])
+            target_charge_amps = max(
+                [_MINIMUM_CHARGE, min([step_down_charge, self._target_charge_amps])]
+            )
             await self._fox.set_charge_current(target_charge_amps)
 
-        if (new_state >= self._perc_target) and self._charge_active:
+        if (new_state > self._perc_target) and self._charge_active:
             await self._stop_force_charge()
-        elif new_state < self._perc_target and not self._charge_active:
+        elif new_state <= self._perc_target and not self._charge_active:
             await self._start_force_charge_off_peak()
 
     def _start_listening(self):
