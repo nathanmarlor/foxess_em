@@ -12,6 +12,10 @@
         "title": "FoxESS - Energy Management: (2/4)",
         "description": "Please enter your FoxESS Username and Password - https://www.foxesscloud.com/",
         "data": {
+          "fox_modbus": "Use Modbus",
+          "fox_modbus_host": "Modbus Host",
+          "fox_modbus_port": "Modbus Port",
+          "fox_cloud": "Use Fox Cloud",
           "fox_username": "Fox Username",
           "fox_password": "Fox Password"
         }
@@ -42,7 +46,8 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_auth": "Error - please check the FoxESS Username and Password",
+      "fox_error": "Error - please check connection details",
+      "fox_select_one": "Error - please choose Modbus or Fox Cloud",
       "time_invalid": "Time format not recognised"
     },
     "abort": {
@@ -60,8 +65,12 @@
       },
       "fox": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your FoxESS Username and Password - https://www.foxesscloud.com/",
+        "description": "Please enter your MQTT details or FoxESS Username and Password - https://www.foxesscloud.com/",
         "data": {
+          "fox_modbus": "Use Modbus",
+          "fox_modbus_host": "Modbus Host",
+          "fox_modbus_port": "Modbus Port",
+          "fox_cloud": "Use Fox Cloud",
           "fox_username": "Fox Username",
           "fox_password": "Fox Password"
         }
@@ -92,7 +101,8 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_auth": "Error - please check the FoxESS Username and Password",
+      "fox_error": "Error - please check connection details",
+      "fox_select_one": "Error - please choose Modbus or Fox Cloud",
       "time_invalid": "Time format not recognised"
     },
     "abort": {

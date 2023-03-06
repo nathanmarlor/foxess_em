@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 import voluptuous as vol
+from custom_components.foxess_em.fox.fox_modbus import FoxModbus
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import callback
@@ -21,14 +22,19 @@ from .const import CHARGE_AMPS
 from .const import DOMAIN
 from .const import ECO_END_TIME
 from .const import ECO_START_TIME
+from .const import FOX_CLOUD
+from .const import FOX_MODBUS
+from .const import FOX_MODBUS_HOST
+from .const import FOX_MODBUS_PORT
 from .const import FOX_PASSWORD
 from .const import FOX_USERNAME
 from .const import HOUSE_POWER
 from .const import SOLCAST_API_KEY
 from .const import SOLCAST_URL
 from .forecast.solcast_api import SolcastApiClient
-from .fox.fox_api import FoxApiClient
+from .fox.fox_cloud_api import FoxCloudApiClient
 from .fox.fox_cloud_service import FoxCloudService
+from .fox.fox_modbus_service import FoxModbuservice
 
 _TITLE = "FoxESS - Energy Management"
 
@@ -65,10 +71,22 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._fox_schema = vol.Schema(
             {
                 vol.Required(
+                    FOX_MODBUS, default=self._data.get(FOX_MODBUS, False)
+                ): bool,
+                vol.Optional(
+                    FOX_MODBUS_HOST,
+                    default=self._data.get(FOX_MODBUS_HOST, ""),
+                ): str,
+                vol.Optional(
+                    FOX_MODBUS_PORT,
+                    default=self._data.get(FOX_MODBUS_PORT, 502),
+                ): int,
+                vol.Required(FOX_CLOUD, default=self._data.get(FOX_CLOUD, True)): bool,
+                vol.Optional(
                     FOX_USERNAME,
                     default=self._data.get(FOX_USERNAME, ""),
                 ): str,
-                vol.Required(
+                vol.Optional(
                     FOX_PASSWORD,
                     default=self._data.get(FOX_PASSWORD, ""),
                 ): str,
@@ -171,15 +189,23 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_fox(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            fox_valid = await self._test_fox(
-                user_input[FOX_USERNAME], user_input[FOX_PASSWORD]
-            )
-            if fox_valid:
-                self._errors["base"] = None
-                self._user_input.update(user_input)
-                return await self.async_step_battery()
+            if user_input[FOX_MODBUS] and user_input[FOX_CLOUD]:
+                self._errors["base"] = "fox_select_one"
             else:
-                self._errors["base"] = "fox_auth"
+                if user_input[FOX_MODBUS]:
+                    fox_valid = await self._test_fox_modbus(
+                        user_input[FOX_MODBUS_HOST], user_input[FOX_MODBUS_PORT]
+                    )
+                else:
+                    fox_valid = await self._test_fox_cloud(
+                        user_input[FOX_USERNAME], user_input[FOX_PASSWORD]
+                    )
+                if fox_valid:
+                    self._errors["base"] = None
+                    self._user_input.update(user_input)
+                    return await self.async_step_battery()
+                else:
+                    self._errors["base"] = "fox_error"
 
         return self.async_show_form(
             step_id="fox", data_schema=self._fox_schema, errors=self._errors
@@ -234,12 +260,27 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             pass
         return False
 
-    async def _test_fox(self, fox_username: str, fox_password: str):
+    async def _test_fox_cloud(self, fox_username: str, fox_password: str):
         """Return true if credentials is valid."""
         try:
             session = async_create_clientsession(self.hass)
-            api = FoxApiClient(session, fox_username, fox_password)
+            api = FoxCloudApiClient(session, fox_username, fox_password)
             service = FoxCloudService(None, api, None, None)
+            result = await service.device_info()
+            if result is not None:
+                return True
+            else:
+                return False
+        except Exception as ex:  # pylint: disable=broad-except
+            _LOGGER.warn(ex)
+            pass
+        return False
+
+    async def _test_fox_modbus(self, host: str, port: str):
+        """Return true if modbus connection can be established"""
+        try:
+            modbus = FoxModbus(host, port)
+            service = FoxModbuservice(None, modbus, None, None)
             result = await service.device_info()
             if result is not None:
                 return True

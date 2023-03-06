@@ -5,8 +5,9 @@ from datetime import time
 
 from homeassistant.core import HomeAssistant
 
-from ..fox.fox_api import FoxApiClient
 from ..util.exceptions import NoDataError
+from .fox_cloud_api import FoxCloudApiClient
+from .fox_service import FoxService
 
 _BASE_URL = "https://www.foxesscloud.com/c/v0"
 _SET_TIMES = "/device/battery/time/set"
@@ -17,16 +18,16 @@ _SETTINGS = "/device/setting/set"
 _LOGGER = logging.getLogger(__name__)
 
 
-class FoxCloudService:
+class FoxCloudService(FoxService):
     """Fox Cloud service"""
 
     def __init__(
         self,
         hass: HomeAssistant,
-        api: FoxApiClient,
+        api: FoxCloudApiClient,
         off_peak_start: time,
         off_peak_end: time,
-        user_min_soc: int = 11,
+        user_min_soc: int = 10,
     ) -> None:
         """Init Fox Cloud service"""
         self._hass = hass
@@ -61,7 +62,6 @@ class FoxCloudService:
                 self._off_peak_end,
             )
         else:
-
             query = self._build_start_single_charge_query(
                 device_sn,
                 self._off_peak_start,

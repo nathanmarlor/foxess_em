@@ -9,6 +9,8 @@ import logging
 from datetime import time
 
 from custom_components.foxess_em.battery.schedule import Schedule
+from custom_components.foxess_em.fox.fox_modbus import FoxModbus
+from custom_components.foxess_em.fox.fox_modbus_service import FoxModbuservice
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config
@@ -28,6 +30,10 @@ from .const import DAY_BUFFER
 from .const import DOMAIN
 from .const import ECO_END_TIME
 from .const import ECO_START_TIME
+from .const import FOX_CLOUD
+from .const import FOX_MODBUS
+from .const import FOX_MODBUS_HOST
+from .const import FOX_MODBUS_PORT
 from .const import FOX_PASSWORD
 from .const import FOX_USERNAME
 from .const import HOUSE_POWER
@@ -38,7 +44,7 @@ from .const import SOLCAST_URL
 from .const import STARTUP_MESSAGE
 from .forecast.forecast_controller import ForecastController
 from .forecast.solcast_api import SolcastApiClient
-from .fox.fox_api import FoxApiClient
+from .fox.fox_cloud_api import FoxCloudApiClient
 from .fox.fox_cloud_service import FoxCloudService
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
@@ -68,6 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     solcast_api_key = entry.data.get(SOLCAST_API_KEY)
     fox_username = entry.data.get(FOX_USERNAME)
     fox_password = entry.data.get(FOX_PASSWORD)
+
     eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
     eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
     house_power = entry.data.get(HOUSE_POWER)
@@ -80,11 +87,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # Added for 1.6.1
     charge_amps = entry.data.get(CHARGE_AMPS, 18)
     battery_volts = entry.data.get(BATTERY_VOLTS, 208)
+    # Added for 1.7.0
+    fox_cloud = entry.data.get(FOX_CLOUD, True)
+    fox_modbus = entry.data.get(FOX_MODBUS, False)
+    fox_modbus_host = entry.data.get(FOX_MODBUS_HOST, "")
+    fox_modbus_port = entry.data.get(FOX_MODBUS_PORT, 502)
 
     session = async_get_clientsession(hass)
     solcast_client = SolcastApiClient(solcast_api_key, SOLCAST_URL, session)
-
-    fox_client = FoxApiClient(session, fox_username, fox_password)
 
     # Initialise controllers and services
     peak_utils = PeakPeriodUtils(eco_start_time, eco_end_time)
@@ -107,9 +117,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         schedule,
         peak_utils,
     )
-    fox_service = FoxCloudService(
-        hass, fox_client, eco_start_time, eco_end_time, user_min_soc
-    )
+    if fox_cloud:
+        fox_client = FoxCloudApiClient(session, fox_username, fox_password)
+        fox_service = FoxCloudService(
+            hass, fox_client, eco_start_time, eco_end_time, user_min_soc
+        )
+    else:
+        fox_modbus = FoxModbus(fox_modbus_host, fox_modbus_port)
+        fox_service = FoxModbuservice(
+            hass, fox_modbus, eco_start_time, eco_end_time, user_min_soc
+        )
     charge_service = ChargeService(
         hass,
         battery_controller,
