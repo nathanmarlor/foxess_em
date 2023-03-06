@@ -3,7 +3,7 @@
 NAME = "foxess_em"
 DOMAIN = "foxess_em"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.6.1b10"
+VERSION = "1.7.0b1"
 
 ISSUE_URL = "https://github.com/nathanmarlor/foxess_em/issues"
 
