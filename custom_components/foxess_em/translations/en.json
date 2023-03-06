@@ -10,7 +10,7 @@
       },
       "fox": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your FoxESS Username and Password - https://www.foxesscloud.com/",
+        "description": "Please enter your Modbus details or FoxESS Username and Password - https://www.foxesscloud.com/",
         "data": {
           "fox_modbus": "Use Modbus",
           "fox_modbus_host": "Modbus Host",
@@ -65,7 +65,7 @@
       },
       "fox": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your MQTT details or FoxESS Username and Password - https://www.foxesscloud.com/",
+        "description": "Please enter your Modbus details or FoxESS Username and Password - https://www.foxesscloud.com/",
         "data": {
           "fox_modbus": "Use Modbus",
           "fox_modbus_host": "Modbus Host",
