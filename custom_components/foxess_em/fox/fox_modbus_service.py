@@ -11,7 +11,7 @@ from .fox_service import FoxService
 _LOGGER = logging.getLogger(__name__)
 _DAY = 40002
 _CHARGE_CURRENT = 41007
-_MIN_SOC = 41009
+_MIN_SOC = 41011
 _P1_ENABLE = 41001
 
 
