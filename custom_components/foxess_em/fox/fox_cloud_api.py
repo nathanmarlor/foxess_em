@@ -19,7 +19,7 @@ _FOX_RETRY_DELAY = 10
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
-class FoxApiClient:
+class FoxCloudApiClient:
     """API client"""
 
     def __init__(

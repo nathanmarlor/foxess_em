@@ -20,8 +20,14 @@ ATTR_ENTRY_TYPE = "entry_type"
 # Configuration and options
 SOLCAST_API_KEY = "key"
 SOLCAST_SCAN_INTERVAL = "scan_interval"
-# SOLCAST_URL = "https://86b687c6-19f9-4041-903a-ad348860255f.mock.pstmn.io"
+# SOLCAST_URL = "https://6bcdc8b5-dbc9-49fa-9a75-80c511daaaf1.mock.pstmn.io"
 SOLCAST_URL = "https://api.solcast.com.au"
+
+# Fox Options
+FOX_MODBUS = "fox_modbus"
+FOX_MODBUS_HOST = "fox_modbus_host"
+FOX_MODBUS_PORT = "fox_modbus_port"
+FOX_CLOUD = "fox_cloud"
 FOX_USERNAME = "fox_username"
 FOX_PASSWORD = "fox_password"
 
