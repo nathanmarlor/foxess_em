@@ -51,7 +51,7 @@ class FoxModbus:
             )
         else:
             response = self._client.write_register(
-                register_address, register_values[0], _SLAVE
+                register_address, int(register_values[0]), _SLAVE
             )
         if response.isError():
             raise ConnectionError(f"Error writing holding register: {response}")
