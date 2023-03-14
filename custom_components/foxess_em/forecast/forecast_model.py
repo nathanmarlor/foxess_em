@@ -16,6 +16,7 @@ class ForecastModel:
 
     def __init__(self, api: SolcastApiClient) -> None:
         """Solcast API"""
+        self._raw_data = []
         self._resampled = {}
         self._api = api
         self._ready = False
@@ -24,16 +25,23 @@ class ForecastModel:
         """Model status"""
         return self._ready
 
+    def load(self, raw_data) -> None:
+        """Load data"""
+        self._raw_data = raw_data
+        self._resampled = self._resample(self._raw_data)
+
+        self._ready = True
+
     async def refresh(self) -> None:
         """Get data from the API"""
 
         sites = await self._api.async_get_sites()
 
-        data = []
+        self._raw_data = []
         for site in sites["sites"]:
-            data += await self._api.async_get_data(site["resource_id"])
+            self._raw_data += await self._api.async_get_data(site["resource_id"])
 
-        self._resampled = self._resample(data)
+        self._resampled = self._resample(self._raw_data)
 
         self._ready = True
 
@@ -44,6 +52,12 @@ class ForecastModel:
     async def api_status(self) -> int:
         """Return number of API calls"""
         return await self._api.async_get_api_calls()
+
+    def raw_data(self) -> list:
+        """Return raw data"""
+        if len(self._raw_data) == 0:
+            raise NoDataError("No forecast data available")
+        return self._raw_data
 
     def resample_data(self) -> pd.DataFrame:
         """Return resampled data"""
@@ -85,6 +99,8 @@ class ForecastModel:
     def _resample(self, values) -> pd.DataFrame:
         """Resample values"""
         df = pd.DataFrame.from_dict(values)
+        df["period_start"] = pd.to_datetime(df["period_start"])
+        df["period_end"] = pd.to_datetime(df["period_end"])
 
         df = df.groupby("period_start").sum()
         df["period_start"] = df.index.values
