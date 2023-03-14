@@ -1,5 +1,8 @@
 """Constants for foxess_em."""
 # Base component constants
+from enum import Enum
+
+
 NAME = "foxess_em"
 DOMAIN = "foxess_em"
 DOMAIN_DATA = f"{DOMAIN}_data"
@@ -45,6 +48,14 @@ BATTERY_CAPACITY = "capacity"
 BATTERY_SOC = "battery_soc"
 CHARGE_AMPS = "charge_amps"
 BATTERY_VOLTS = "battery_volts"
+
+
+# Connection types
+class Connection(Enum):
+    BOTH = "both"
+    MODBUS = "modbus"
+    CLOUD = "cloud"
+
 
 # Defaults
 DEFAULT_NAME = DOMAIN

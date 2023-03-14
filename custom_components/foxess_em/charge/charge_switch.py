@@ -1,6 +1,8 @@
 """Battery switch"""
 import logging
 
+from custom_components.foxess_em.const import Connection
+
 from ..common.switch import Switch
 from ..common.switch_desc import SwitchDescription
 
@@ -23,6 +25,7 @@ _SWITCHES: dict[str, SwitchDescription] = {
         is_on="custom_charge_profile_status",
         switch="set_custom_charge_profile",
         store_state=True,
+        connection=Connection.MODBUS,
     ),
 }
 

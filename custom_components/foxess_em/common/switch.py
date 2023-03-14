@@ -25,7 +25,7 @@ class Switch(SwitchEntity, RestoreEntity):
     ):
         self._controller = controller
         self._config_entry = config_entry
-        self._switch_desc = switch_desc
+        self.switch_desc = switch_desc
 
         self._attr_device_info = {
             ATTR_IDENTIFIERS: {(DOMAIN, config_entry.entry_id)},
@@ -33,27 +33,27 @@ class Switch(SwitchEntity, RestoreEntity):
             ATTR_ENTRY_TYPE: DeviceEntryType.SERVICE,
         }
 
-        self._unique_id = f"{DEFAULT_NAME}_{SWITCH}_{self._switch_desc.name}"
+        self._unique_id = f"{DEFAULT_NAME}_{SWITCH}_{self.switch_desc.name}"
 
     async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn on the switch."""
-        switch = getattr(self._controller, self._switch_desc.switch)
+        switch = getattr(self._controller, self.switch_desc.switch)
         switch(True)
 
     async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn off the switch."""
-        switch = getattr(self._controller, self._switch_desc.switch)
+        switch = getattr(self._controller, self.switch_desc.switch)
         switch(False)
 
     @property
     def name(self) -> str:
         """Return the name of the switch."""
-        return self._switch_desc.name
+        return self.switch_desc.name
 
     @property
     def icon(self) -> str:
         """Return the icon of this switch."""
-        return self._switch_desc.icon
+        return self.switch_desc.icon
 
     @property
     def unique_id(self) -> str:
@@ -63,14 +63,14 @@ class Switch(SwitchEntity, RestoreEntity):
     @property
     def is_on(self) -> bool:
         """Return true if the switch is on."""
-        is_on = getattr(self._controller, self._switch_desc.is_on)
+        is_on = getattr(self._controller, self.switch_desc.is_on)
         return is_on()
 
     async def async_added_to_hass(self) -> None:
         """Add update callback after being added to hass."""
         await super().async_added_to_hass()
         state = await self.async_get_last_state()
-        if state and self._switch_desc.store_state:
+        if state and self.switch_desc.store_state:
             if state.state == "on":
                 await self.async_turn_on()
             elif state.state == "off":
