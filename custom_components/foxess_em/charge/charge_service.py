@@ -179,9 +179,11 @@ class ChargeService(UnloadController):
             )
             await self._fox.set_charge_current(target_charge_amps)
 
-        if (new_state > self._perc_target) and self._charge_active:
-            await self._stop_force_charge()
-        elif new_state <= self._perc_target and not self._charge_active:
+        # don't stop a force charge if it's targeted to 100% to aid battery balancing
+        if (new_state >= self._perc_target) and self._charge_active:
+            if self._perc_target != 100:
+                await self._stop_force_charge()
+        elif new_state < self._perc_target and not self._charge_active:
             await self._start_force_charge_off_peak()
 
     def _start_listening(self):
