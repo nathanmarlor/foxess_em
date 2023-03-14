@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
+from custom_components.foxess_em.fox.fox_service import FoxService
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change
@@ -14,7 +15,6 @@ from homeassistant.helpers.event import async_track_utc_time_change
 from ..battery.battery_controller import BatteryController
 from ..common.unload_controller import UnloadController
 from ..forecast.forecast_controller import ForecastController
-from ..fox.fox_cloud_service import FoxCloudService
 
 _LOGGER = logging.getLogger(__name__)
 _CHARGE_BUFFER = timedelta(minutes=30)
@@ -29,7 +29,7 @@ class ChargeService(UnloadController):
         hass: HomeAssistant,
         battery_controller: BatteryController,
         forecast_controller: ForecastController,
-        fox: FoxCloudService,
+        fox: FoxService,
         peak_utils: PeakPeriodUtils,
         eco_start_time: time,
         eco_end_time: time,

@@ -25,6 +25,7 @@ from .const import BATTERY_CAPACITY
 from .const import BATTERY_SOC
 from .const import BATTERY_VOLTS
 from .const import CHARGE_AMPS
+from .const import Connection
 from .const import DAWN_BUFFER
 from .const import DAY_BUFFER
 from .const import DOMAIN
@@ -118,14 +119,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         peak_utils,
     )
     if fox_cloud:
-        fox_client = FoxCloudApiClient(session, fox_username, fox_password)
+        cloud_client = FoxCloudApiClient(session, fox_username, fox_password)
         fox_service = FoxCloudService(
-            hass, fox_client, eco_start_time, eco_end_time, user_min_soc
+            hass, cloud_client, eco_start_time, eco_end_time, user_min_soc
         )
     else:
-        fox_modbus = FoxModbus(fox_modbus_host, fox_modbus_port)
+        modbus_client = FoxModbus(fox_modbus_host, fox_modbus_port)
         fox_service = FoxModbuservice(
-            hass, fox_modbus, eco_start_time, eco_end_time, user_min_soc
+            hass, modbus_client, eco_start_time, eco_end_time, user_min_soc
         )
     charge_service = ChargeService(
         hass,
@@ -147,7 +148,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "battery": battery_controller,
             "forecast": forecast_controller,
             "charge": charge_service,
-        }
+        },
+        "config": {"connection": Connection.MODBUS if fox_modbus else Connection.CLOUD},
     }
 
     # Add callbacks into battery controller for updates

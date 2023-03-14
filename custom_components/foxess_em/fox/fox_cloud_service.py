@@ -116,17 +116,9 @@ class FoxCloudService(FoxService):
 
     async def set_charge_current(self, charge_current: float, *args) -> None:
         """Set charge current"""
-        _LOGGER.debug(f"Sending charge current of {charge_current}A to Fox Cloud")
-
-        try:
-            device_info = await self.device_info()
-            device_id = device_info["deviceID"]
-            await self._api.async_post_data(
-                f"{_BASE_URL}{_SETTINGS}",
-                self._build_charge_query(device_id, charge_current),
-            )
-        except NoDataError as ex:
-            _LOGGER.error(ex)
+        _LOGGER.debug(
+            "Skipping call to set charge current as not supported using the Cloud"
+        )
 
     async def device_info(self) -> None:
         """Get device serial number"""
@@ -146,14 +138,6 @@ class FoxCloudService(FoxService):
             "currentPage": 1,
             "total": 0,
             "condition": {"queryDate": {"begin": 0, "end": 0}},
-        }
-
-    def _build_charge_query(self, device_id: str, charge_current: float) -> dict:
-        """Build device charge object"""
-        return {
-            "id": device_id,
-            "key": "h112__basic2__00",
-            "values": {"h112__basic2__00": str(charge_current)},
         }
 
     def _build_min_soc_query(self, device_sn: str, soc: int) -> dict:
