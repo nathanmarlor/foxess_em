@@ -20,8 +20,10 @@ ATTR_ENTRY_TYPE = "entry_type"
 # Configuration and options
 SOLCAST_API_KEY = "key"
 SOLCAST_SCAN_INTERVAL = "scan_interval"
-# SOLCAST_URL = "https://6bcdc8b5-dbc9-49fa-9a75-80c511daaaf1.mock.pstmn.io"
+# SOLCAST_URL = "https://dbd4ba32-7a97-4717-a864-efe5cfe03a1c.mock.pstmn.io"
 SOLCAST_URL = "https://api.solcast.com.au"
+
+FORECAST = "sensor.foxess_em_forecast"
 
 # Fox Options
 FOX_MODBUS = "fox_modbus"

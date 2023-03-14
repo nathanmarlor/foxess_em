@@ -38,6 +38,17 @@ SENSORS: dict[str, SensorDescription] = {
         name="Forecast: API Count",
         icon="mdi:counter",
     ),
+    "forecast": SensorDescription(
+        key="empty",
+        name="FoxESS EM: Forecast",
+        icon="mdi:calendar",
+        should_poll=False,
+        visible=False,
+        state_attributes={
+            "forecast": "raw_data",
+        },
+        store_attributes=True,
+    ),
 }
 
 

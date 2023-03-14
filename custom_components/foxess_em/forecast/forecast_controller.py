@@ -5,6 +5,7 @@ from datetime import time
 from datetime import timedelta
 
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
+from custom_components.foxess_em.const import FORECAST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
@@ -36,9 +37,25 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         # Setup mixins
         UnloadController.__init__(self)
         CallbackController.__init__(self)
-        HassLoadController.__init__(self, hass, self.async_refresh)
+        HassLoadController.__init__(self, hass, self.load)
 
         self._setup_reset()
+
+    async def load(self, *args) -> None:
+        """Load forecast from state"""
+        raw_data = self._hass.states.get(FORECAST)
+
+        if raw_data is not None and "forecast" in raw_data.attributes:
+            _LOGGER.debug("Loading forecast data from cache")
+            forecast_data = raw_data.attributes["forecast"]
+            self._api.load(forecast_data)
+            self._last_update = datetime.now().astimezone()
+            _LOGGER.debug(
+                "Finished loading forecast data from cache, notifying listeners"
+            )
+            self._notify_listeners()
+        else:
+            await self.async_refresh()
 
     async def _setup_refresh(self, *args):
         """Setup refresh intervals"""
@@ -144,6 +161,10 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         """Return resampled data"""
         return self._api.resample_data()
 
+    def raw_data(self) -> list:
+        """Return resampled data"""
+        return self._api.raw_data()
+
     async def _reset_api_count(self, *args) -> None:  # pylint: disable=unused-argument
         """Reset API count to 0"""
         self._api_count = 0
@@ -171,3 +192,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
     def api_count(self) -> int:
         """Return API count"""
         return self._api_count
+
+    def empty(self) -> int:
+        """Hack for hidden sensors"""
+        return 0
