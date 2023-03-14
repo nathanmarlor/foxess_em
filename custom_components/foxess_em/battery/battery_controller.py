@@ -92,7 +92,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         except NoDataError as ex:
             _LOGGER.warning(ex)
         except Exception as ex:
-            _LOGGER.error(ex)
+            _LOGGER.error(f"{ex!r}")
 
     def update_callback(self) -> None:
         """Schedule a refresh"""
