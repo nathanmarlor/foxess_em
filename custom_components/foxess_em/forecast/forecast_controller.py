@@ -146,14 +146,14 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
             await self._api.refresh()
             self._last_update = datetime.now().astimezone()
 
-            _LOGGER.debug("Finished refreshing forecast data, notifying listeners")
-            self._notify_listeners()
+            _LOGGER.debug("Finished refreshing forecast data")
         except NoDataError as ex:
             _LOGGER.warning(ex)
         except Exception as ex:
             _LOGGER.error(f"{ex!r}")
 
         await self._async_get_site_info()
+        self._notify_listeners()
 
     async def _async_get_site_info(
         self, *args
