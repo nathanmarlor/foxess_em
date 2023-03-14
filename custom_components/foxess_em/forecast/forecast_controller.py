@@ -53,6 +53,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
             _LOGGER.debug(
                 "Finished loading forecast data from cache, notifying listeners"
             )
+            await self._async_get_site_info()
             self._notify_listeners()
         else:
             await self.async_refresh()
@@ -145,17 +146,30 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
             await self._api.refresh()
             self._last_update = datetime.now().astimezone()
 
-            api_status = await self._api.api_status()
-            self._api_count = api_status["daily_limit_consumed"]
-            self._api_limit = api_status["daily_limit"]
-            await self._setup_refresh()
-
             _LOGGER.debug("Finished refreshing forecast data, notifying listeners")
             self._notify_listeners()
         except NoDataError as ex:
             _LOGGER.warning(ex)
         except Exception as ex:
-            _LOGGER.error(ex)
+            _LOGGER.error(f"{ex!r}")
+
+        await self._async_get_site_info()
+
+    async def _async_get_site_info(
+        self, *args
+    ) -> None:  # pylint: disable=unused-argument
+        """Refresh site info"""
+        try:
+            _LOGGER.debug("Refreshing Solcast site info")
+
+            api_status = await self._api.api_status()
+            self._api_count = api_status["daily_limit_consumed"]
+            self._api_limit = api_status["daily_limit"]
+            await self._setup_refresh()
+
+            _LOGGER.debug("Finished refreshing Solcast site info")
+        except Exception as ex:
+            _LOGGER.error(f"{ex!r}")
 
     def resample_data(self) -> DataFrame:
         """Return resampled data"""
