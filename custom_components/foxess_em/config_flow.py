@@ -156,16 +156,19 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     MIN_SOC,
                     default=self._data.get(MIN_SOC, 0.11) * 100,
                 ): vol.All(vol.Coerce(float), vol.Range(min=10, max=99)),
-                vol.Required(
-                    CHARGE_AMPS,
-                    default=self._data.get(CHARGE_AMPS, 18),
-                ): vol.All(vol.Coerce(float), vol.Range(min=1, max=99)),
-                vol.Required(
-                    BATTERY_VOLTS,
-                    default=self._data.get(BATTERY_VOLTS, 208),
-                ): vol.All(vol.Coerce(float), vol.Range(min=1, max=2000)),
             }
         )
+
+        self._modbus_battery_schema = {
+            vol.Required(
+                CHARGE_AMPS,
+                default=self._data.get(CHARGE_AMPS, 18),
+            ): vol.All(vol.Coerce(float), vol.Range(min=1, max=99)),
+            vol.Required(
+                BATTERY_VOLTS,
+                default=self._data.get(BATTERY_VOLTS, 208),
+            ): vol.All(vol.Coerce(float), vol.Range(min=1, max=2000)),
+        }
 
         self._power_schema = vol.Schema(
             {
@@ -309,8 +312,12 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 self._errors["base"] = "time_invalid"
 
+        schema = self._battery_schema
+        if self._user_input[CONNECTION_TYPE] in [FOX_MODBUS_SERIAL, FOX_MODBUS_TCP]:
+            schema = schema.extend(self._modbus_battery_schema)
+
         return self.async_show_form(
-            step_id="battery", data_schema=self._battery_schema, errors=self._errors
+            step_id="battery", data_schema=schema, errors=self._errors
         )
 
     async def async_step_power(self, user_input: dict[str, Any] = None):
