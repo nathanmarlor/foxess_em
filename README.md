@@ -69,7 +69,7 @@ Choose from one of the following options:
 
 ![Inverter](images/config-step-2.png)
 
-<b>Modbus TCP</b>
+<b>Modbus TCP (Only compatible with RTU -> TCP devices, not direct LAN)</b>
 
 - **Modbus Host**: IP Adddress of your Modbus (i.e. W610/LAN) host
 - **Modbus Port**: Port number (default 502)
