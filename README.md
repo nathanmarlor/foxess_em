@@ -173,7 +173,7 @@ Description of switches:
 ## Extras
 
 <details>
-    <summary><b>Graphing</b></summary>
+    <summary><b>Graphing & Home Assistant Tweaks</b></summary>
 
 <b>Important! Before following this guide add the following to your configuration.yaml to prevent the HA database becoming bloated</b>
 
@@ -182,6 +182,7 @@ recorder:
   exclude:
     entities:
       - sensor.foxess_em_raw_data
+      - sensor.foxess_em_forecast
 ```
 
 - Enable the FoxESS Raw Data entity from the entity settings:
