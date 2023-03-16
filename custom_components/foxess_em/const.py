@@ -29,13 +29,10 @@ SOLCAST_URL = "https://api.solcast.com.au"
 FORECAST = "sensor.foxess_em_forecast"
 
 # Fox Options
-CONNECTION_TYPE = "connection_type"
-FOX_MODBUS_TCP = "Modbus TCP"
-FOX_MODBUS_SERIAL = "Modbus Serial"
+FOX_MODBUS = "fox_modbus"
 FOX_MODBUS_HOST = "fox_modbus_host"
 FOX_MODBUS_PORT = "fox_modbus_port"
-FOX_MODBUS_SLAVE = "fox_modbus_slave"
-FOX_CLOUD = "Fox Cloud"
+FOX_CLOUD = "fox_cloud"
 FOX_USERNAME = "fox_username"
 FOX_PASSWORD = "fox_password"
 

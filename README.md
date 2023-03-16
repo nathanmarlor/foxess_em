@@ -63,12 +63,33 @@ Recommend installation through [HACS][hacs]
 </details>
 
 <details>
-    <summary><b>FoxESS Cloud Setup</b></summary></p>
+    <summary><b>Inverter Connection Setup</b></summary></p>
+
+Choose from one of the following options:
+
+![Inverter](images/config-step-2.png)
+
+<b>Modbus TCP</b>
+
+- **Modbus Host**: IP Adddress of your Modbus (i.e. W610/LAN) host
+- **Modbus Port**: Port number (default 502)
+- **Modbus Slave**: Slave ID (default 247)
+
+![TCP](images/config-step-2-tcp.png)
+
+<b>Modbus Serial</b>
+
+- **Modbus Host**: Path to your USB host (default /dev/ttyUSB0)
+- **Modbus Slave**: Slave ID (default 247)
+
+![SERIAL](images/config-step-2-serial.png)
+
+<b>FoxESS Cloud</b>
 
 - **Username**: Username from FoxESS Cloud
 - **Password**: Password from FoxESS Cloud
 
-![FoxESS Setup](images/config-step-2.png)
+![FOX](images/config-step-2-fox.png)
 
 </details>
 
@@ -83,7 +104,11 @@ Enter your desired battery parameters:
 - **Day Buffer**: As above, but for the day
 - **Battery Capacity**: Capacity of battery in kWh
 - **Minimum SoC**: Minimum State of Charge as set in the FoxESS App
+
+If using Modbus connection:
+
 - **Charge Rate**: Nominal charge rate in A - for a 3.6kw inverter this should be ~18A
+- **Battery Volts**: Nominal battery voltage in V - i.e. 4 x HV2600 is ~220V
 
 ![Battery Params](images/config-step-3.png)
 
@@ -136,12 +161,12 @@ Notes:
 
 Description of switches:
 
-| Switch                | Description                                                                                |
-| --------------------- | ------------------------------------------------------------------------------------------ |
-| Boost Charge (+1kW)   | Adds 1kW to the charge needed sensor. Resets after the charge period.                      |
-| Disable Auto Charge   | Prevents the integration from changing FoxESS settings to auto-charge or setting Min-SoC   |
-| Full Charge           | Fully charges the battery during off-peak. Resets after the charge period.                 |
-| Custom Charge Profile | Uses a custom charge profile which reduces charge current when > 90% to aid with balancing |
+| Switch                              | Description                                                                                                                              |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Boost Charge (+1kW)                 | Adds 1kW to the charge needed sensor. Resets after the charge period.                                                                    |
+| Disable Auto Charge                 | Prevents the integration from changing FoxESS settings to auto-charge or setting Min-SoC                                                 |
+| Full Charge                         | Fully charges the battery during off-peak. Resets after the charge period.                                                               |
+| Custom Charge Profile (Modbus Only) | Uses a custom charge profile which reduces charge current to meet the desired SoC and further ramps when > 90% SoC to aid with balancing |
 
 </details>
 
