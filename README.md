@@ -71,7 +71,7 @@ Choose from one of the following options:
 
 <b>Modbus TCP (Only compatible with RTU -> TCP devices, not direct LAN)</b>
 
-- **Modbus Host**: IP Adddress of your Modbus (i.e. W610/LAN) host
+- **Modbus Host**: IP Adddress of your Modbus (i.e. W610) host
 - **Modbus Port**: Port number (default 502)
 - **Modbus Slave**: Slave ID (default 247)
 
