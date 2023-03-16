@@ -1,58 +1,91 @@
+import asyncio
 import logging
+from typing import Any
 
+from custom_components.foxess_em.const import CONNECTION_TYPE
+from custom_components.foxess_em.const import FOX_MODBUS_SERIAL
+from custom_components.foxess_em.const import FOX_MODBUS_TCP
+from pymodbus.client import ModbusSerialClient
 from pymodbus.client import ModbusTcpClient
+from pymodbus.exceptions import ModbusIOException
 
 _LOGGER = logging.getLogger(__name__)
-_SLAVE = 247
 
 
 class FoxModbus:
     """Modbus"""
 
-    def __init__(self, host, port=502):
+    def __init__(self, hass, config: dict[str, Any]):
         """Init"""
-        self._host = host
-        self._port = port
-        self._client = ModbusTcpClient(self._host, self._port)
+        self._hass = hass
+        self._config = config
+        self._lock = asyncio.Lock()
+        self._config_type = config[CONNECTION_TYPE]
+        self._class = {
+            FOX_MODBUS_SERIAL: ModbusSerialClient,
+            FOX_MODBUS_TCP: ModbusTcpClient,
+        }
 
-    def _connect(self):
+        self._client = self._class[self._config_type](**config)
+        self._hass.async_create_task(self.connect())
+
+    async def connect(self):
         """Connect to device"""
-        if not self._client.connect():
-            raise ConnectionError(
-                f"Error connecting to device: ({self._host}:{self._port})"
-            )
+        _LOGGER.debug(f"Connecting to modbus - ({self._config})")
+        if not await self._async_pymodbus_call(self._client.connect):
+            _LOGGER.debug("Connect failed, pymodbus will retry")
 
-    def read_input_registers(self, start_address, num_registers):
+    async def close(self):
+        """Close connection"""
+        _LOGGER.debug("Closing connection to modbus")
+        await self._async_pymodbus_call(self._client.close)
+
+    async def read_registers(self, start_address, num_registers, slave):
         """Read registers"""
-        if not self._client.is_socket_open():
-            _LOGGER.info(f"Connecting to modbus: ({self._host}:{self._port})")
-            self._connect()
-
-        _LOGGER.info(f"Reading input register: ({start_address}, {num_registers})")
-
-        response = self._client.read_input_registers(
-            start_address, num_registers, _SLAVE
+        _LOGGER.debug(
+            f"Reading register: ({start_address}, {num_registers}, ({slave}))"
         )
+        response = await self._async_pymodbus_call(
+            self._client.read_input_registers,
+            start_address,
+            num_registers,
+            slave,
+        )
+
         if response.isError():
-            raise ConnectionError(f"Error reading input registers: {response}")
-        return response.registers
+            raise ModbusIOException(f"Error reading registers: {response}")
+        # convert to signed integers
+        regs = [
+            reading if reading < 32768 else reading - 65536
+            for reading in response.registers
+        ]
+        return regs
 
-    def write_registers(self, register_address, register_values):
+    async def write_registers(self, register_address, register_values, slave):
         """Write registers"""
-        if not self._client.is_socket_open():
-            _LOGGER.info(f"Connecting to modbus: ({self._host}:{self._port})")
-            self._connect()
-
-        _LOGGER.info(f"Writing register: ({register_address}, {register_values})")
-
+        _LOGGER.debug(
+            f"Writing register: ({register_address}, {register_values}, {slave})"
+        )
         if len(register_values) > 1:
-            response = self._client.write_registers(
-                register_address, register_values, _SLAVE
+            register_values = [int(i) for i in register_values]
+            response = await self._async_pymodbus_call(
+                self._client.write_registers,
+                register_address,
+                register_values,
+                slave,
             )
         else:
-            response = self._client.write_register(
-                register_address, int(register_values[0]), _SLAVE
+            response = await self._async_pymodbus_call(
+                self._client.write_register,
+                register_address,
+                int(register_values[0]),
+                slave,
             )
         if response.isError():
-            raise ConnectionError(f"Error writing holding register: {response}")
+            raise ModbusIOException(f"Error writing holding register: {response}")
         return True
+
+    async def _async_pymodbus_call(self, call, *args):
+        """Convert async to sync pymodbus call."""
+        async with self._lock:
+            return await self._hass.async_add_executor_job(call, *args)

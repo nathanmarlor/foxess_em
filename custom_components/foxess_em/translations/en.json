@@ -8,16 +8,36 @@
           "key": "API Key"
         }
       },
-      "fox": {
+      "inverter": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your Modbus details or FoxESS Username and Password - https://www.foxesscloud.com/",
+        "description": "Please choose how your inverter is connected",
         "data": {
-          "fox_modbus": "Use Modbus",
+          "connection_type": "Connection Type"
+        }
+      },
+      "cloud": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your FoxESS Cloud details - https://www.foxesscloud.com",
+        "data": {
+          "fox_username": "FoxESS Username",
+          "fox_password": "FoxESS Password"
+        }
+      },
+      "tcp": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your Modbus TCP details",
+        "data": {
           "fox_modbus_host": "Modbus Host",
           "fox_modbus_port": "Modbus Port",
-          "fox_cloud": "Use Fox Cloud",
-          "fox_username": "Fox Username",
-          "fox_password": "Fox Password"
+          "fox_modbus_slave": "Modbus Slave"
+        }
+      },
+      "serial": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your Modbus Serial details",
+        "data": {
+          "fox_modbus_host": "Modbus Host",
+          "fox_modbus_slave": "Modbus Slave"
         }
       },
       "battery": {
@@ -46,9 +66,10 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_error": "Error - please check connection details",
+      "fox_error": "Error - please check username and password",
       "fox_select_one": "Error - please choose Modbus or Fox Cloud",
-      "time_invalid": "Time format not recognised"
+      "time_invalid": "Time format not recognised",
+      "modbus_error": "Error - please check connection details"
     },
     "abort": {
       "single_instance_allowed": "Only a single instance is allowed."
@@ -63,16 +84,36 @@
           "key": "API Key"
         }
       },
-      "fox": {
+      "inverter": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your Modbus details or FoxESS Username and Password - https://www.foxesscloud.com/",
+        "description": "Please choose how your inverter is connected",
         "data": {
-          "fox_modbus": "Use Modbus",
+          "connection_type": "Connection Type"
+        }
+      },
+      "cloud": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your FoxESS Cloud details",
+        "data": {
+          "fox_username": "FoxESS Username",
+          "fox_password": "FoxESS Password"
+        }
+      },
+      "tcp": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your Modbus TCP details",
+        "data": {
           "fox_modbus_host": "Modbus Host",
           "fox_modbus_port": "Modbus Port",
-          "fox_cloud": "Use Fox Cloud",
-          "fox_username": "Fox Username",
-          "fox_password": "Fox Password"
+          "fox_modbus_slave": "Modbus Slave"
+        }
+      },
+      "serial": {
+        "title": "FoxESS - Energy Management: (2/4)",
+        "description": "Please enter your Modbus Serial details",
+        "data": {
+          "fox_modbus_host": "Modbus Host",
+          "fox_modbus_slave": "Modbus Slave"
         }
       },
       "battery": {
@@ -101,9 +142,10 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_error": "Error - please check connection details",
+      "fox_error": "Error - please check username and password",
       "fox_select_one": "Error - please choose Modbus or Fox Cloud",
-      "time_invalid": "Time format not recognised"
+      "time_invalid": "Time format not recognised",
+      "modbus_error": "Error - please check connection details"
     },
     "abort": {
       "single_instance_allowed": "Only a single instance is allowed."

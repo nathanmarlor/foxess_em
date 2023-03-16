@@ -9,6 +9,8 @@ import logging
 from datetime import time
 
 from custom_components.foxess_em.battery.schedule import Schedule
+from custom_components.foxess_em.const import CONNECTION_TYPE
+from custom_components.foxess_em.const import FOX_MODBUS_TCP
 from custom_components.foxess_em.fox.fox_modbus import FoxModbus
 from custom_components.foxess_em.fox.fox_modbus_service import FoxModbuservice
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
@@ -32,9 +34,10 @@ from .const import DOMAIN
 from .const import ECO_END_TIME
 from .const import ECO_START_TIME
 from .const import FOX_CLOUD
-from .const import FOX_MODBUS
 from .const import FOX_MODBUS_HOST
 from .const import FOX_MODBUS_PORT
+from .const import FOX_MODBUS_SERIAL
+from .const import FOX_MODBUS_SLAVE
 from .const import FOX_PASSWORD
 from .const import FOX_USERNAME
 from .const import HOUSE_POWER
@@ -89,10 +92,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     charge_amps = entry.data.get(CHARGE_AMPS, 18)
     battery_volts = entry.data.get(BATTERY_VOLTS, 208)
     # Added for 1.7.0
-    fox_cloud = entry.data.get(FOX_CLOUD, True)
-    fox_modbus = entry.data.get(FOX_MODBUS, False)
+    connection_type = entry.data.get(CONNECTION_TYPE, FOX_MODBUS_TCP)
     fox_modbus_host = entry.data.get(FOX_MODBUS_HOST, "")
     fox_modbus_port = entry.data.get(FOX_MODBUS_PORT, 502)
+    fox_modbus_slave = entry.data.get(FOX_MODBUS_SLAVE, 247)
 
     session = async_get_clientsession(hass)
     solcast_client = SolcastApiClient(solcast_api_key, SOLCAST_URL, session)
@@ -118,16 +121,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         schedule,
         peak_utils,
     )
-    if fox_cloud:
+
+    _LOGGER.debug(f"Initialising {connection_type} service")
+    if connection_type == FOX_CLOUD:
         cloud_client = FoxCloudApiClient(session, fox_username, fox_password)
         fox_service = FoxCloudService(
             hass, cloud_client, eco_start_time, eco_end_time, user_min_soc
         )
     else:
-        modbus_client = FoxModbus(fox_modbus_host, fox_modbus_port)
+        params = {CONNECTION_TYPE: connection_type}
+        if connection_type == FOX_MODBUS_TCP:
+            params.update({"host": fox_modbus_host, "port": fox_modbus_port})
+        else:
+            params.update({"port": fox_modbus_host, "baudrate": 9600})
+        modbus_client = FoxModbus(hass, params)
         fox_service = FoxModbuservice(
-            hass, modbus_client, eco_start_time, eco_end_time, user_min_soc
+            hass,
+            modbus_client,
+            fox_modbus_slave,
+            eco_start_time,
+            eco_end_time,
+            user_min_soc,
         )
+
     charge_service = ChargeService(
         hass,
         battery_controller,
@@ -149,7 +165,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "forecast": forecast_controller,
             "charge": charge_service,
         },
-        "config": {"connection": Connection.MODBUS if fox_modbus else Connection.CLOUD},
+        "config": {
+            "connection": Connection.MODBUS
+            if (connection_type in (FOX_MODBUS_TCP, FOX_MODBUS_SERIAL))
+            else Connection.CLOUD
+        },
     }
 
     # Add callbacks into battery controller for updates

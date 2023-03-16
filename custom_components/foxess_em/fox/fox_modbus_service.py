@@ -22,6 +22,7 @@ class FoxModbuservice(FoxService):
         self,
         hass: HomeAssistant,
         modbus: FoxModbus,
+        slave: int,
         off_peak_start: time,
         off_peak_end: time,
         user_min_soc: int = 10,
@@ -29,6 +30,7 @@ class FoxModbuservice(FoxService):
         """Init Fox Cloud service"""
         self._hass = hass
         self._modbus = modbus
+        self._slave = slave
         self._off_peak_start = off_peak_start
         self._off_peak_end = off_peak_end
         self._user_min_soc = user_min_soc
@@ -50,32 +52,38 @@ class FoxModbuservice(FoxService):
         _LOGGER.debug("Requesting start force charge from Fox Modbus")
         start_encoded, stop_encoded = self._encode_time(start, stop)
 
-        self._modbus.write_registers(
-            _P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0]
+        await self._modbus.write_registers(
+            _P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0], self._slave
         )
 
     async def stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
         _LOGGER.debug("Requesting stop force charge from Fox Modbus")
-        self._modbus.write_registers(_P1_ENABLE, [0, 0, 0, 0, 0, 0])
+        await self._modbus.write_registers(_P1_ENABLE, [0, 0, 0, 0, 0, 0], self._slave)
 
     async def set_min_soc(
         self, soc: int, *args
     ) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
         _LOGGER.debug("Request set min SoC to Fox Modbus")
-        self._modbus.write_registers(_MIN_SOC, [soc])
+        await self._modbus.write_registers(_MIN_SOC, [soc], self._slave)
 
     async def set_charge_current(self, charge_current: float, *args) -> None:
         """Set charge current"""
         _LOGGER.debug(
             f"Requesting set charge current of {charge_current}A to Fox Modbus"
         )
-        self._modbus.write_registers(_CHARGE_CURRENT, [charge_current * 10])
+        await self._modbus.write_registers(
+            _CHARGE_CURRENT, [charge_current * 10], self._slave
+        )
 
     async def device_info(self) -> None:
         """Get device info"""
-        return self._modbus.read_input_registers(_DAY, 1)[0] == datetime.now().day
+        try:
+            day = await self._modbus.read_registers(_DAY, 1, self._slave)
+            return day[0] == datetime.now().day
+        finally:
+            await self._modbus.close()
 
     def _encode_time(self, start, stop):
         """Encode time to Fox time"""
