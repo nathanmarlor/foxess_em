@@ -18,7 +18,7 @@ from ..forecast.forecast_controller import ForecastController
 
 _LOGGER = logging.getLogger(__name__)
 _CHARGE_BUFFER = timedelta(minutes=30)
-_MINIMUM_CHARGE = 1
+_MINIMUM_CHARGE = 2
 
 
 class ChargeService(UnloadController):
