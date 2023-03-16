@@ -8,8 +8,11 @@ from custom_components.foxess_em.fox.fox_modbus import FoxModbus
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.selector import selector as sel
+from pymodbus.exceptions import ModbusException
 
 from ..foxess_em.const import DAWN_BUFFER
 from ..foxess_em.const import DAY_BUFFER
@@ -19,13 +22,16 @@ from .const import BATTERY_CAPACITY
 from .const import BATTERY_SOC
 from .const import BATTERY_VOLTS
 from .const import CHARGE_AMPS
+from .const import CONNECTION_TYPE
 from .const import DOMAIN
 from .const import ECO_END_TIME
 from .const import ECO_START_TIME
 from .const import FOX_CLOUD
-from .const import FOX_MODBUS
 from .const import FOX_MODBUS_HOST
 from .const import FOX_MODBUS_PORT
+from .const import FOX_MODBUS_SERIAL
+from .const import FOX_MODBUS_SLAVE
+from .const import FOX_MODBUS_TCP
 from .const import FOX_PASSWORD
 from .const import FOX_USERNAME
 from .const import HOUSE_POWER
@@ -64,29 +70,59 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(
                     SOLCAST_API_KEY,
                     default=self._data.get(SOLCAST_API_KEY, ""),
-                ): str,
+                ): cv.string,
             }
         )
 
-        self._fox_schema = vol.Schema(
+        self._inverter_connection_schema = vol.Schema(
+            {
+                vol.Required(CONNECTION_TYPE, default=FOX_MODBUS_TCP): sel(
+                    {
+                        "select": {
+                            "options": [FOX_MODBUS_TCP, FOX_MODBUS_SERIAL, FOX_CLOUD]
+                        }
+                    }
+                )
+            }
+        )
+
+        self._modbus_tcp_schema = vol.Schema(
             {
                 vol.Required(
-                    FOX_MODBUS, default=self._data.get(FOX_MODBUS, False)
-                ): bool,
-                vol.Optional(
                     FOX_MODBUS_HOST,
-                    default=self._data.get(FOX_MODBUS_HOST, ""),
-                ): str,
-                vol.Optional(
+                    default=self._data.get(FOX_MODBUS_HOST, "192.168.x.x"),
+                ): cv.string,
+                vol.Required(
                     FOX_MODBUS_PORT,
-                    default=self._data.get(FOX_MODBUS_PORT, 502),
+                    default=502,
                 ): int,
-                vol.Required(FOX_CLOUD, default=self._data.get(FOX_CLOUD, True)): bool,
-                vol.Optional(
+                vol.Required(
+                    FOX_MODBUS_SLAVE,
+                    default=247,
+                ): int,
+            }
+        )
+
+        self._modbus_serial_schema = vol.Schema(
+            {
+                vol.Required(
+                    FOX_MODBUS_HOST,
+                    default=self._data.get(FOX_MODBUS_HOST, "/dev/ttyUSB0"),
+                ): cv.string,
+                vol.Required(
+                    FOX_MODBUS_SLAVE,
+                    default=self._data.get(FOX_MODBUS_SLAVE, 247),
+                ): int,
+            }
+        )
+
+        self._cloud_schema = vol.Schema(
+            {
+                vol.Required(
                     FOX_USERNAME,
                     default=self._data.get(FOX_USERNAME, ""),
                 ): str,
-                vol.Optional(
+                vol.Required(
                     FOX_PASSWORD,
                     default=self._data.get(FOX_PASSWORD, ""),
                 ): str,
@@ -178,7 +214,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             if solcast_valid:
                 self._errors["base"] = None
                 self._user_input.update(user_input)
-                return await self.async_step_fox()
+                return await self.async_step_inverter()
             else:
                 self._errors["base"] = "solcast_auth"
 
@@ -186,29 +222,77 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=self._solcast_schema, errors=self._errors
         )
 
-    async def async_step_fox(self, user_input: dict[str, Any] = None):
+    async def async_step_inverter(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            if user_input[FOX_MODBUS] and user_input[FOX_CLOUD]:
-                self._errors["base"] = "fox_select_one"
+            self._errors["base"] = None
+            self._user_input.update(user_input)
+            if user_input[CONNECTION_TYPE] == FOX_MODBUS_TCP:
+                return await self.async_step_tcp()
+            elif user_input[CONNECTION_TYPE] == FOX_MODBUS_SERIAL:
+                return await self.async_step_serial()
             else:
-                if user_input[FOX_MODBUS]:
-                    fox_valid = await self._test_fox_modbus(
-                        user_input[FOX_MODBUS_HOST], user_input[FOX_MODBUS_PORT]
-                    )
-                else:
-                    fox_valid = await self._test_fox_cloud(
-                        user_input[FOX_USERNAME], user_input[FOX_PASSWORD]
-                    )
-                if fox_valid:
-                    self._errors["base"] = None
-                    self._user_input.update(user_input)
-                    return await self.async_step_battery()
-                else:
-                    self._errors["base"] = "fox_error"
+                return await self.async_step_cloud()
 
         return self.async_show_form(
-            step_id="fox", data_schema=self._fox_schema, errors=self._errors
+            step_id="inverter",
+            data_schema=self._inverter_connection_schema,
+            errors=self._errors,
+        )
+
+    async def async_step_tcp(self, user_input: dict[str, Any] = None):
+        """Handle a flow initialized by the user."""
+        if user_input is not None:
+            self._errors["base"] = None
+            modbus_valid = await self._test_fox_modbus(
+                FOX_MODBUS_TCP,
+                f"{user_input[FOX_MODBUS_HOST]}:{user_input[FOX_MODBUS_PORT]}",
+                user_input[FOX_MODBUS_SLAVE],
+            )
+            if modbus_valid:
+                self._errors["base"] = None
+                self._user_input.update(user_input)
+                return await self.async_step_battery()
+
+        return self.async_show_form(
+            step_id="tcp", data_schema=self._modbus_tcp_schema, errors=self._errors
+        )
+
+    async def async_step_serial(self, user_input: dict[str, Any] = None):
+        """Handle a flow initialized by the user."""
+        if user_input is not None:
+            self._errors["base"] = None
+            modbus_valid = await self._test_fox_modbus(
+                FOX_MODBUS_SERIAL,
+                user_input[FOX_MODBUS_HOST],
+                user_input[FOX_MODBUS_SLAVE],
+            )
+            if modbus_valid:
+                self._errors["base"] = None
+                self._user_input.update(user_input)
+                return await self.async_step_battery()
+
+        return self.async_show_form(
+            step_id="serial",
+            data_schema=self._modbus_serial_schema,
+            errors=self._errors,
+        )
+
+    async def async_step_cloud(self, user_input: dict[str, Any] = None):
+        """Handle a flow initialized by the user."""
+        if user_input is not None:
+            fox_valid = await self._test_fox_cloud(
+                user_input[FOX_USERNAME], user_input[FOX_PASSWORD]
+            )
+            if fox_valid:
+                self._errors["base"] = None
+                self._user_input.update(user_input)
+                return await self.async_step_battery()
+            else:
+                self._errors["base"] = "fox_error"
+
+        return self.async_show_form(
+            step_id="cloud", data_schema=self._cloud_schema, errors=self._errors
         )
 
     async def async_step_battery(self, user_input: dict[str, Any] = None):
@@ -276,19 +360,20 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             pass
         return False
 
-    async def _test_fox_modbus(self, host: str, port: str):
+    async def _test_fox_modbus(self, conn_type, host, slave):
         """Return true if modbus connection can be established"""
         try:
-            modbus = FoxModbus(host, port)
-            service = FoxModbuservice(None, modbus, None, None)
-            result = await service.device_info()
-            if result is not None:
-                return True
+            params = {CONNECTION_TYPE: conn_type}
+            if conn_type == FOX_MODBUS_TCP:
+                params.update({"host": host.split(":")[0], "port": host.split(":")[1]})
             else:
-                return False
-        except Exception as ex:  # pylint: disable=broad-except
-            _LOGGER.warn(ex)
-            pass
+                params.update({"port": host, "baudrate": 9600})
+            client = FoxModbus(self.hass, params)
+            controller = FoxModbuservice(None, client, slave, None, None)
+            return await controller.device_info()
+        except ModbusException as ex:
+            _LOGGER.warning(f"{ex!r}")
+            self._errors["base"] = "modbus_error"
         return False
 
     @staticmethod
