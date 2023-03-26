@@ -100,9 +100,7 @@ class BatteryModel:
 
         for index, _ in future.iterrows():
             period = (
-                load_forecast.iloc[index]["period_start"]
-                .to_pydatetime()
-                .astimezone(tz.tzlocal())
+                load_forecast.iloc[index]["period_start"].to_pydatetime().astimezone()
             )
             if period.time() == self._eco_start_time:
                 # landed on the start of the eco period
@@ -128,9 +126,7 @@ class BatteryModel:
 
         for index, _ in future.iterrows():
             period = (
-                load_forecast.iloc[index]["period_start"]
-                .to_pydatetime()
-                .astimezone(tz.tzlocal())
+                load_forecast.iloc[index]["period_start"].to_pydatetime().astimezone()
             )
             if period.time() == self._eco_start_time:
                 self._add_metadata(load_forecast, period)
