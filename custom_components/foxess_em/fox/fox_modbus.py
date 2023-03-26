@@ -7,6 +7,7 @@ from custom_components.foxess_em.const import FOX_MODBUS_SERIAL
 from custom_components.foxess_em.const import FOX_MODBUS_TCP
 from pymodbus.client import ModbusSerialClient
 from pymodbus.client import ModbusTcpClient
+from pymodbus.exceptions import ModbusException
 from pymodbus.exceptions import ModbusIOException
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,44 +65,58 @@ class FoxModbus:
         ]
         return regs
 
-    async def write_registers(self, register_address, register_values, slave):
+    async def write_registers(self, address, values, slave):
         """Write registers"""
-        _LOGGER.debug(
-            f"Writing register: ({register_address}, {register_values}, {slave})"
-        )
-        if len(register_values) > 1:
-            register_values = [int(i) for i in register_values]
-            response = await self._async_pymodbus_call(
-                self._client.write_registers,
-                register_address,
-                register_values,
-                slave,
-            )
-        else:
-            response = await self._async_pymodbus_call(
-                self._client.write_register,
-                register_address,
-                int(register_values[0]),
-                slave,
-            )
-        if response.isError():
-            self._write_errors += 1
+        _LOGGER.debug("Writing register: (%s, %s, %s)", address, values, slave)
+        try:
+            if len(values) > 1:
+                values = [int(i) for i in values]
+                response = await self._async_pymodbus_call(
+                    self._client.write_registers,
+                    address,
+                    values,
+                    slave,
+                )
+            else:
+                response = await self._async_pymodbus_call(
+                    self._client.write_register,
+                    address,
+                    int(values[0]),
+                    slave,
+                )
+            if response.isError():
+                _LOGGER.warning(
+                    "Error writing holding register - retry (%s/%s): %s",
+                    self._write_errors,
+                    _WRITE_ATTEMPTS,
+                    response,
+                )
+                return await self._handle_write_error(address, values, slave)
+            else:
+                _LOGGER.debug("Sucessfully wrote holding register: %s", response)
+                self._write_errors = 0
+                return True
+
+        except ModbusException as ex:
             _LOGGER.warning(
-                "Error writing holding register - retry (%s/%s): %s",
+                "Exception writing holding register - retry (%s/%s): %s",
                 self._write_errors,
                 _WRITE_ATTEMPTS,
-                response,
+                ex,
             )
-            if self._write_errors >= _WRITE_ATTEMPTS:
-                _LOGGER.error("No more retries left, giving up")
-                self._write_errors = 0
-                return False
-            else:
-                await asyncio.sleep(_WRITE_ERROR_SLEEP)
-                await self.write_registers(register_address, register_values, slave)
-        else:
+            return await self._handle_write_error(address, values, slave)
+
+    async def _handle_write_error(self, address, values, slave):
+        """Handle a write error"""
+        self._write_errors += 1
+
+        if self._write_errors >= _WRITE_ATTEMPTS:
+            _LOGGER.error("No more retries left, giving up")
             self._write_errors = 0
-            return True
+            return False
+        else:
+            await asyncio.sleep(_WRITE_ERROR_SLEEP)
+            await self.write_registers(address, values, slave)
 
     async def _async_pymodbus_call(self, call, *args):
         """Convert async to sync pymodbus call."""
