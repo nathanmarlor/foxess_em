@@ -138,7 +138,11 @@ class BatteryModel:
     ):
         """Return charge totals for dawn/day"""
         # calculate start/end of the next peak period
-        eco_start = period.replace(
+        now = datetime.now().astimezone()
+        eco_start = now.replace(
+            year=period.year,
+            month=period.month,
+            day=period.day,
             hour=self._eco_start_time.hour,
             minute=self._eco_start_time.minute,
             second=0,
