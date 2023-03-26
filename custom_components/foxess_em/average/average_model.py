@@ -148,18 +148,26 @@ class AverageModel:
         """House load peak"""
         days = self._tracked_sensors["house_load_7d"].primary.period.days
 
-        eco_start = datetime.now().replace(
-            hour=self._eco_start_time.hour,
-            minute=self._eco_start_time.minute,
-            second=0,
-            microsecond=0,
+        eco_start = (
+            datetime.now()
+            .astimezone()
+            .replace(
+                hour=self._eco_start_time.hour,
+                minute=self._eco_start_time.minute,
+                second=0,
+                microsecond=0,
+            )
         )
         eco_start = eco_start.astimezone(pytz.utc).time()
-        eco_end = datetime.now().replace(
-            hour=self._eco_end_time.hour,
-            minute=self._eco_end_time.minute,
-            second=0,
-            microsecond=0,
+        eco_end = (
+            datetime.now()
+            .astimezone()
+            .replace(
+                hour=self._eco_end_time.hour,
+                minute=self._eco_end_time.minute,
+                second=0,
+                microsecond=0,
+            )
         )
         eco_end = eco_end.astimezone(pytz.utc).time()
 

@@ -63,7 +63,10 @@ class FoxESSCalendar(CalendarEntity):
             summary += f"Export: {str(round(values['export'], 2))} / "
             calendar_events.append(
                 CalendarEvent(
-                    key, values["eco_end"], f"FoxESS Charge: {charge}", summary
+                    values["eco_start"],
+                    values["eco_end"],
+                    f"FoxESS Charge: {charge}",
+                    summary,
                 )
             )
 
