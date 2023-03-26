@@ -9,6 +9,7 @@ import pandas as pd
 from custom_components.foxess_em.battery.battery_util import BatteryUtils
 from custom_components.foxess_em.battery.schedule import Schedule
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
+from dateutil import tz
 from homeassistant.core import HomeAssistant
 
 from ..util.exceptions import NoDataError
@@ -98,7 +99,11 @@ class BatteryModel:
             _, min_soc = self._charge_totals(load_forecast, now, battery)
 
         for index, _ in future.iterrows():
-            period = load_forecast.iloc[index]["period_start"].to_pydatetime()
+            period = (
+                load_forecast.iloc[index]["period_start"]
+                .to_pydatetime()
+                .astimezone(tz.tzlocal())
+            )
             if period.time() == self._eco_start_time:
                 # landed on the start of the eco period
                 boost = self._get_total_additional_charge(period)
@@ -122,7 +127,11 @@ class BatteryModel:
             load_forecast.at[index, "battery"] = battery
 
         for index, _ in future.iterrows():
-            period = load_forecast.iloc[index]["period_start"].to_pydatetime()
+            period = (
+                load_forecast.iloc[index]["period_start"]
+                .to_pydatetime()
+                .astimezone(tz.tzlocal())
+            )
             if period.time() == self._eco_start_time:
                 self._add_metadata(load_forecast, period)
 
@@ -138,11 +147,7 @@ class BatteryModel:
     ):
         """Return charge totals for dawn/day"""
         # calculate start/end of the next peak period
-        now = datetime.now().astimezone()
-        eco_start = now.replace(
-            year=period.year,
-            month=period.month,
-            day=period.day,
+        eco_start = period.replace(
             hour=self._eco_start_time.hour,
             minute=self._eco_start_time.minute,
             second=0,
