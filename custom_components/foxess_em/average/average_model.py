@@ -4,7 +4,7 @@ from datetime import datetime
 from datetime import time
 
 import pandas as pd
-import pytz
+from dateutil import tz
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder import history
 from homeassistant.core import HomeAssistant
@@ -65,7 +65,7 @@ class AverageModel:
                 datetime.now()
                 .astimezone()
                 .replace(hour=0, minute=0, second=0, microsecond=0)
-                .astimezone(pytz.utc)
+                .astimezone(tz.UTC)
             )
 
         from_date = to_date - item.period
@@ -82,7 +82,7 @@ class AverageModel:
 
         values_dict = [
             {
-                "datetime": value.last_changed.astimezone(pytz.utc),
+                "datetime": value.last_changed.astimezone(tz.UTC),
                 "value": float(value.state),
             }
             for value in values
@@ -91,13 +91,13 @@ class AverageModel:
 
         # Add start/final value to ensure even resampling later
         values_dict[0] = {
-            "datetime": from_date.astimezone(pytz.utc),
+            "datetime": from_date.astimezone(tz.UTC),
             "value": 0,
         }
 
         values_dict.append(
             {
-                "datetime": to_date.astimezone(pytz.utc),
+                "datetime": to_date.astimezone(tz.UTC),
                 "value": values_dict[-1]["value"],
             }
         )
@@ -158,7 +158,7 @@ class AverageModel:
                 microsecond=0,
             )
         )
-        eco_start = eco_start.astimezone(pytz.utc).time()
+        eco_start = eco_start.astimezone(tz.UTC).time()
         eco_end = (
             datetime.now()
             .astimezone()
@@ -169,7 +169,7 @@ class AverageModel:
                 microsecond=0,
             )
         )
-        eco_end = eco_end.astimezone(pytz.utc).time()
+        eco_end = eco_end.astimezone(tz.UTC).time()
 
         l_df = self._resampled
         filtered = l_df.between_time(eco_end, eco_start)
