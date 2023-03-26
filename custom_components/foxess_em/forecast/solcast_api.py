@@ -88,7 +88,7 @@ class SolcastApiClient:
             for forecast in live["forecasts"]
         ]
 
-        return history_estimates + live_estimates
+        return history_estimates[1:] + live_estimates
 
     async def _fetch_data(
         self, api_key: str, solcast_url: str, hours=120
