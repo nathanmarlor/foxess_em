@@ -10,6 +10,8 @@ from pymodbus.client import ModbusTcpClient
 from pymodbus.exceptions import ModbusIOException
 
 _LOGGER = logging.getLogger(__name__)
+_WRITE_ATTEMPTS = 5
+_WRITE_ERROR_SLEEP = 5
 
 
 class FoxModbus:
@@ -19,6 +21,7 @@ class FoxModbus:
         """Init"""
         self._hass = hass
         self._config = config
+        self._write_errors = 0
         self._lock = asyncio.Lock()
         self._config_type = config[CONNECTION_TYPE]
         self._class = {
@@ -82,8 +85,23 @@ class FoxModbus:
                 slave,
             )
         if response.isError():
-            raise ModbusIOException(f"Error writing holding register: {response}")
-        return True
+            self._write_errors += 1
+            _LOGGER.warning(
+                "Error writing holding register - retry (%s/%s): %s",
+                self._write_errors,
+                _WRITE_ATTEMPTS,
+                response,
+            )
+            if self._write_errors >= _WRITE_ATTEMPTS:
+                _LOGGER.error("No more retries left, giving up")
+                self._write_errors = 0
+                return False
+            else:
+                await asyncio.sleep(_WRITE_ERROR_SLEEP)
+                await self.write_registers(register_address, register_values, slave)
+        else:
+            self._write_errors = 0
+            return True
 
     async def _async_pymodbus_call(self, call, *args):
         """Convert async to sync pymodbus call."""
