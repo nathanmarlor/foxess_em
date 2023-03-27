@@ -19,6 +19,7 @@ from ..forecast.forecast_controller import ForecastController
 _LOGGER = logging.getLogger(__name__)
 _CHARGE_BUFFER = timedelta(minutes=30)
 _MINIMUM_CHARGE = 2
+_CHARGE_HYSTERESIS = 2
 
 
 class ChargeService(UnloadController):
@@ -118,20 +119,20 @@ class ChargeService(UnloadController):
         else:
             self._target_charge_amps = self._user_charge_amps
 
-        _LOGGER.debug(f"Charge rate set to {self._target_charge_amps}A for {window}")
+        _LOGGER.debug("Charge rate set to %dA for %s", self._target_charge_amps, window)
         await self._fox.set_charge_current(self._target_charge_amps)
 
     async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
         """Eco start"""
 
-        _LOGGER.debug(f"Setting min SoC to {self._perc_target}%")
+        _LOGGER.debug("Setting min SoC to %d%%", self._perc_target)
         await self._fox.set_min_soc(self._perc_target)
 
         self._start_listening()
 
         if self._charge_required <= 0:
             _LOGGER.debug(
-                f"Allowing battery to continue discharge until {self._perc_target}"
+                "Allowing battery to continue discharge until %d%%", self._perc_target
             )
             await self._stop_force_charge()
 
@@ -183,7 +184,10 @@ class ChargeService(UnloadController):
         if (new_state >= self._perc_target) and self._charge_active:
             if self._perc_target != 100:
                 await self._stop_force_charge()
-        elif new_state < self._perc_target and not self._charge_active:
+        elif (
+            new_state < (self._perc_target - _CHARGE_HYSTERESIS)
+            and not self._charge_active
+        ):
             await self._start_force_charge_off_peak()
 
     def _start_listening(self):

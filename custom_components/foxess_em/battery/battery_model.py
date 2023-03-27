@@ -304,7 +304,7 @@ class BatteryModel:
             & (self._model["period_start"] > (now - timedelta(days=3)))
         ]
         # set global model
-        return hist.append(future)
+        return pd.concat([hist, future])
 
     def _get_total_additional_charge(self, period: datetime):
         """Get all additional charge"""

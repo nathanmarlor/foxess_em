@@ -35,7 +35,7 @@ class FoxModbus:
 
     async def connect(self):
         """Connect to device"""
-        _LOGGER.debug(f"Connecting to modbus - ({self._config})")
+        _LOGGER.debug("Connecting to modbus - (%s)", self._config)
         if not await self._async_pymodbus_call(self._client.connect):
             _LOGGER.debug("Connect failed, pymodbus will retry")
 
@@ -47,7 +47,7 @@ class FoxModbus:
     async def read_registers(self, start_address, num_registers, slave):
         """Read registers"""
         _LOGGER.debug(
-            f"Reading register: ({start_address}, {num_registers}, ({slave}))"
+            "Reading register: (%d, %d, %d)", start_address, num_registers, slave
         )
         response = await self._async_pymodbus_call(
             self._client.read_input_registers,
@@ -67,7 +67,7 @@ class FoxModbus:
 
     async def write_registers(self, address, values, slave):
         """Write registers"""
-        _LOGGER.debug("Writing register: (%s, %s, %s)", address, values, slave)
+        _LOGGER.debug("Writing register: (%d, %s, %d)", address, values, slave)
         try:
             if len(values) > 1:
                 values = [int(i) for i in values]
@@ -85,21 +85,23 @@ class FoxModbus:
                     slave,
                 )
             if response.isError():
+                self._write_errors += 1
                 _LOGGER.warning(
-                    "Error writing holding register - retry (%s/%s): %s",
+                    "Error writing holding register - retry (%d/%d): %s",
                     self._write_errors,
                     _WRITE_ATTEMPTS,
                     response,
                 )
                 return await self._handle_write_error(address, values, slave)
             else:
-                _LOGGER.debug("Sucessfully wrote holding register: %s", response)
+                _LOGGER.debug("Sucessful write to holding register: %s", response)
                 self._write_errors = 0
                 return True
 
         except ModbusException as ex:
+            self._write_errors += 1
             _LOGGER.warning(
-                "Exception writing holding register - retry (%s/%s): %s",
+                "Exception writing holding register - retry (%d/%d): %s",
                 self._write_errors,
                 _WRITE_ATTEMPTS,
                 ex,
@@ -108,8 +110,6 @@ class FoxModbus:
 
     async def _handle_write_error(self, address, values, slave):
         """Handle a write error"""
-        self._write_errors += 1
-
         if self._write_errors >= _WRITE_ATTEMPTS:
             _LOGGER.error("No more retries left, giving up")
             self._write_errors = 0
