@@ -8,18 +8,11 @@ from ..common.switch_desc import SwitchDescription
 _LOGGER = logging.getLogger(__name__)
 
 _SWITCHES: dict[str, SwitchDescription] = {
-    "boost": SwitchDescription(
-        key="boost",
-        name="Boost Charge (+1kW)",
-        icon="mdi:rocket",
-        is_on="boost_status",
-        switch="set_boost",
-    ),
     "full": SwitchDescription(
         key="full",
         name="Full Charge",
         icon="mdi:rocket",
-        is_on="full_status",
+        is_on="get_full",
         switch="set_full",
     ),
 }
