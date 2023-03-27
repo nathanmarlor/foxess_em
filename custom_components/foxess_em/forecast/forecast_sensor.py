@@ -44,9 +44,7 @@ SENSORS: dict[str, SensorDescription] = {
         icon="mdi:calendar",
         should_poll=False,
         visible=False,
-        state_attributes={
-            "forecast": "raw_data",
-        },
+        state_attributes={"forecast": "raw_data", "last_update": "last_update"},
         store_attributes=True,
     ),
 }

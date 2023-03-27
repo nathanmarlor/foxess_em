@@ -45,16 +45,24 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         """Load forecast from state"""
         raw_data = self._hass.states.get(FORECAST)
 
-        if raw_data is not None and "forecast" in raw_data.attributes:
-            _LOGGER.debug("Loading forecast data from cache")
-            forecast_data = raw_data.attributes["forecast"]
-            self._api.load(forecast_data)
-            self._last_update = datetime.now().astimezone()
-            _LOGGER.debug(
-                "Finished loading forecast data from cache, notifying listeners"
-            )
-            await self._async_get_site_info()
-            self._notify_listeners()
+        if raw_data is not None and all(
+            k in raw_data.attributes for k in ("forecast", "last_update")
+        ):
+            last_update = datetime.fromisoformat(raw_data.attributes["last_update"])
+            cache_age = datetime.now().astimezone() - last_update
+            _LOGGER.debug("Forecast cache is %s old", cache_age)
+            if cache_age < timedelta(days=1):
+                _LOGGER.debug("Loading forecast data from cache")
+                forecast_data = raw_data.attributes["forecast"]
+                self._api.load(forecast_data)
+                self._last_update = last_update
+                _LOGGER.debug(
+                    "Finished loading forecast data from cache, notifying listeners"
+                )
+                await self._async_get_site_info()
+                self._notify_listeners()
+            else:
+                await self.async_refresh()
         else:
             await self.async_refresh()
 
