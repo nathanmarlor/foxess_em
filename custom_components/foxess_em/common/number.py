@@ -55,15 +55,15 @@ class Number(NumberEntity):
 
     @property
     def native_min_value(self):
-        return 1
+        return self.number_desc.min
 
     @property
     def native_max_value(self):
-        return 5
+        return self.number_desc.max
 
     @property
     def native_step(self):
-        return 0.5
+        return self.number_desc.step
 
     @property
     def icon(self) -> str:

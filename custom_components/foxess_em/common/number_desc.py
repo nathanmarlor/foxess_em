@@ -10,3 +10,6 @@ class NumberDescription(NumberEntityDescription):
 
     set: str | None = None
     get: str | None = None
+    min: float | None = 0
+    max: float | None = 0
+    step: float | None = 0.5

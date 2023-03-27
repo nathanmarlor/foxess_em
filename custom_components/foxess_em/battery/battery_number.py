@@ -14,6 +14,9 @@ _NUMBERS: dict[str, NumberDescription] = {
         icon="mdi:rocket",
         set="set_boost",
         get="get_boost",
+        min=0,
+        max=5,
+        step=0.5,
     ),
 }
 
