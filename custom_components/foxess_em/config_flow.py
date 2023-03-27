@@ -145,10 +145,10 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 ): str,
                 vol.Required(
                     DAWN_BUFFER, default=float(self._data.get(DAWN_BUFFER, 1))
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=50)),
                 vol.Required(
                     DAY_BUFFER, default=self._data.get(DAY_BUFFER, 2)
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=50)),
                 vol.Required(
                     BATTERY_CAPACITY, default=self._data.get(BATTERY_CAPACITY, 10.4)
                 ): vol.Coerce(float),
