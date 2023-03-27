@@ -40,6 +40,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         self._hass = hass
         self._schedule = schedule
         self._peak_utils = peak_utils
+        self._capacity = capacity
         self._battery_utils = BatteryUtils(capacity, min_soc)
         self._model = BatteryModel(
             hass,
@@ -172,27 +173,27 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         """Forecast last update in ISO format"""
         return self._forecast_controller.last_update().isoformat()
 
-    def set_boost(self, status: bool) -> None:
+    def set_boost(self, value: float) -> None:
         """Set boost on/off"""
         self._schedule.upsert(
-            self._peak_utils.next_eco_start(), {"boost_status": status}
+            self._peak_utils.next_eco_start(), {"boost_status": value}
         )
         self.refresh()
 
-    def boost_status(self) -> bool:
+    def get_boost(self) -> bool:
         """Boost status"""
         return self._get_boost(self._peak_utils.next_eco_start(), "boost_status")
 
     def set_full(self, status: bool) -> None:
         """Set full charge on/off"""
-        self._schedule.upsert(
-            self._peak_utils.next_eco_start(), {"full_status": status}
-        )
+        value = self._capacity if status else 0
+        self._schedule.upsert(self._peak_utils.next_eco_start(), {"full_status": value})
         self.refresh()
 
-    def full_status(self) -> bool:
+    def get_full(self) -> float:
         """Full status"""
-        return self._get_boost(self._peak_utils.next_eco_start(), "full_status")
+        value = self._get_boost(self._peak_utils.next_eco_start(), "full_status")
+        return False if value == 0 else True
 
     def _get_boost(self, index: datetime, charge_type: str) -> bool:
         """Retrieve schedule item"""
@@ -200,7 +201,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         if schedule is not None and charge_type in schedule:
             return schedule[charge_type]
 
-        return False
+        return 0
 
     def battery_depleted(self) -> datetime:
         """Time battery capacity is 0"""

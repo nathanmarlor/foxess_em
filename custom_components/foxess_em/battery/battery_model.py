@@ -15,9 +15,6 @@ from ..util.exceptions import NoDataError
 
 _LOGGER = logging.getLogger(__name__)
 
-_BOOST = 1
-_FULL = 1000
-
 
 class BatteryModel:
     """Class to manage battery values"""
@@ -311,18 +308,15 @@ class BatteryModel:
         boost = self._get_boost(period, "boost_status")
         full = self._get_boost(period, "full_status")
 
-        boost = _BOOST if boost is True else 0
-        full = _FULL if full is True else 0
-
         return max([boost, full])
 
-    def _get_boost(self, index: datetime, charge_type: str) -> bool:
+    def _get_boost(self, index: datetime, boost_type: str) -> float:
         """Retrieve schedule item"""
         schedule = self._schedule.get(index)
-        if schedule is not None and charge_type in schedule:
-            return schedule[charge_type]
+        if schedule is not None and boost_type in schedule:
+            return schedule[boost_type]
 
-        return False
+        return 0
 
     def _merge_dataframes(self, load: pd.DataFrame, forecast: pd.DataFrame):
         """Merge load and forecast dataframes"""
