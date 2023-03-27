@@ -81,6 +81,9 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         """Refresh battery model"""
         _LOGGER.debug("Refreshing battery model")
 
+        if not (self._average_controller.ready() and self._forecast_controller.ready()):
+            return
+
         try:
             load = self._average_controller.resample_data()
             forecast = self._forecast_controller.resample_data()

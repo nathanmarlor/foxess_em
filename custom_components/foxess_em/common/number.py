@@ -45,25 +45,29 @@ class Number(NumberEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        number = getattr(self._controller, self.number_desc.get)
+        number = getattr(self._controller, self.number_desc.get_method)
         return number()
 
     async def async_set_native_value(self, value: float) -> None:
         """Change the selected option."""
-        number = getattr(self._controller, self.number_desc.set)
+        number = getattr(self._controller, self.number_desc.set_method)
         number(value)
 
     @property
     def native_min_value(self):
-        return self.number_desc.min
+        return self.number_desc.native_min_value
 
     @property
     def native_max_value(self):
-        return self.number_desc.max
+        return self.number_desc.native_max_value
 
     @property
     def native_step(self):
-        return self.number_desc.step
+        return self.number_desc.native_step
+
+    @property
+    def native_unit_of_measurement(self):
+        return self.number_desc.native_unit_of_measurement
 
     @property
     def icon(self) -> str:

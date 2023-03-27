@@ -12,11 +12,12 @@ _NUMBERS: dict[str, NumberDescription] = {
         key="boost",
         name="Boost Charge",
         icon="mdi:rocket",
-        set="set_boost",
-        get="get_boost",
-        min=0,
-        max=5,
-        step=0.5,
+        set_method="set_boost",
+        get_method="get_boost",
+        native_min_value=0,
+        native_max_value=5,
+        native_step=0.5,
+        native_unit_of_measurement="kWh",
     ),
 }
 
