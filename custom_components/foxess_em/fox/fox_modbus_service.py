@@ -50,11 +50,22 @@ class FoxModbuservice(FoxService):
     async def _start_force_charge(self, start, stop) -> None:
         """Start force charge"""
         _LOGGER.debug("Requesting start force charge from Fox Modbus")
-        start_encoded, stop_encoded = self._encode_time(start, stop)
+        start_encoded = self._encode_time(start)
+        stop_encoded = self._encode_time(stop)
+        midnight_encoded = self._encode_time(time(hour=23, minute=59))
 
-        await self._modbus.write_registers(
-            _P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0], self._slave
-        )
+        if start > stop:
+            _LOGGER.debug("Setting double charge window - %s / %s", start, stop)
+            await self._modbus.write_registers(
+                _P1_ENABLE,
+                [1, start_encoded, stop_encoded, 1, midnight_encoded, stop_encoded],
+                self._slave,
+            )
+        else:
+            _LOGGER.debug("Setting single charge window - %s / %s", start, stop)
+            await self._modbus.write_registers(
+                _P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0], self._slave
+            )
 
     async def stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
@@ -85,8 +96,6 @@ class FoxModbuservice(FoxService):
         finally:
             await self._modbus.close()
 
-    def _encode_time(self, start, stop):
+    def _encode_time(self, core_time):
         """Encode time to Fox time"""
-        start_encoded = (start.hour * 256) + start.minute
-        stop_encoded = (stop.hour * 256) + stop.minute
-        return start_encoded, stop_encoded
+        return (core_time.hour * 256) + core_time.minute
