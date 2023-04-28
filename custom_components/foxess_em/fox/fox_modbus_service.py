@@ -53,12 +53,13 @@ class FoxModbuservice(FoxService):
         start_encoded = self._encode_time(start)
         stop_encoded = self._encode_time(stop)
         midnight_encoded = self._encode_time(time(hour=23, minute=59))
+        next_day_encoded = self._encode_time(time(hour=0, minute=1))
 
         if start > stop:
             _LOGGER.debug("Setting double charge window - %s / %s", start, stop)
             await self._modbus.write_registers(
                 _P1_ENABLE,
-                [1, start_encoded, stop_encoded, 1, midnight_encoded, stop_encoded],
+                [1, start_encoded, midnight_encoded, 1, next_day_encoded, stop_encoded],
                 self._slave,
             )
         else:
