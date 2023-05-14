@@ -37,7 +37,7 @@ class FoxCloudApiClient:
         _LOGGER.debug("Logging into Fox Cloud")
         params = {"user": self._fox_username, "password": self._fox_password}
         result = await self._post_data(_LOGIN, params)
-        self._token = {"token": result["token"]}
+        self._token = result["token"]
 
     async def async_post_data(self, url: str, params: dict[str, str]) -> dict:
         """Post data via the Fox API."""
@@ -50,10 +50,17 @@ class FoxCloudApiClient:
 
     async def _post_data(self, url: str, params: dict[str, str]) -> dict:
         try:
+            header_data = {
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+            }
+
+            if self._token is not None:
+                header_data["token"] = self._token
+
             _LOGGER.debug(f"Issuing request to ({url}) with params: {params}")
             async with async_timeout.timeout(_TIMEOUT):
                 response = await self._session.post(
-                    url, json=params, headers=self._token
+                    url, json=params, headers=header_data
                 )
             # Leave 1 second between subsequent Fox calls
             await asyncio.sleep(1)
