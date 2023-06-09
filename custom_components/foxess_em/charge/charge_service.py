@@ -136,10 +136,6 @@ class ChargeService(UnloadController):
             )
             await self._stop_force_charge()
 
-        _LOGGER.debug("Resetting switches")
-        self._battery_controller.set_boost(False)
-        self._battery_controller.set_full(False)
-
     async def _start_force_charge_off_peak(
         self, *args
     ) -> None:  # pylint: disable=unused-argument
