@@ -154,8 +154,8 @@ class BatteryModel:
         ]
 
         # sum forecast and house load
-        forecast_sum = peak.pv_estimate.sum(numeric_only=True)
-        load_sum = peak.load.sum(numeric_only=True)
+        forecast_sum = peak.pv_estimate.sum()
+        load_sum = peak.load.sum()
         dawn_load = self._dawn_load(model, eco_end_time)
         dawn_charge = self._dawn_charge_needs(dawn_load)
         day_charge = self._day_charge_needs(forecast_sum, load_sum)
@@ -206,8 +206,8 @@ class BatteryModel:
         ]
 
         # metadata - import/export
-        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum(numeric_only=True))
-        grid_export = peak[(peak["grid"] > 0)].grid.sum(numeric_only=True)
+        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum())
+        grid_export = peak[(peak["grid"] > 0)].grid.sum()
 
         self._schedule.upsert(
             eco_start,
@@ -263,7 +263,7 @@ class BatteryModel:
         if len(grid_use) == 0:
             return 0
 
-        return round(abs(grid_use.grid.sum(numeric_only=True)), 2)
+        return round(abs(grid_use.grid.sum()), 2)
 
     def peak_grid_export(self) -> float:
         """Grid usage required to next eco start"""
@@ -279,7 +279,7 @@ class BatteryModel:
         if len(grid_export) == 0:
             return 0
 
-        return round(grid_export.grid.sum(numeric_only=True), 2)
+        return round(grid_export.grid.sum(), 2)
 
     def _battery_capacity_remaining(self) -> float:
         """Usable capacity remaining"""
@@ -343,7 +343,7 @@ class BatteryModel:
             (model["period_start"] > eco_end_time) & (model["period_start"] < dawn_time)
         ]
 
-        load_sum = abs(dawn_load.delta.sum(numeric_only=True))
+        load_sum = abs(dawn_load.delta.sum())
 
         return round(load_sum, 2)
 
