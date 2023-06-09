@@ -61,12 +61,7 @@ class AverageModel:
         to_date = datetime.now().astimezone()
 
         if item.whole_day:
-            to_date = (
-                datetime.now()
-                .astimezone()
-                .replace(hour=0, minute=0, second=0, microsecond=0)
-                .astimezone(tz.UTC)
-            )
+            to_date = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0).astimezone(tz.UTC)
 
         from_date = to_date - item.period
 

@@ -99,33 +99,25 @@ class FoxCloudService(FoxService):
         except NoDataError as ex:
             _LOGGER.error(ex)
 
-    async def set_min_soc(
-        self, soc: int, *args
-    ) -> None:  # pylint: disable=unused-argument
+    async def set_min_soc(self, soc: int, *args) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
         _LOGGER.debug("Sending min SoC to Fox Cloud")
 
         try:
             device_info = await self.device_info()
             device_sn = device_info["deviceSN"]
-            await self._api.async_post_data(
-                f"{_BASE_URL}{_MIN_SOC}", self._build_min_soc_query(device_sn, soc)
-            )
+            await self._api.async_post_data(f"{_BASE_URL}{_MIN_SOC}", self._build_min_soc_query(device_sn, soc))
         except NoDataError as ex:
             _LOGGER.error(ex)
 
     async def set_charge_current(self, charge_current: float, *args) -> None:
         """Set charge current"""
-        _LOGGER.debug(
-            "Skipping call to set charge current as not supported using the Cloud"
-        )
+        _LOGGER.debug("Skipping call to set charge current as not supported using the Cloud")
 
     async def device_info(self) -> None:
         """Get device serial number"""
         if self._device_info is None:
-            device = await self._api.async_post_data(
-                f"{_BASE_URL}{_DEVICE}", self._build_device_query()
-            )
+            device = await self._api.async_post_data(f"{_BASE_URL}{_DEVICE}", self._build_device_query())
             self._device_info = device["devices"][0]
             _LOGGER.debug(f"Retrieved Fox device info: {self._device_info}")
 
@@ -169,9 +161,7 @@ class FoxCloudService(FoxService):
 
         return query
 
-    def _build_start_single_charge_query(
-        self, device_sn: str, start_time: time, end_time: time
-    ) -> dict:
+    def _build_start_single_charge_query(self, device_sn: str, start_time: time, end_time: time) -> dict:
         """Build single time charge query"""
 
         query = {

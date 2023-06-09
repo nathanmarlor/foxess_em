@@ -53,9 +53,7 @@ class BatteryModel:
         """Return raw data in dictionary form"""
         now = datetime.now().astimezone()
 
-        filtered = self._model[
-            ["period_start", "pv_estimate", "load", "battery", "grid"]
-        ]
+        filtered = self._model[["period_start", "pv_estimate", "load", "battery", "grid"]]
 
         filtered = filtered.set_index("period_start").resample("5Min").mean()
         filtered["period_start"] = pd.to_datetime(filtered.index.values, utc=True)
@@ -95,15 +93,11 @@ class BatteryModel:
             _, min_soc = self._charge_totals(load_forecast, now, battery)
 
         for index, _ in future.iterrows():
-            period = (
-                load_forecast.iloc[index]["period_start"].to_pydatetime().astimezone()
-            )
+            period = load_forecast.iloc[index]["period_start"].to_pydatetime().astimezone()
             if period.time() == self._eco_start_time:
                 # landed on the start of the eco period
                 boost = self._get_total_additional_charge(period)
-                total, min_soc = self._charge_totals(
-                    load_forecast, period, battery, boost
-                )
+                total, min_soc = self._charge_totals(load_forecast, period, battery, boost)
                 battery += total
             elif self._peak_utils.in_peak(period.time()) and battery < min_soc:
                 # hold SoC in off-peak period
@@ -121,9 +115,7 @@ class BatteryModel:
             load_forecast.at[index, "battery"] = battery
 
         for index, _ in future.iterrows():
-            period = (
-                load_forecast.iloc[index]["period_start"].to_pydatetime().astimezone()
-            )
+            period = load_forecast.iloc[index]["period_start"].to_pydatetime().astimezone()
             if period.time() == self._eco_start_time:
                 self._add_metadata(load_forecast, period)
 
@@ -148,26 +140,17 @@ class BatteryModel:
         eco_end_time = self._peak_utils.next_eco_end(eco_start)
         next_eco_start = eco_start + timedelta(days=1)
         # grab all peak values
-        peak = model[
-            (model["period_start"] > eco_end_time)
-            & (model["period_start"] < next_eco_start)
-        ]
+        peak = model[(model["period_start"] > eco_end_time) & (model["period_start"] < next_eco_start)]
 
         # sum forecast and house load
-        forecast_sum = peak.pv_estimate.sum(numeric_only=True)
-        load_sum = peak.load.sum(numeric_only=True)
+        forecast_sum = peak.pv_estimate.sum()
+        load_sum = peak.load.sum()
         dawn_load = self._dawn_load(model, eco_end_time)
         dawn_charge = self._dawn_charge_needs(dawn_load)
         day_charge = self._day_charge_needs(forecast_sum, load_sum)
-        max_charge = self._battery_utils.ceiling_charge_total(
-            max([dawn_charge, day_charge])
-        )
+        max_charge = self._battery_utils.ceiling_charge_total(max([dawn_charge, day_charge]))
         min_soc = (
-            max_charge
-            if boost == 0
-            else self._battery_utils.ceiling_charge_total(
-                max([battery, max_charge]) + boost
-            )
+            max_charge if boost == 0 else self._battery_utils.ceiling_charge_total(max([battery, max_charge]) + boost)
         )
         total = self._battery_utils.ceiling_charge_total(max([0, min_soc - battery]))
         # store in dataframe for retrieval later
@@ -200,14 +183,11 @@ class BatteryModel:
         eco_end_time = self._peak_utils.next_eco_end(eco_start)
         next_eco_start = eco_start + timedelta(days=1)
         # grab all peak values
-        peak = model[
-            (model["period_start"] > eco_end_time)
-            & (model["period_start"] < next_eco_start)
-        ]
+        peak = model[(model["period_start"] > eco_end_time) & (model["period_start"] < next_eco_start)]
 
         # metadata - import/export
-        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum(numeric_only=True))
-        grid_export = peak[(peak["grid"] > 0)].grid.sum(numeric_only=True)
+        grid_import = abs(peak[(peak["grid"] < 0)].grid.sum())
+        grid_export = peak[(peak["grid"] > 0)].grid.sum()
 
         self._schedule.upsert(
             eco_start,
@@ -239,8 +219,7 @@ class BatteryModel:
             return None
 
         battery_depleted = self._model[
-            (self._model["battery"] == 0)
-            & (self._model["period_start"] > datetime.now().astimezone())
+            (self._model["battery"] == 0) & (self._model["period_start"] > datetime.now().astimezone())
         ]
 
         if len(battery_depleted) == 0:
@@ -255,15 +234,13 @@ class BatteryModel:
         eco_start = self._peak_utils.next_eco_start()
 
         grid_use = self._model[
-            (self._model["grid"] < 0)
-            & (self._model["period_start"] > now)
-            & (self._model["period_start"] < eco_start)
+            (self._model["grid"] < 0) & (self._model["period_start"] > now) & (self._model["period_start"] < eco_start)
         ]
 
         if len(grid_use) == 0:
             return 0
 
-        return round(abs(grid_use.grid.sum(numeric_only=True)), 2)
+        return round(abs(grid_use.grid.sum()), 2)
 
     def peak_grid_export(self) -> float:
         """Grid usage required to next eco start"""
@@ -271,15 +248,13 @@ class BatteryModel:
         eco_start = self._peak_utils.next_eco_start()
 
         grid_export = self._model[
-            (self._model["grid"] > 0)
-            & (self._model["period_start"] > now)
-            & (self._model["period_start"] < eco_start)
+            (self._model["grid"] > 0) & (self._model["period_start"] > now) & (self._model["period_start"] < eco_start)
         ]
 
         if len(grid_export) == 0:
             return 0
 
-        return round(grid_export.grid.sum(numeric_only=True), 2)
+        return round(grid_export.grid.sum(), 2)
 
     def _battery_capacity_remaining(self) -> float:
         """Usable capacity remaining"""
@@ -297,8 +272,7 @@ class BatteryModel:
     def _update_model_forecasts(self, future: pd.DataFrame, now: datetime):
         # keep original values including load, pv, grid etc
         hist = self._model[
-            (self._model["period_start"] <= now)
-            & (self._model["period_start"] > (now - timedelta(days=3)))
+            (self._model["period_start"] <= now) & (self._model["period_start"] > (now - timedelta(days=3)))
         ]
         # set global model
         return pd.concat([hist, future])
@@ -339,11 +313,9 @@ class BatteryModel:
         """Dawn load"""
         dawn_time = self._dawn_time(model, eco_end_time)
 
-        dawn_load = model[
-            (model["period_start"] > eco_end_time) & (model["period_start"] < dawn_time)
-        ]
+        dawn_load = model[(model["period_start"] > eco_end_time) & (model["period_start"] < dawn_time)]
 
-        load_sum = abs(dawn_load.delta.sum(numeric_only=True))
+        load_sum = abs(dawn_load.delta.sum())
 
         return round(load_sum, 2)
 

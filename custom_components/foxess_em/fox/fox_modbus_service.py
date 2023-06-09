@@ -64,30 +64,22 @@ class FoxModbuservice(FoxService):
             )
         else:
             _LOGGER.debug("Setting single charge window - %s / %s", start, stop)
-            await self._modbus.write_registers(
-                _P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0], self._slave
-            )
+            await self._modbus.write_registers(_P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0], self._slave)
 
     async def stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
         _LOGGER.debug("Requesting stop force charge from Fox Modbus")
         await self._modbus.write_registers(_P1_ENABLE, [0, 0, 0, 0, 0, 0], self._slave)
 
-    async def set_min_soc(
-        self, soc: int, *args
-    ) -> None:  # pylint: disable=unused-argument
+    async def set_min_soc(self, soc: int, *args) -> None:  # pylint: disable=unused-argument
         """Start force charge"""
         _LOGGER.debug("Request set min SoC to Fox Modbus")
         await self._modbus.write_registers(_MIN_SOC, [soc], self._slave)
 
     async def set_charge_current(self, charge_current: float, *args) -> None:
         """Set charge current"""
-        _LOGGER.debug(
-            f"Requesting set charge current of {charge_current}A to Fox Modbus"
-        )
-        await self._modbus.write_registers(
-            _CHARGE_CURRENT, [charge_current * 10], self._slave
-        )
+        _LOGGER.debug(f"Requesting set charge current of {charge_current}A to Fox Modbus")
+        await self._modbus.write_registers(_CHARGE_CURRENT, [charge_current * 10], self._slave)
 
     async def device_info(self) -> None:
         """Get device info"""

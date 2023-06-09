@@ -64,9 +64,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         HassLoadController.__init__(self, hass, self.async_refresh)
 
         # Refresh on SoC change
-        battery_refresh = async_track_state_change(
-            self._hass, battery_soc, self.refresh
-        )
+        battery_refresh = async_track_state_change(self._hass, battery_soc, self.refresh)
         self._unload_listeners.append(battery_refresh)
 
     def ready(self) -> bool:
@@ -114,9 +112,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
             return schedule
 
         return {
-            k: v
-            for k, v in schedule.items()
-            if datetime.fromisoformat(k) > start and datetime.fromisoformat(k) < end
+            k: v for k, v in schedule.items() if datetime.fromisoformat(k) > start and datetime.fromisoformat(k) < end
         }
 
     def raw_data(self):
@@ -178,9 +174,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
 
     def set_boost(self, value: float) -> None:
         """Set boost on/off"""
-        self._schedule.upsert(
-            self._peak_utils.next_eco_start(), {"boost_status": value}
-        )
+        self._schedule.upsert(self._peak_utils.next_eco_start(), {"boost_status": value})
         self.refresh()
 
     def get_boost(self) -> bool:

@@ -71,7 +71,7 @@ class ForecastModel:
         f_df = self._resampled
         filtered = f_df[f_df["date"] == date_now.date()]
 
-        return round(filtered.pv_estimate.sum(numeric_only=True), 2)
+        return round(filtered.pv_estimate.sum(), 2)
 
     def total_kwh_forecast_tomorrow(self) -> float:
         """Total forecast tomorrow"""
@@ -79,18 +79,15 @@ class ForecastModel:
         f_df = self._resampled
         filtered = f_df[f_df["date"] == date_tomorrow.date()]
 
-        return round(filtered.pv_estimate.sum(numeric_only=True), 2)
+        return round(filtered.pv_estimate.sum(), 2)
 
     def total_kwh_forecast_today_remaining(self) -> float:
         """Return Remaining Forecasts data for today"""
         date_now = datetime.now().astimezone()
         forecast = self._resampled
-        forecast = forecast[
-            (forecast["period_start"] >= date_now)
-            & (forecast["date"] == date_now.date())
-        ]
+        forecast = forecast[(forecast["period_start"] >= date_now) & (forecast["date"] == date_now.date())]
 
-        return round(forecast.pv_estimate.sum(numeric_only=True), 2)
+        return round(forecast.pv_estimate.sum(), 2)
 
     def energy(self) -> pd.DataFrame:
         """Return energy"""

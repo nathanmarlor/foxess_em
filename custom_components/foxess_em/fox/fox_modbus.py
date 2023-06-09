@@ -46,9 +46,7 @@ class FoxModbus:
 
     async def read_registers(self, start_address, num_registers, slave):
         """Read registers"""
-        _LOGGER.debug(
-            "Reading register: (%d, %d, %d)", start_address, num_registers, slave
-        )
+        _LOGGER.debug("Reading register: (%d, %d, %d)", start_address, num_registers, slave)
         response = await self._async_pymodbus_call(
             self._client.read_input_registers,
             start_address,
@@ -59,10 +57,7 @@ class FoxModbus:
         if response.isError():
             raise ModbusIOException(f"Error reading registers: {response}")
         # convert to signed integers
-        regs = [
-            reading if reading < 32768 else reading - 65536
-            for reading in response.registers
-        ]
+        regs = [reading if reading < 32768 else reading - 65536 for reading in response.registers]
         return regs
 
     async def write_registers(self, address, values, slave):

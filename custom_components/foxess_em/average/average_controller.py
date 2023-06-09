@@ -4,10 +4,11 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
-from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
+
+from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 
 from ..average.average_model import AverageModel
 from ..common.callback_controller import CallbackController
@@ -30,15 +31,12 @@ class AverageController(UnloadController, CallbackController, HassLoadController
         aux_power: list[str],
     ) -> None:
         self._hass = hass
-        self._last_update = None
+        self._last_update = datetime.min
 
         entities = {
             "house_load_7d": TrackedSensor(
                 HistorySensor(house_power, timedelta(days=2), False),
-                [
-                    HistorySensor(sensor, timedelta(days=2), False)
-                    for sensor in aux_power
-                ],
+                [HistorySensor(sensor, timedelta(days=2), False) for sensor in aux_power],
             )
         }
 

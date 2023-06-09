@@ -14,9 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_get_solar_forecast(hass: HomeAssistant, config_entry_id: str) -> dict:
     """Get solar forecast for a config entry ID."""
 
-    controller: ForecastController = hass.data[DOMAIN][config_entry_id]["controllers"][
-        "forecast"
-    ]
+    controller: ForecastController = hass.data[DOMAIN][config_entry_id]["controllers"]["forecast"]
 
     if controller is None:
         return None

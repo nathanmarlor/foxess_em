@@ -57,9 +57,7 @@ class Sensor(SensorEntity, RestoreEntity):
         """Return the value reported by the sensor."""
         if self._controller.ready():
             for value in self._entity_description.state_attributes:
-                extra_method = getattr(
-                    self._controller, self._entity_description.state_attributes[value]
-                )
+                extra_method = getattr(self._controller, self._entity_description.state_attributes[value])
                 self._attr_extra_state_attributes[value] = extra_method()
 
             method = getattr(self._controller, self._entity_description.key)

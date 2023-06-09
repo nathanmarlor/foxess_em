@@ -20,9 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 class Switch(SwitchEntity, RestoreEntity):
     """Battery switch class."""
 
-    def __init__(
-        self, controller, config_entry: ConfigEntry, switch_desc: SwitchDescription
-    ):
+    def __init__(self, controller, config_entry: ConfigEntry, switch_desc: SwitchDescription):
         self._controller = controller
         self._config_entry = config_entry
         self.switch_desc = switch_desc

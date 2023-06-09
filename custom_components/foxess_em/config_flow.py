@@ -77,11 +77,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._inverter_connection_schema = vol.Schema(
             {
                 vol.Required(CONNECTION_TYPE, default=FOX_MODBUS_TCP): sel(
-                    {
-                        "select": {
-                            "options": [FOX_MODBUS_TCP, FOX_MODBUS_SERIAL, FOX_CLOUD]
-                        }
-                    }
+                    {"select": {"options": [FOX_MODBUS_TCP, FOX_MODBUS_SERIAL, FOX_CLOUD]}}
                 )
             }
         )
@@ -133,25 +129,19 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     ECO_START_TIME,
-                    default=self._data.get(
-                        ECO_START_TIME, datetime.time(0, 30).isoformat()
-                    ),
+                    default=self._data.get(ECO_START_TIME, datetime.time(0, 30).isoformat()),
                 ): str,
                 vol.Required(
                     ECO_END_TIME,
-                    default=self._data.get(
-                        ECO_END_TIME, datetime.time(4, 30).isoformat()
-                    ),
+                    default=self._data.get(ECO_END_TIME, datetime.time(4, 30).isoformat()),
                 ): str,
-                vol.Required(
-                    DAWN_BUFFER, default=float(self._data.get(DAWN_BUFFER, 1))
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=50)),
-                vol.Required(
-                    DAY_BUFFER, default=self._data.get(DAY_BUFFER, 2)
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=50)),
-                vol.Required(
-                    BATTERY_CAPACITY, default=self._data.get(BATTERY_CAPACITY, 10.4)
-                ): vol.Coerce(float),
+                vol.Required(DAWN_BUFFER, default=float(self._data.get(DAWN_BUFFER, 1))): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=50)
+                ),
+                vol.Required(DAY_BUFFER, default=self._data.get(DAY_BUFFER, 2)): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=50)
+                ),
+                vol.Required(BATTERY_CAPACITY, default=self._data.get(BATTERY_CAPACITY, 10.4)): vol.Coerce(float),
                 vol.Required(
                     MIN_SOC,
                     default=self._data.get(MIN_SOC, 0.11) * 100,
@@ -175,21 +165,15 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(
                     BATTERY_SOC,
                     default=self._data.get(BATTERY_SOC, "sensor.battery_soc"),
-                ): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor", multiple=False)
-                ),
+                ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", multiple=False)),
                 vol.Required(
                     HOUSE_POWER,
                     default=self._data.get(HOUSE_POWER, "sensor.load_power"),
-                ): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor", multiple=False)
-                ),
+                ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", multiple=False)),
                 vol.Optional(
                     AUX_POWER,
                     default=self._data.get(AUX_POWER, []),
-                ): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor", multiple=True)
-                ),
+                ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", multiple=True)),
             }
         )
 
@@ -211,9 +195,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_solcast(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            solcast_valid = await self._test_solcast(
-                user_input[SOLCAST_API_KEY], SOLCAST_URL
-            )
+            solcast_valid = await self._test_solcast(user_input[SOLCAST_API_KEY], SOLCAST_URL)
             if solcast_valid:
                 self._errors["base"] = None
                 self._user_input.update(user_input)
@@ -221,9 +203,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 self._errors["base"] = "solcast_auth"
 
-        return self.async_show_form(
-            step_id="user", data_schema=self._solcast_schema, errors=self._errors
-        )
+        return self.async_show_form(step_id="user", data_schema=self._solcast_schema, errors=self._errors)
 
     async def async_step_inverter(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
@@ -257,9 +237,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 self._user_input.update(user_input)
                 return await self.async_step_battery()
 
-        return self.async_show_form(
-            step_id="tcp", data_schema=self._modbus_tcp_schema, errors=self._errors
-        )
+        return self.async_show_form(step_id="tcp", data_schema=self._modbus_tcp_schema, errors=self._errors)
 
     async def async_step_serial(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
@@ -284,9 +262,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_cloud(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            fox_valid = await self._test_fox_cloud(
-                user_input[FOX_USERNAME], user_input[FOX_PASSWORD]
-            )
+            fox_valid = await self._test_fox_cloud(user_input[FOX_USERNAME], user_input[FOX_PASSWORD])
             if fox_valid:
                 self._errors["base"] = None
                 self._user_input.update(user_input)
@@ -294,17 +270,13 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 self._errors["base"] = "fox_error"
 
-        return self.async_show_form(
-            step_id="cloud", data_schema=self._cloud_schema, errors=self._errors
-        )
+        return self.async_show_form(step_id="cloud", data_schema=self._cloud_schema, errors=self._errors)
 
     async def async_step_battery(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             user_input[MIN_SOC] = round(user_input[MIN_SOC] / 100, 2)
-            valid_times = self._parse_time(
-                user_input[ECO_START_TIME], user_input[ECO_END_TIME]
-            )
+            valid_times = self._parse_time(user_input[ECO_START_TIME], user_input[ECO_END_TIME])
             if valid_times:
                 self._errors["base"] = None
                 self._user_input.update(user_input)
@@ -316,9 +288,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if self._user_input[CONNECTION_TYPE] in [FOX_MODBUS_SERIAL, FOX_MODBUS_TCP]:
             schema = schema.extend(self._modbus_battery_schema)
 
-        return self.async_show_form(
-            step_id="battery", data_schema=schema, errors=self._errors
-        )
+        return self.async_show_form(step_id="battery", data_schema=schema, errors=self._errors)
 
     async def async_step_power(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
