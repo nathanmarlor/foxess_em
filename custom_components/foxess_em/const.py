@@ -6,7 +6,7 @@ from enum import Enum
 NAME = "foxess_em"
 DOMAIN = "foxess_em"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.7.0"
+VERSION = "1.8.0"
 
 ISSUE_URL = "https://github.com/nathanmarlor/foxess_em/issues"
 
