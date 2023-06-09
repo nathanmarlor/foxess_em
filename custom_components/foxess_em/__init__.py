@@ -67,9 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     for platform in PLATFORMS:
         if entry.options.get(platform, True):
-            hass.async_add_job(
-                hass.config_entries.async_forward_entry_setup(entry, platform)
-            )
+            hass.async_add_job(hass.config_entries.async_forward_entry_setup(entry, platform))
 
     if len(entry.options) > 0:
         # overwrite data with options
@@ -104,9 +102,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     peak_utils = PeakPeriodUtils(eco_start_time, eco_end_time)
 
     forecast_controller = ForecastController(hass, solcast_client)
-    average_controller = AverageController(
-        hass, eco_start_time, eco_end_time, house_power, aux_power
-    )
+    average_controller = AverageController(hass, eco_start_time, eco_end_time, house_power, aux_power)
     schedule = Schedule(hass)
     battery_controller = BatteryController(
         hass,
@@ -125,9 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.debug(f"Initialising {connection_type} service")
     if connection_type == FOX_CLOUD:
         cloud_client = FoxCloudApiClient(session, fox_username, fox_password)
-        fox_service = FoxCloudService(
-            hass, cloud_client, eco_start_time, eco_end_time, user_min_soc
-        )
+        fox_service = FoxCloudService(hass, cloud_client, eco_start_time, eco_end_time, user_min_soc)
     else:
         params = {CONNECTION_TYPE: connection_type}
         if connection_type == FOX_MODBUS_TCP:
@@ -176,22 +170,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     forecast_controller.add_update_listener(battery_controller)
     average_controller.add_update_listener(battery_controller)
 
-    hass.services.async_register(
-        DOMAIN, "start_force_charge_now", fox_service.start_force_charge_now
-    )
-    hass.services.async_register(
-        DOMAIN, "start_force_charge_off_peak", fox_service.start_force_charge_off_peak
-    )
-    hass.services.async_register(
-        DOMAIN, "stop_force_charge", fox_service.stop_force_charge
-    )
-    hass.services.async_register(
-        DOMAIN, "clear_schedule", battery_controller.clear_schedule
-    )
+    hass.services.async_register(DOMAIN, "start_force_charge_now", fox_service.start_force_charge_now)
+    hass.services.async_register(DOMAIN, "start_force_charge_off_peak", fox_service.start_force_charge_off_peak)
+    hass.services.async_register(DOMAIN, "stop_force_charge", fox_service.stop_force_charge)
+    hass.services.async_register(DOMAIN, "clear_schedule", battery_controller.clear_schedule)
 
-    hass.data[DOMAIN][entry.entry_id]["unload"] = entry.add_update_listener(
-        async_reload_entry
-    )
+    hass.data[DOMAIN][entry.entry_id]["unload"] = entry.add_update_listener(async_reload_entry)
 
     return True
 
@@ -200,10 +184,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Handle removal of an entry."""
     unloaded = all(
         await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
-                for platform in PLATFORMS
-            ]
+            *[hass.config_entries.async_forward_entry_unload(entry, platform) for platform in PLATFORMS]
         )
     )
 

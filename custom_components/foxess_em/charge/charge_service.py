@@ -62,9 +62,7 @@ class ChargeService(UnloadController):
 
     def _add_listeners(self) -> None:
         # Setup trigger to start just before eco period starts
-        eco_start_setup_time = (
-            datetime.combine(date.today(), self._eco_start_time) - timedelta(minutes=5)
-        ).time()
+        eco_start_setup_time = (datetime.combine(date.today(), self._eco_start_time) - timedelta(minutes=5)).time()
         eco_start_setup = async_track_utc_time_change(
             self._hass,
             self._eco_start_setup,
@@ -112,9 +110,7 @@ class ChargeService(UnloadController):
         window = self._peak_utils.time_window()
         if self._charge_required > 0 and self._custom_charge_profile:
             hours = (window - _CHARGE_BUFFER).total_seconds() / 3600
-            target_charge_rate = round(
-                ((self._charge_required / self._battery_volts) * 1000) / hours, 2
-            )
+            target_charge_rate = round(((self._charge_required / self._battery_volts) * 1000) / hours, 2)
             self._target_charge_amps = min([self._user_charge_amps, target_charge_rate])
         else:
             self._target_charge_amps = self._user_charge_amps
@@ -131,21 +127,15 @@ class ChargeService(UnloadController):
         self._start_listening()
 
         if self._charge_required <= 0:
-            _LOGGER.debug(
-                "Allowing battery to continue discharge until %d%%", self._perc_target
-            )
+            _LOGGER.debug("Allowing battery to continue discharge until %d%%", self._perc_target)
             await self._stop_force_charge()
 
-    async def _start_force_charge_off_peak(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
+    async def _start_force_charge_off_peak(self, *args) -> None:  # pylint: disable=unused-argument
         """Set Fox force charge settings to True"""
         self._charge_active = True
         await self._fox.start_force_charge_off_peak()
 
-    async def _stop_force_charge(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
+    async def _stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
         """Set Fox force charge settings to False"""
         self._charge_active = False
         await self._fox.stop_force_charge()
@@ -162,28 +152,19 @@ class ChargeService(UnloadController):
         _LOGGER.debug("Releasing SoC hold")
         await self._fox.set_min_soc(self._original_soc * 100)
 
-    async def _battery_soc_change(
-        self, entity, old_state, new_state
-    ):  # pylint: disable=unused-argument
+    async def _battery_soc_change(self, entity, old_state, new_state):  # pylint: disable=unused-argument
         new_state = float(new_state.state)
 
         if self._custom_charge_profile and new_state > 90:
-            step_down_charge = round(
-                ((100 - new_state) / 10) * self._user_charge_amps, 2
-            )
-            target_charge_amps = max(
-                [_MINIMUM_CHARGE, min([step_down_charge, self._target_charge_amps])]
-            )
+            step_down_charge = round(((100 - new_state) / 10) * self._user_charge_amps, 2)
+            target_charge_amps = max([_MINIMUM_CHARGE, min([step_down_charge, self._target_charge_amps])])
             await self._fox.set_charge_current(target_charge_amps)
 
         # don't stop a force charge if it's targeted to 100% to aid battery balancing
         if (new_state >= self._perc_target) and self._charge_active:
             if self._perc_target != 100:
                 await self._stop_force_charge()
-        elif (
-            new_state < (self._perc_target - _CHARGE_HYSTERESIS)
-            and not self._charge_active
-        ):
+        elif new_state < (self._perc_target - _CHARGE_HYSTERESIS) and not self._charge_active:
             await self._start_force_charge_off_peak()
 
     def _start_listening(self):
@@ -209,14 +190,10 @@ class ChargeService(UnloadController):
 
         if status:
             self.unload()
-            asyncio.run_coroutine_threadsafe(
-                self._fox.stop_force_charge(), self._hass.loop
-            )
+            asyncio.run_coroutine_threadsafe(self._fox.stop_force_charge(), self._hass.loop)
         else:
             self._add_listeners()
-            asyncio.run_coroutine_threadsafe(
-                self._fox.start_force_charge_off_peak(), self._hass.loop
-            )
+            asyncio.run_coroutine_threadsafe(self._fox.start_force_charge_off_peak(), self._hass.loop)
 
     def disable_status(self) -> bool:
         """Disable status"""

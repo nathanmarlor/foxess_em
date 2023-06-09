@@ -85,10 +85,7 @@ class ForecastModel:
         """Return Remaining Forecasts data for today"""
         date_now = datetime.now().astimezone()
         forecast = self._resampled
-        forecast = forecast[
-            (forecast["period_start"] >= date_now)
-            & (forecast["date"] == date_now.date())
-        ]
+        forecast = forecast[(forecast["period_start"] >= date_now) & (forecast["date"] == date_now.date())]
 
         return round(forecast.pv_estimate.sum(), 2)
 

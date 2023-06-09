@@ -70,8 +70,7 @@ class SolcastApiClient:
 
         history_estimates = [
             {
-                "period_start": dateutil.parser.isoparse(forecast["period_end"])
-                - timedelta(minutes=30),
+                "period_start": dateutil.parser.isoparse(forecast["period_end"]) - timedelta(minutes=30),
                 "period_end": dateutil.parser.isoparse(forecast["period_end"]),
                 "pv_estimate": forecast["pv_estimate"],
             }
@@ -80,8 +79,7 @@ class SolcastApiClient:
 
         live_estimates = [
             {
-                "period_start": dateutil.parser.isoparse(forecast["period_end"])
-                - timedelta(minutes=30),
+                "period_start": dateutil.parser.isoparse(forecast["period_end"]) - timedelta(minutes=30),
                 "period_end": dateutil.parser.isoparse(forecast["period_end"]),
                 "pv_estimate": forecast["pv_estimate"],
             }
@@ -90,9 +88,7 @@ class SolcastApiClient:
 
         return history_estimates[1:] + live_estimates
 
-    async def _fetch_data(
-        self, api_key: str, solcast_url: str, hours=120
-    ) -> dict[str, Any]:
+    async def _fetch_data(self, api_key: str, solcast_url: str, hours=120) -> dict[str, Any]:
         """fetch data via the Solcast API."""
 
         try:

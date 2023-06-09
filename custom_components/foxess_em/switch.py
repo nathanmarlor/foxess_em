@@ -20,8 +20,7 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_devices):
     entities = [
         entity
         for entity in entities
-        if (entity.switch_desc.connection == Connection.BOTH)
-        or (entity.switch_desc.connection == config["connection"])
+        if (entity.switch_desc.connection == Connection.BOTH) or (entity.switch_desc.connection == config["connection"])
     ]
 
     async_add_devices(entities)

@@ -22,9 +22,7 @@ _LOGGER: logging.Logger = logging.getLogger(__package__)
 class FoxCloudApiClient:
     """API client"""
 
-    def __init__(
-        self, session: aiohttp.ClientSession, fox_username: str, fox_password: str
-    ) -> None:
+    def __init__(self, session: aiohttp.ClientSession, fox_username: str, fox_password: str) -> None:
         """Fox API Client."""
         self._session = session
         self._token = None
@@ -59,9 +57,7 @@ class FoxCloudApiClient:
 
             _LOGGER.debug(f"Issuing request to ({url}) with params: {params}")
             async with async_timeout.timeout(_TIMEOUT):
-                response = await self._session.post(
-                    url, json=params, headers=header_data
-                )
+                response = await self._session.post(url, json=params, headers=header_data)
             # Leave 1 second between subsequent Fox calls
             await asyncio.sleep(1)
         except Exception as ex:
@@ -85,10 +81,6 @@ class FoxCloudApiClient:
                 await asyncio.sleep(sleep_time)
                 return await self._post_data(url, params)
             else:
-                raise NoDataError(
-                    f"Could not make request to Fox Cloud - Error: {status}"
-                )
+                raise NoDataError(f"Could not make request to Fox Cloud - Error: {status}")
         else:
-            raise NoDataError(
-                f"Could not make request to Fox Cloud - HTTP Status: {response.status}"
-            )
+            raise NoDataError(f"Could not make request to Fox Cloud - HTTP Status: {response.status}")

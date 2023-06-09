@@ -4,11 +4,12 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
-from custom_components.foxess_em.common.hass_load_controller import HassLoadController
-from custom_components.foxess_em.const import FORECAST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
+
+from custom_components.foxess_em.common.hass_load_controller import HassLoadController
+from custom_components.foxess_em.const import FORECAST
 
 from ..common.callback_controller import CallbackController
 from ..common.unload_controller import UnloadController
@@ -45,9 +46,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         """Load forecast from state"""
         raw_data = self._hass.states.get(FORECAST)
 
-        if raw_data is not None and all(
-            k in raw_data.attributes for k in ("forecast", "last_update")
-        ):
+        if raw_data is not None and all(k in raw_data.attributes for k in ("forecast", "last_update")):
             last_update = datetime.fromisoformat(raw_data.attributes["last_update"])
             cache_age = datetime.now().astimezone() - last_update
             _LOGGER.debug("Forecast cache is %s old", cache_age)
@@ -56,9 +55,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
                 forecast_data = raw_data.attributes["forecast"]
                 self._api.load(forecast_data)
                 self._last_update = last_update
-                _LOGGER.debug(
-                    "Finished loading forecast data from cache, notifying listeners"
-                )
+                _LOGGER.debug("Finished loading forecast data from cache, notifying listeners")
                 await self._async_get_site_info()
                 self._notify_listeners()
             else:
@@ -81,14 +78,10 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         sites = len(sites["sites"])
         _LOGGER.debug(f"Creating refresh schedule for {sites} sites")
 
-        api_available = int(
-            (self._api_limit - self._api_count - _API_BUFFER) / (_CALLS * sites)
-        )
+        api_available = int((self._api_limit - self._api_count - _API_BUFFER) / (_CALLS * sites))
         _LOGGER.debug(f"Calculated {api_available} available refreshes")
 
-        self._add_refresh(
-            now.replace(hour=_START_HOUR, minute=0, second=0, microsecond=0).time()
-        )
+        self._add_refresh(now.replace(hour=_START_HOUR, minute=0, second=0, microsecond=0).time())
 
         # default first refresh is used
         if now < default_start:
@@ -163,9 +156,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         await self._async_get_site_info()
         self._notify_listeners()
 
-    async def _async_get_site_info(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
+    async def _async_get_site_info(self, *args) -> None:  # pylint: disable=unused-argument
         """Refresh site info"""
         try:
             _LOGGER.debug("Refreshing Solcast site info")

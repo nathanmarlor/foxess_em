@@ -19,9 +19,7 @@ class FoxService:
         """Start force charge"""
         pass
 
-    async def set_min_soc(
-        self, soc: int, *args
-    ) -> None:  # pylint: disable=unused-argument
+    async def set_min_soc(self, soc: int, *args) -> None:  # pylint: disable=unused-argument
         """Set Min SoC"""
         pass
 
