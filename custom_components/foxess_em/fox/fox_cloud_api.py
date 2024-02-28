@@ -1,15 +1,17 @@
 """Fox API Client."""
+
 import asyncio
 import hashlib
 import logging
+import time
 
 import aiohttp
 import async_timeout
 
 from ..util.exceptions import NoDataError
 
+_BASE_URL = "https://www.foxesscloud.com"
 _TIMEOUT = 30
-_LOGIN = "https://www.foxesscloud.com/c/v0/user/login"
 _FOX_OK = 0
 _FOX_INVALID_TOKEN = 41808
 _FOX_TIMEOUT = 41203
@@ -19,43 +21,59 @@ _FOX_RETRY_DELAY = 10
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
+class GetAuth:
+
+    def get_signature(self, token, path, lang="en"):
+        """
+        This function is used to generate a signature consisting of URL, token, and timestamp, and
+        return a dictionary containing the signature and other information.
+            :param token: your key
+            :param path:  your request path
+            :param lang: language, default is English.
+            :return: with authentication header
+        """
+        timestamp = round(time.time() * 1000)
+        signature = rf"{path}\r\n{token}\r\n{timestamp}"
+        # or use user_agent_rotator.get_random_user_agent() for user-agent
+        result = {
+            "token": token,
+            "lang": lang,
+            "timestamp": str(timestamp),
+            "Content-Type": "application/json",
+            "signature": self.md5c(text=signature),
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/117.0.0.0 Safari/537.36",
+            "Connection": "close",
+        }
+        return result
+
+    @staticmethod
+    def md5c(text="", _type="lower"):
+        res = hashlib.md5(text.encode(encoding="UTF-8")).hexdigest()
+        if _type.__eq__("lower"):
+            return res
+        else:
+            return res.upper()
+
+
 class FoxCloudApiClient:
     """API client"""
 
-    def __init__(
-        self, session: aiohttp.ClientSession, fox_username: str, fox_password: str
-    ) -> None:
+    def __init__(self, session: aiohttp.ClientSession, fox_api_key: str) -> None:
         """Fox API Client."""
         self._session = session
-        self._token = None
-        self._fox_username = fox_username
-        self._fox_password = hashlib.md5(str(fox_password).encode("utf-8")).hexdigest()
+        self._fox_api_key = fox_api_key
         self._fox_retries = 0
 
-    async def _refresh_token(self) -> dict:
-        """Refresh login token"""
-        _LOGGER.debug("Logging into Fox Cloud")
-        params = {"user": self._fox_username, "password": self._fox_password}
-        result = await self._post_data(_LOGIN, params)
-        self._token = result["token"]
-
-    async def async_post_data(self, url: str, params: dict[str, str]) -> dict:
+    async def async_post_data(self, path: str, params: dict[str, str]) -> dict:
         """Post data via the Fox API."""
         self._fox_retries = 0
+        return await self._post_data(path, params)
 
-        if self._token is None:
-            await self._refresh_token()
-
-        return await self._post_data(url, params)
-
-    async def _post_data(self, url: str, params: dict[str, str]) -> dict:
+    async def _post_data(self, path: str, params: dict[str, str]) -> dict:
         try:
-            header_data = {
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-            }
-
-            if self._token is not None:
-                header_data["token"] = self._token
+            url = _BASE_URL + path
+            header_data = GetAuth().get_signature(token=self._fox_api_key, path=path)
 
             _LOGGER.debug(f"Issuing request to ({url}) with params: {params}")
             async with async_timeout.timeout(_TIMEOUT):
