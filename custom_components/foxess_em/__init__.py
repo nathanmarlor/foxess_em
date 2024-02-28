@@ -228,3 +228,17 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
+
+
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+    """Handle migration from earlier configuration options."""
+    version = config_entry.version
+
+    if version == 1:
+        # Migrate from username/password to API keys.
+        _LOGGER.warning(
+            "FoxESS Energy Management can no longer access foxesscloud.com using a username and password.\r\nPlease reconfigure using API keys."
+        )
+        return False
+
+    return True
