@@ -1,4 +1,5 @@
 """Adds config flow for foxess_em."""
+
 import datetime
 import logging
 from typing import Any
@@ -32,8 +33,7 @@ from .const import FOX_MODBUS_PORT
 from .const import FOX_MODBUS_SERIAL
 from .const import FOX_MODBUS_SLAVE
 from .const import FOX_MODBUS_TCP
-from .const import FOX_PASSWORD
-from .const import FOX_USERNAME
+from .const import FOX_API_KEY
 from .const import HOUSE_POWER
 from .const import SOLCAST_API_KEY
 from .const import SOLCAST_URL
@@ -50,7 +50,7 @@ _LOGGER = logging.getLogger(__name__)
 class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for foxess_em."""
 
-    VERSION = 1
+    VERSION = 2
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self, config=None) -> None:
@@ -119,12 +119,8 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._cloud_schema = vol.Schema(
             {
                 vol.Required(
-                    FOX_USERNAME,
-                    default=self._data.get(FOX_USERNAME, ""),
-                ): str,
-                vol.Required(
-                    FOX_PASSWORD,
-                    default=self._data.get(FOX_PASSWORD, ""),
+                    FOX_API_KEY,
+                    default=self._data.get(FOX_API_KEY, ""),
                 ): str,
             }
         )
@@ -284,9 +280,7 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_cloud(self, user_input: dict[str, Any] = None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            fox_valid = await self._test_fox_cloud(
-                user_input[FOX_USERNAME], user_input[FOX_PASSWORD]
-            )
+            fox_valid = await self._test_fox_cloud(user_input[FOX_API_KEY])
             if fox_valid:
                 self._errors["base"] = None
                 self._user_input.update(user_input)
@@ -351,11 +345,11 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             pass
         return False
 
-    async def _test_fox_cloud(self, fox_username: str, fox_password: str):
-        """Return true if credentials is valid."""
+    async def _test_fox_cloud(self, fox_api_key: str):
+        """Return true if API key is valid."""
         try:
             session = async_create_clientsession(self.hass)
-            api = FoxCloudApiClient(session, fox_username, fox_password)
+            api = FoxCloudApiClient(session, fox_api_key)
             service = FoxCloudService(None, api, None, None)
             result = await service.device_info()
             if result is not None:

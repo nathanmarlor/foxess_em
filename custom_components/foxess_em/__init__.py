@@ -4,6 +4,7 @@ Custom integration to integrate FoxESS Energy Management with Home Assistant.
 For more details about this integration, please refer to
 https://github.com/nathanmarlor/foxess_em
 """
+
 import asyncio
 import logging
 from datetime import time
@@ -33,13 +34,12 @@ from .const import DAY_BUFFER
 from .const import DOMAIN
 from .const import ECO_END_TIME
 from .const import ECO_START_TIME
+from .const import FOX_API_KEY
 from .const import FOX_CLOUD
 from .const import FOX_MODBUS_HOST
 from .const import FOX_MODBUS_PORT
 from .const import FOX_MODBUS_SERIAL
 from .const import FOX_MODBUS_SLAVE
-from .const import FOX_PASSWORD
-from .const import FOX_USERNAME
 from .const import HOUSE_POWER
 from .const import MIN_SOC
 from .const import PLATFORMS
@@ -76,8 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         entry.data = entry.options
 
     solcast_api_key = entry.data.get(SOLCAST_API_KEY)
-    fox_username = entry.data.get(FOX_USERNAME)
-    fox_password = entry.data.get(FOX_PASSWORD)
+    fox_api_key = entry.data.get(FOX_API_KEY)
 
     eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
     eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
@@ -124,7 +123,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     _LOGGER.debug(f"Initialising {connection_type} service")
     if connection_type == FOX_CLOUD:
-        cloud_client = FoxCloudApiClient(session, fox_username, fox_password)
+        cloud_client = FoxCloudApiClient(session, fox_api_key)
         fox_service = FoxCloudService(
             hass, cloud_client, eco_start_time, eco_end_time, user_min_soc
         )
@@ -166,9 +165,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             "charge": charge_service,
         },
         "config": {
-            "connection": Connection.MODBUS
-            if (connection_type in (FOX_MODBUS_TCP, FOX_MODBUS_SERIAL))
-            else Connection.CLOUD
+            "connection": (
+                Connection.MODBUS
+                if (connection_type in (FOX_MODBUS_TCP, FOX_MODBUS_SERIAL))
+                else Connection.CLOUD
+            )
         },
     }
 

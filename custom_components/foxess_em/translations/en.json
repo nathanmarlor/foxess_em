@@ -17,10 +17,9 @@
       },
       "cloud": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your FoxESS Cloud details - https://www.foxesscloud.com",
+        "description": "Please enter your FoxESS Cloud API Key - Go to https://www.foxesscloud.com/user/center and select API Management",
         "data": {
-          "fox_username": "FoxESS Username",
-          "fox_password": "FoxESS Password"
+          "fox_api_key": "FoxESS API Key"
         }
       },
       "tcp": {
@@ -66,7 +65,7 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_error": "Error - please check username and password",
+      "fox_error": "Error - please check the FoxESS API Key",
       "fox_select_one": "Error - please choose Modbus or Fox Cloud",
       "time_invalid": "Time format not recognised",
       "modbus_error": "Error - please check connection details"
@@ -93,10 +92,9 @@
       },
       "cloud": {
         "title": "FoxESS - Energy Management: (2/4)",
-        "description": "Please enter your FoxESS Cloud details",
+        "description": "Please enter your FoxESS Cloud API Key - Go to https://www.foxesscloud.com/user/center and select API Management",
         "data": {
-          "fox_username": "FoxESS Username",
-          "fox_password": "FoxESS Password"
+          "fox_api_key": "FoxESS API Key"
         }
       },
       "tcp": {
@@ -142,7 +140,7 @@
     },
     "error": {
       "solcast_auth": "Error - please check the Solcast API Key",
-      "fox_error": "Error - please check username and password",
+      "fox_error": "Error - please check the FoxESS API Key",
       "fox_select_one": "Error - please choose Modbus or Fox Cloud",
       "time_invalid": "Time format not recognised",
       "modbus_error": "Error - please check connection details"

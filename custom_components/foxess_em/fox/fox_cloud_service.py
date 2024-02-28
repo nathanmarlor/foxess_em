@@ -1,4 +1,5 @@
 """Fox controller"""
+
 import logging
 from datetime import datetime
 from datetime import time
@@ -9,11 +10,10 @@ from ..util.exceptions import NoDataError
 from .fox_cloud_api import FoxCloudApiClient
 from .fox_service import FoxService
 
-_BASE_URL = "https://www.foxesscloud.com/c/v0"
-_SET_TIMES = "/device/battery/time/set"
-_DEVICE = "/device/list"
-_MIN_SOC = "/device/battery/soc/set"
-_SETTINGS = "/device/setting/set"
+
+_SET_TIMES = "/op/v0/device/battery/forceChargeTime/set"
+_DEVICE = "/op/v0/device/list"
+_MIN_SOC = "/op/v0/device/battery/soc/set"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,10 +75,7 @@ class FoxCloudService(FoxService):
         _LOGGER.debug("Requesting start force charge from Fox Cloud")
 
         try:
-            await self._api.async_post_data(
-                f"{_BASE_URL}{_SET_TIMES}",
-                query,
-            )
+            await self._api.async_post_data(_SET_TIMES, query)
         except NoDataError as ex:
             _LOGGER.error(ex)
 
@@ -92,10 +89,7 @@ class FoxCloudService(FoxService):
 
             query = self._build_stop_charge_query(device_sn)
 
-            await self._api.async_post_data(
-                f"{_BASE_URL}{_SET_TIMES}",
-                query,
-            )
+            await self._api.async_post_data(_SET_TIMES, query)
         except NoDataError as ex:
             _LOGGER.error(ex)
 
@@ -109,7 +103,7 @@ class FoxCloudService(FoxService):
             device_info = await self.device_info()
             device_sn = device_info["deviceSN"]
             await self._api.async_post_data(
-                f"{_BASE_URL}{_MIN_SOC}", self._build_min_soc_query(device_sn, soc)
+                _MIN_SOC, self._build_min_soc_query(device_sn, soc)
             )
         except NoDataError as ex:
             _LOGGER.error(ex)
@@ -124,9 +118,9 @@ class FoxCloudService(FoxService):
         """Get device serial number"""
         if self._device_info is None:
             device = await self._api.async_post_data(
-                f"{_BASE_URL}{_DEVICE}", self._build_device_query()
+                _DEVICE, self._build_device_query()
             )
-            self._device_info = device["devices"][0]
+            self._device_info = device["data"][0]
             _LOGGER.debug(f"Retrieved Fox device info: {self._device_info}")
 
         return self._device_info
@@ -134,37 +128,41 @@ class FoxCloudService(FoxService):
     def _build_device_query(self) -> dict:
         """Build device query object"""
         return {
-            "pagesize": 10,
+            "pageSize": 10,
             "currentPage": 1,
-            "total": 0,
-            "condition": {"queryDate": {"begin": 0, "end": 0}},
         }
 
     def _build_min_soc_query(self, device_sn: str, soc: int) -> dict:
         """Build min SoC query object"""
-        return {"sn": device_sn, "minGridSoc": soc, "minSoc": self._user_min_soc * 100}
+        return {
+            "sn": device_sn,
+            "minSocOnGrid": soc,
+            "minSoc": int(self._user_min_soc * 100),
+        }
 
     def _build_stop_charge_query(self, device_sn: str) -> dict:
         """Build stop charge query"""
 
         query = {
             "sn": device_sn,
-            "times": [
-                {
-                    "tip": "",
-                    "enableCharge": False,
-                    "enableGrid": False,
-                    "startTime": {"hour": 0, "minute": 0},
-                    "endTime": {"hour": 0, "minute": 0},
-                },
-                {
-                    "tip": "",
-                    "enableCharge": False,
-                    "enableGrid": False,
-                    "startTime": {"hour": 0, "minute": 0},
-                    "endTime": {"hour": 0, "minute": 0},
-                },
-            ],
+            "enable1": False,
+            "enable2": False,
+            "startTime1": {
+                "hour": 0,
+                "minute": 0,
+            },
+            "endTime1": {
+                "hour": 0,
+                "minute": 0,
+            },
+            "startTime2": {
+                "hour": 0,
+                "minute": 0,
+            },
+            "endTime2": {
+                "hour": 0,
+                "minute": 0,
+            },
         }
 
         return query
@@ -176,28 +174,24 @@ class FoxCloudService(FoxService):
 
         query = {
             "sn": device_sn,
-            "times": [
-                {
-                    "tip": "",
-                    "enableCharge": True,
-                    "enableGrid": True,
-                    "startTime": {
-                        "hour": str(start_time.hour).zfill(2),
-                        "minute": str(start_time.minute).zfill(2),
-                    },
-                    "endTime": {
-                        "hour": str(end_time.hour).zfill(2),
-                        "minute": str(end_time.minute).zfill(2),
-                    },
-                },
-                {
-                    "tip": "",
-                    "enableCharge": False,
-                    "enableGrid": False,
-                    "startTime": {"hour": 0, "minute": 0},
-                    "endTime": {"hour": 0, "minute": 0},
-                },
-            ],
+            "enable1": True,
+            "enable2": False,
+            "startTime1": {
+                "hour": start_time.hour,
+                "minute": start_time.minute,
+            },
+            "endTime1": {
+                "hour": end_time.hour,
+                "minute": end_time.minute,
+            },
+            "startTime2": {
+                "hour": 0,
+                "minute": 0,
+            },
+            "endTime2": {
+                "hour": 0,
+                "minute": 0,
+            },
         }
 
         return query
@@ -215,34 +209,24 @@ class FoxCloudService(FoxService):
 
         query = {
             "sn": device_sn,
-            "times": [
-                {
-                    "tip": "",
-                    "enableCharge": True,
-                    "enableGrid": True,
-                    "startTime": {
-                        "hour": str(start_time.hour).zfill(2),
-                        "minute": str(start_time.minute).zfill(2),
-                    },
-                    "endTime": {
-                        "hour": str(before_midnight.hour).zfill(2),
-                        "minute": str(before_midnight.minute).zfill(2),
-                    },
-                },
-                {
-                    "tip": "",
-                    "enableCharge": True,
-                    "enableGrid": True,
-                    "startTime": {
-                        "hour": str(after_midnight.hour).zfill(2),
-                        "minute": str(after_midnight.minute).zfill(2),
-                    },
-                    "endTime": {
-                        "hour": str(stop_time.hour).zfill(2),
-                        "minute": str(stop_time.minute).zfill(2),
-                    },
-                },
-            ],
+            "enable1": True,
+            "enable2": True,
+            "startTime1": {
+                "hour": start_time.hour,
+                "minute": start_time.minute,
+            },
+            "endTime1": {
+                "hour": before_midnight.hour,
+                "minute": before_midnight.minute,
+            },
+            "startTime2": {
+                "hour": after_midnight.hour,
+                "minute": after_midnight.minute,
+            },
+            "endTime2": {
+                "hour": stop_time.hour,
+                "minute": stop_time.minute,
+            },
         }
 
         return query

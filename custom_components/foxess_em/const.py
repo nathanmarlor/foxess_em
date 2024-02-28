@@ -1,4 +1,5 @@
 """Constants for foxess_em."""
+
 # Base component constants
 from enum import Enum
 
@@ -37,8 +38,7 @@ FOX_MODBUS_HOST = "fox_modbus_host"
 FOX_MODBUS_PORT = "fox_modbus_port"
 FOX_MODBUS_SLAVE = "fox_modbus_slave"
 FOX_CLOUD = "Fox Cloud"
-FOX_USERNAME = "fox_username"
-FOX_PASSWORD = "fox_password"
+FOX_API_KEY = "fox_api_key"
 
 # Battery options
 HOUSE_POWER = "house_power"
