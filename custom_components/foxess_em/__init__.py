@@ -15,20 +15,27 @@ from custom_components.foxess_em.const import FOX_MODBUS_TCP
 from custom_components.foxess_em.fox.fox_modbus import FoxModbus
 from custom_components.foxess_em.fox.fox_modbus_service import FoxModbuservice
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryAuthFailed
 from homeassistant.core import Config
 from homeassistant.core import HomeAssistant
+from homeassistant.const import (
+    MAJOR_VERSION as HA_MAJOR_VERSION,
+    MINOR_VERSION as HA_MINOR_VERSION,
+)
+from homeassistant.helpers import issue_registry
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .average.average_controller import AverageController
 from .battery.battery_controller import BatteryController
 from .charge.charge_service import ChargeService
+from .config_flow import BatteryManagerFlowHandler
 from .const import AUX_POWER
 from .const import BATTERY_CAPACITY
 from .const import BATTERY_SOC
 from .const import BATTERY_VOLTS
 from .const import CHARGE_AMPS
 from .const import Connection
+from .const import CONNECTION_TYPE
 from .const import DAWN_BUFFER
 from .const import DAY_BUFFER
 from .const import DOMAIN
@@ -65,18 +72,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
         _LOGGER.info(STARTUP_MESSAGE)
 
+    # Check FoxESS API Key before settings up the other platforms to prevent those being setup if it
+    # fails, which will prevent setup working when the FoxESS API key is fixed.
+    if len(entry.options) > 0:
+        # overwrite data with options
+        entry.data = entry.options
+
+    connection_type = entry.data.get(CONNECTION_TYPE, FOX_MODBUS_TCP)
+    fox_api_key = entry.data.get(FOX_API_KEY)
+    if connection_type == FOX_CLOUD:
+        if not fox_api_key:
+            raise ConfigEntryAuthFailed(
+                "FoxESSCloud must now be accessed vi API Keys. Please reconfigure."
+            )
+
     for platform in PLATFORMS:
         if entry.options.get(platform, True):
             hass.async_add_job(
                 hass.config_entries.async_forward_entry_setup(entry, platform)
             )
 
-    if len(entry.options) > 0:
-        # overwrite data with options
-        entry.data = entry.options
-
     solcast_api_key = entry.data.get(SOLCAST_API_KEY)
-    fox_api_key = entry.data.get(FOX_API_KEY)
 
     eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
     eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
@@ -91,7 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     charge_amps = entry.data.get(CHARGE_AMPS, 18)
     battery_volts = entry.data.get(BATTERY_VOLTS, 208)
     # Added for 1.7.0
-    connection_type = entry.data.get(CONNECTION_TYPE, FOX_MODBUS_TCP)
     fox_modbus_host = entry.data.get(FOX_MODBUS_HOST, "")
     fox_modbus_port = entry.data.get(FOX_MODBUS_PORT, 502)
     fox_modbus_slave = entry.data.get(FOX_MODBUS_SLAVE, 247)
@@ -235,10 +250,29 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
     version = config_entry.version
 
     if version == 1:
-        # Migrate from username/password to API keys.
-        _LOGGER.warning(
-            "FoxESS Energy Management can no longer access foxesscloud.com using a username and password.\r\nPlease reconfigure using API keys."
-        )
-        return False
+        data = dict(config_entry.data)
+        if data.get(CONNECTION_TYPE) == FOX_CLOUD:
+            # Migrate from username/password to API keys.
+            if not data.get(FOX_API_KEY):
+                _LOGGER.error(
+                    "FoxESS Energy Management can no longer access foxesscloud.com using a username and password.\r\nPlease reconfigure using API keys."
+                )
+
+        # Migrate the config to the new version. There are no automatically migratable config
+        # changes and in retrospect, the major version number shouldn't have changed to 2 when
+        # adding the API key, but it's done now so just migrate to version 2 and fix up the config
+        # else where.
+        if HA_MAJOR_VERSION > 2024 or (
+            HA_MAJOR_VERSION == 2024 and HA_MINOR_VERSION >= 3
+        ):
+            # 2024.3 disallows direct modification of the config_entry when migrating and adds
+            # version parameters to async_update_entry.
+            hass.config_entries.async_update_entry(
+                config_entry,
+                data=data,
+                version=BatteryManagerFlowHandler.VERSION,
+            )
+        else:
+            config_entry.version = config_flow.BatteryManagerFlowHandler.VERSION
 
     return True
