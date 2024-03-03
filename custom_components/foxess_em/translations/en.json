@@ -22,6 +22,13 @@
           "fox_api_key": "FoxESS API Key"
         }
       },
+      "reauth_fox_api_key": {
+        "title": "FoxESS - Energy Management",
+        "description": "Please enter your FoxESS Cloud API Key - Go to https://www.foxesscloud.com/user/center and select API Management",
+        "data": {
+          "fox_api_key": "FoxESS API Key"
+        }
+      },
       "tcp": {
         "title": "FoxESS - Energy Management: (2/4)",
         "description": "Please enter your Modbus TCP details",
@@ -71,7 +78,8 @@
       "modbus_error": "Error - please check connection details"
     },
     "abort": {
-      "single_instance_allowed": "Only a single instance is allowed."
+      "single_instance_allowed": "Only a single instance is allowed.",
+      "reauth_successful": "FoxESS API Key updated successfully."
     }
   },
   "options": {

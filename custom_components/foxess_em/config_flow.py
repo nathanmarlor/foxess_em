@@ -53,6 +53,8 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
+    reauth_entry: ConfigEntry | None = None
+
     def __init__(self, config=None) -> None:
         """Initialize."""
         self._errors = {}
@@ -187,6 +189,37 @@ class BatteryManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     selector.EntitySelectorConfig(domain="sensor", multiple=True)
                 ),
             }
+        )
+
+    async def async_step_reauth(self, user_input=None):
+        """Perform reauth upon an API authentication error."""
+        self.reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        return await self.async_step_reauth_fox_api_key()
+
+    async def async_step_reauth_fox_api_key(self, user_input=None):
+        """Ask user to add their API Key."""
+        if user_input is not None:
+            fox_valid = await self._test_fox_cloud(user_input[FOX_API_KEY])
+            if fox_valid:
+                self._errors["base"] = None
+                data = dict(self.reauth_entry.data)
+                options = dict(self.reauth_entry.data)
+                data.update(user_input)
+                options.update(user_input)
+                return self.async_update_reload_and_abort(
+                    self.reauth_entry,
+                    data=data,
+                    options=options,
+                )
+            else:
+                self._errors["base"] = "fox_error"
+
+        return self.async_show_form(
+            step_id="reauth_fox_api_key",
+            data_schema=self._cloud_schema,
+            errors=self._errors,
         )
 
     async def async_step_init(self, user_input: dict[str, Any] = None):

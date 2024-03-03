@@ -86,8 +86,13 @@ Choose from one of the following options:
 
 <b>FoxESS Cloud</b>
 
-- **Username**: Username from FoxESS Cloud
-- **Password**: Password from FoxESS Cloud
+- **API Key**: API Key from FoxESS Cloud. To find this, go to https://www.foxesscloud.com/, select
+  the User icon in the top right corner and select User Profile, then select API Management and
+  generate an API key if you do not already have one.
+
+Do not generate a new key if you have already generated one for something else (e.g.
+[foxess-ha](https://github.com/macxq/foxess-ha)), as this will invalidate the previous key and you
+will have to reconfigure your other uses.
 
 ![FOX](images/config-step-2-fox.png)
 

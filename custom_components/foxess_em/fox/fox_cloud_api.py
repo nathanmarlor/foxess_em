@@ -91,9 +91,7 @@ class FoxCloudApiClient:
             if status == _FOX_OK:
                 return result["result"]
             elif status == _FOX_INVALID_TOKEN:
-                _LOGGER.debug("Fox Cloud token has expired - refreshing...")
-                await self._refresh_token()
-                return await self._post_data(url, params)
+                raise NoDataError(f"Fox Cloud API Key is not valid - Error: {status}")
             elif status == _FOX_TIMEOUT and self._fox_retries < _FOX_RETRIES:
                 self._fox_retries += 1
                 sleep_time = self._fox_retries * _FOX_RETRY_DELAY
