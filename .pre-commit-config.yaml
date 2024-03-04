@@ -6,14 +6,6 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: local
-    hooks:
-      - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types: [python]
-        require_serial: true
   # Using this mirror lets us use mypyc-compiled black, which is about 2x faster
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 24.2.0
@@ -29,6 +21,10 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.2.1
     hooks:
