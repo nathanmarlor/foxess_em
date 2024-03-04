@@ -1,8 +1,10 @@
 """Custom sensor with optional properties"""
+
 from dataclasses import dataclass
 
-from custom_components.foxess_em.const import Connection
 from homeassistant.components.switch import SwitchEntityDescription
+
+from custom_components.foxess_em.const import Connection
 
 
 @dataclass

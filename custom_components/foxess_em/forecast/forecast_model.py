@@ -1,7 +1,7 @@
 """Forecast model"""
+
+from datetime import datetime, timedelta
 import logging
-from datetime import datetime
-from datetime import timedelta
 
 import pandas as pd
 

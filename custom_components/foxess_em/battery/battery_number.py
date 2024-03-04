@@ -1,9 +1,9 @@
 """Battery switch"""
+
 import logging
 
 from custom_components.foxess_em.common.number import Number
 from custom_components.foxess_em.common.number_desc import NumberDescription
-
 
 _LOGGER = logging.getLogger(__name__)
 

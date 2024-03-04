@@ -1,17 +1,15 @@
 """Average model"""
-import logging
-from datetime import datetime
-from datetime import time
 
-import pandas as pd
+from datetime import datetime, time
+import logging
+
 from dateutil import tz
-from homeassistant.components.recorder import get_instance
-from homeassistant.components.recorder import history
+from homeassistant.components.recorder import get_instance, history
 from homeassistant.core import HomeAssistant
+import pandas as pd
 
 from ..util.exceptions import NoDataError
-from .tracked_sensor import HistorySensor
-from .tracked_sensor import TrackedSensor
+from .tracked_sensor import HistorySensor, TrackedSensor
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,20 +1,22 @@
 """Sensor"""
+
 import logging
 from typing import Any
 
 from attr import dataclass
-from custom_components.foxess_em.common.callback_controller import CallbackController
-from homeassistant.components.sensor import ExtraStoredData
-from homeassistant.components.sensor import RestoreEntity
-from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    ExtraStoredData,
+    RestoreEntity,
+    SensorDeviceClass,
+    SensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_IDENTIFIERS
-from homeassistant.const import ATTR_NAME
+from homeassistant.const import ATTR_IDENTIFIERS, ATTR_NAME
 from homeassistant.helpers.device_registry import DeviceEntryType
 
-from ..const import ATTR_ENTRY_TYPE
-from ..const import DOMAIN
+from custom_components.foxess_em.common.callback_controller import CallbackController
+
+from ..const import ATTR_ENTRY_TYPE, DOMAIN
 from .sensor_desc import SensorDescription
 
 _LOGGER = logging.getLogger(__name__)

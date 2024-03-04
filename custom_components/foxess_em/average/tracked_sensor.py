@@ -1,4 +1,5 @@
 """Tracked sensor data model"""
+
 from dataclasses import dataclass
 from datetime import timedelta
 

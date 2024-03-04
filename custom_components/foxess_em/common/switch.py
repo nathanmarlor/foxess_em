@@ -1,18 +1,15 @@
 """Home Assistant switch"""
+
 import logging
 
 from homeassistant.components.sensor import RestoreEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_IDENTIFIERS
-from homeassistant.const import ATTR_NAME
+from homeassistant.const import ATTR_IDENTIFIERS, ATTR_NAME
 from homeassistant.helpers.device_registry import DeviceEntryType
 
 from ..common.switch_desc import SwitchDescription
-from ..const import ATTR_ENTRY_TYPE
-from ..const import DEFAULT_NAME
-from ..const import DOMAIN
-from ..const import SWITCH
+from ..const import ATTR_ENTRY_TYPE, DEFAULT_NAME, DOMAIN, SWITCH
 
 _LOGGER = logging.getLogger(__name__)
 

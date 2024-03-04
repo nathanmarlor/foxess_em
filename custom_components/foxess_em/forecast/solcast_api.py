@@ -1,6 +1,7 @@
 """Sample API Client."""
-import logging
+
 from datetime import timedelta
+import logging
 from typing import Any
 
 import aiohttp

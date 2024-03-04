@@ -1,11 +1,10 @@
 """Callback controller"""
+
 import asyncio
 import logging
 from typing import Callable
 
-from homeassistant.core import CoreState
-from homeassistant.core import EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import HomeAssistant
+from homeassistant.core import EVENT_HOMEASSISTANT_STARTED, CoreState, HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 

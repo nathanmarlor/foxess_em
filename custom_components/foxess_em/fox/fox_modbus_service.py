@@ -1,7 +1,7 @@
 """Fox controller"""
+
+from datetime import datetime, time
 import logging
-from datetime import datetime
-from datetime import time
 
 from homeassistant.core import HomeAssistant
 

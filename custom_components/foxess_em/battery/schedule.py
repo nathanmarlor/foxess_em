@@ -1,13 +1,14 @@
 """Battery controller"""
+
+from datetime import datetime, timedelta
 import logging
-from datetime import datetime
-from datetime import timedelta
 from typing import Any
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.event import async_track_utc_time_change
 
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from custom_components.foxess_em.common.unload_controller import UnloadController
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.event import async_track_utc_time_change
 
 _LOGGER = logging.getLogger(__name__)
 _SCHEDULE = "sensor.foxess_em_schedule"

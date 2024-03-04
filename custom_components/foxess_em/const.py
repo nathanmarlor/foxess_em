@@ -3,7 +3,6 @@
 # Base component constants
 from enum import Enum
 
-
 NAME = "foxess_em"
 DOMAIN = "foxess_em"
 DOMAIN_DATA = f"{DOMAIN}_data"

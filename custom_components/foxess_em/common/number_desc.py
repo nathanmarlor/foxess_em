@@ -1,4 +1,5 @@
 """Custom sensor with optional properties"""
+
 from dataclasses import dataclass
 
 from homeassistant.components.number import NumberEntityDescription

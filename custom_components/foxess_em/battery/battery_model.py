@@ -1,15 +1,15 @@
 """Battery model"""
+
+from datetime import datetime, time, timedelta
 import json
 import logging
-from datetime import datetime
-from datetime import time
-from datetime import timedelta
 
+from homeassistant.core import HomeAssistant
 import pandas as pd
+
 from custom_components.foxess_em.battery.battery_util import BatteryUtils
 from custom_components.foxess_em.battery.schedule import Schedule
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
-from homeassistant.core import HomeAssistant
 
 from ..util.exceptions import NoDataError
 

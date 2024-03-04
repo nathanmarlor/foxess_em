@@ -1,17 +1,15 @@
 """Home Assistant switch"""
+
 import logging
 
-from custom_components.foxess_em.common.number_desc import NumberDescription
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_IDENTIFIERS
-from homeassistant.const import ATTR_NAME
+from homeassistant.const import ATTR_IDENTIFIERS, ATTR_NAME
 from homeassistant.helpers.device_registry import DeviceEntryType
 
-from ..const import ATTR_ENTRY_TYPE
-from ..const import DEFAULT_NAME
-from ..const import DOMAIN
-from ..const import NUMBER
+from custom_components.foxess_em.common.number_desc import NumberDescription
+
+from ..const import ATTR_ENTRY_TYPE, DEFAULT_NAME, DOMAIN, NUMBER
 
 _LOGGER = logging.getLogger(__name__)
 

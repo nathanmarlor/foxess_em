@@ -1,15 +1,13 @@
 """Fox controller"""
 
+from datetime import datetime, time
 import logging
-from datetime import datetime
-from datetime import time
 
 from homeassistant.core import HomeAssistant
 
 from ..util.exceptions import NoDataError
 from .fox_cloud_api import FoxCloudApiClient
 from .fox_service import FoxService
-
 
 _SET_TIMES = "/op/v0/device/battery/forceChargeTime/set"
 _DEVICE = "/op/v0/device/list"
