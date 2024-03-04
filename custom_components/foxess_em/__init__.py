@@ -10,8 +10,6 @@ import logging
 from datetime import time
 
 from custom_components.foxess_em.battery.schedule import Schedule
-from custom_components.foxess_em.const import CONNECTION_TYPE
-from custom_components.foxess_em.const import FOX_MODBUS_TCP
 from custom_components.foxess_em.fox.fox_modbus import FoxModbus
 from custom_components.foxess_em.fox.fox_modbus_service import FoxModbuservice
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
@@ -22,7 +20,6 @@ from homeassistant.const import (
     MAJOR_VERSION as HA_MAJOR_VERSION,
     MINOR_VERSION as HA_MINOR_VERSION,
 )
-from homeassistant.helpers import issue_registry
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .average.average_controller import AverageController
@@ -47,6 +44,7 @@ from .const import FOX_MODBUS_HOST
 from .const import FOX_MODBUS_PORT
 from .const import FOX_MODBUS_SERIAL
 from .const import FOX_MODBUS_SLAVE
+from .const import FOX_MODBUS_TCP
 from .const import HOUSE_POWER
 from .const import MIN_SOC
 from .const import PLATFORMS
@@ -273,6 +271,6 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
                 version=BatteryManagerFlowHandler.VERSION,
             )
         else:
-            config_entry.version = config_flow.BatteryManagerFlowHandler.VERSION
+            config_entry.version = BatteryManagerFlowHandler.VERSION
 
     return True
