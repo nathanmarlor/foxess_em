@@ -1,10 +1,10 @@
 """Home Assistant switch"""
+
 from homeassistant.config_entries import ConfigEntry
 
 from .battery import battery_switch
 from .charge import charge_switch
-from .const import Connection
-from .const import DOMAIN
+from .const import DOMAIN, Connection
 
 
 async def async_setup_entry(hass, entry: ConfigEntry, async_add_devices):

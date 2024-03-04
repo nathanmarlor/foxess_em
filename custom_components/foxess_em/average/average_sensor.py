@@ -1,4 +1,5 @@
 """Average sensor"""
+
 import logging
 
 from homeassistant.components.sensor import SensorDeviceClass

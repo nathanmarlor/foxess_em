@@ -1,6 +1,6 @@
 """Custom sensor with optional properties"""
-from dataclasses import dataclass
-from dataclasses import field
+
+from dataclasses import dataclass, field
 
 from homeassistant.components.sensor import SensorEntityDescription
 

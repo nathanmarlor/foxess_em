@@ -1,13 +1,14 @@
 """Calendar entries"""
-import logging
-from datetime import datetime
 
-from custom_components.foxess_em.const import DOMAIN
-from homeassistant.components.calendar import CalendarEntity
-from homeassistant.components.calendar import CalendarEvent
+from datetime import datetime
+import logging
+
+from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from custom_components.foxess_em.const import DOMAIN
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 

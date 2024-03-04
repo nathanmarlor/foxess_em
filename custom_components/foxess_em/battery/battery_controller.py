@@ -1,14 +1,15 @@
 """Battery controller"""
+
+from datetime import datetime, time
 import logging
-from datetime import datetime
-from datetime import time
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.event import async_track_state_change
 
 from custom_components.foxess_em.battery.battery_util import BatteryUtils
 from custom_components.foxess_em.battery.schedule import Schedule
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.event import async_track_state_change
 
 from ..average.average_controller import AverageController
 from ..common.callback_controller import CallbackController

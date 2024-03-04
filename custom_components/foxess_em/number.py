@@ -1,4 +1,5 @@
 """Home Assistant switch"""
+
 from homeassistant.config_entries import ConfigEntry
 
 from .battery import battery_number

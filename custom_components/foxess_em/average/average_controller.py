@@ -1,19 +1,18 @@
 """Average controller"""
-import logging
-from datetime import datetime
-from datetime import time
-from datetime import timedelta
 
-from custom_components.foxess_em.common.hass_load_controller import HassLoadController
+from datetime import datetime, time, timedelta
+import logging
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
 
+from custom_components.foxess_em.common.hass_load_controller import HassLoadController
+
 from ..average.average_model import AverageModel
 from ..common.callback_controller import CallbackController
 from ..common.unload_controller import UnloadController
-from .tracked_sensor import HistorySensor
-from .tracked_sensor import TrackedSensor
+from .tracked_sensor import HistorySensor, TrackedSensor
 
 _LOGGER = logging.getLogger(__name__)
 

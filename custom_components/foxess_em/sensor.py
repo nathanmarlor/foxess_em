@@ -1,4 +1,5 @@
 """Sensor platform for foxess_em."""
+
 import logging
 
 from homeassistant.config_entries import ConfigEntry

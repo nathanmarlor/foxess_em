@@ -1,9 +1,9 @@
 """Battery switch"""
+
 import logging
 
 from ..common.switch import Switch
 from ..common.switch_desc import SwitchDescription
-
 
 _LOGGER = logging.getLogger(__name__)
 
