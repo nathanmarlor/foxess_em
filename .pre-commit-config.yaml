@@ -8,18 +8,22 @@ repos:
       - id: trailing-whitespace
   - repo: local
     hooks:
-      - id: black
-        name: black
-        entry: black
-        language: system
-        types: [python]
-        require_serial: true
       - id: flake8
         name: flake8
         entry: flake8
         language: system
         types: [python]
         require_serial: true
+  # Using this mirror lets us use mypyc-compiled black, which is about 2x faster
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.2.0
+    hooks:
+      - id: black
+        # It is recommended to specify the latest version of Python
+        # supported by your project here, or alternatively use
+        # pre-commit's default_language_version, see
+        # https://pre-commit.com/#top_level-default_language_version
+        language_version: python3.12
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
