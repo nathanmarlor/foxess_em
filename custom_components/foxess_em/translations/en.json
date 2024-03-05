@@ -156,5 +156,15 @@
     "abort": {
       "single_instance_allowed": "Only a single instance is allowed."
     }
+  },
+  "services": {
+    "fox_start_force_charge": {
+      "name": "Start force charge",
+      "description": "Starts force charge now until midnight."
+    },
+    "fox_stop_force_charge": {
+      "name": "Stop force charge",
+      "description": "Stops force charge."
+    }
   }
 }
