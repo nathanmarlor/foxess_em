@@ -15,6 +15,7 @@ from homeassistant.const import (
     MINOR_VERSION as HA_MINOR_VERSION,
 )
 from homeassistant.core import Config, HomeAssistant
+from homeassistant.helpers import config_validation
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.foxess_em.battery.schedule import Schedule
@@ -59,6 +60,8 @@ from .fox.fox_cloud_api import FoxCloudApiClient
 from .fox.fox_cloud_service import FoxCloudService
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
+
+CONFIG_SCHEMA = config_validation.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: Config):
