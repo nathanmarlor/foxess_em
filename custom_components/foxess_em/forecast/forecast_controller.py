@@ -21,7 +21,8 @@ _CALLS = 2
 _API_BUFFER = _CALLS * 2
 _START_HOUR = 6
 _HOURS = 12
-_API_LIMIT = 10 # solcast api usage call no longer supported, this is your Api_Limit - set to 10 or 50.
+_API_LIMIT = 10  # solcast api usage call no longer supported, this is your Api_Limit - set to 10 or 50.
+
 
 class ForecastController(UnloadController, CallbackController, HassLoadController):
     """Class to manage forecast retrieval"""
@@ -169,7 +170,9 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         """Refresh site info"""
         try:
             _LOGGER.debug("Setting Solcast site info")
-            self._api_limit = _API_LIMIT # this api_call no longer works, assume api_limit
+            self._api_limit = (
+                _API_LIMIT  # this api_call no longer works, assume api_limit
+            )
             _LOGGER.debug(f"API Limit {self._api_limit}")
 
             await self._setup_refresh()
