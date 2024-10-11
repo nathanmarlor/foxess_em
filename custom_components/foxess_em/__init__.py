@@ -6,8 +6,10 @@ https://github.com/nathanmarlor/foxess_em
 """
 
 import asyncio
+import copy
 from datetime import time
 import logging
+
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryAuthFailed
 from homeassistant.const import (
@@ -77,36 +79,45 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # Check FoxESS API Key before settings up the other platforms to prevent those being setup if it
     # fails, which will prevent setup working when the FoxESS API key is fixed.
-    if len(entry.options) > 0:
-        # overwrite data with options
-        entry.data = entry.options
+    entry_options = copy.deepcopy(dict(entry.options))
+    entry_data = copy.deepcopy(dict(entry.data))
+    _LOGGER.debug(f"Options {entry.options}")
+    _LOGGER.debug(f"Data {entry.data}")
 
-    connection_type = entry.data.get(CONNECTION_TYPE, FOX_MODBUS_TCP)
-    fox_api_key = entry.data.get(FOX_API_KEY)
+    if entry_options != entry_data:
+        # overwrite data with options
+        entry_data = copy.deepcopy(dict(entry.options))
+        _LOGGER.info("Config has been updated")
+    _LOGGER.debug(f"_Data {entry_data}")
+
+
+    connection_type = entry_data.get(CONNECTION_TYPE, FOX_MODBUS_TCP)
+    fox_api_key = entry_data.get(FOX_API_KEY)
     if connection_type == FOX_CLOUD:
         if not fox_api_key:
             raise ConfigEntryAuthFailed(
                 "FoxESSCloud must now be accessed vi API Keys. Please reconfigure."
             )
 
-    solcast_api_key = entry.data.get(SOLCAST_API_KEY)
 
-    eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
-    eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
-    house_power = entry.data.get(HOUSE_POWER)
-    battery_soc = entry.data.get(BATTERY_SOC)
-    aux_power = entry.data.get(AUX_POWER)
-    user_min_soc = entry.data.get(MIN_SOC)
-    capacity = entry.data.get(BATTERY_CAPACITY)
-    dawn_buffer = entry.data.get(DAWN_BUFFER)
-    day_buffer = entry.data.get(DAY_BUFFER)
+    solcast_api_key = entry_data.get(SOLCAST_API_KEY)
+
+    eco_start_time = time.fromisoformat(entry_data.get(ECO_START_TIME))
+    eco_end_time = time.fromisoformat(entry_data.get(ECO_END_TIME))
+    house_power = entry_data.get(HOUSE_POWER)
+    battery_soc = entry_data.get(BATTERY_SOC)
+    aux_power = entry_data.get(AUX_POWER)
+    user_min_soc = entry_data.get(MIN_SOC)
+    capacity = entry_data.get(BATTERY_CAPACITY)
+    dawn_buffer = entry_data.get(DAWN_BUFFER)
+    day_buffer = entry_data.get(DAY_BUFFER)
     # Added for 1.6.1
-    charge_amps = entry.data.get(CHARGE_AMPS, 18)
-    battery_volts = entry.data.get(BATTERY_VOLTS, 208)
+    charge_amps = entry_data.get(CHARGE_AMPS, 18)
+    battery_volts = entry_data.get(BATTERY_VOLTS, 208)
     # Added for 1.7.0
-    fox_modbus_host = entry.data.get(FOX_MODBUS_HOST, "")
-    fox_modbus_port = entry.data.get(FOX_MODBUS_PORT, 502)
-    fox_modbus_slave = entry.data.get(FOX_MODBUS_SLAVE, 247)
+    fox_modbus_host = entry_data.get(FOX_MODBUS_HOST, "")
+    fox_modbus_port = entry_data.get(FOX_MODBUS_PORT, 502)
+    fox_modbus_slave = entry_data.get(FOX_MODBUS_SLAVE, 247)
 
     session = async_get_clientsession(hass)
     solcast_client = SolcastApiClient(solcast_api_key, SOLCAST_URL, session)
@@ -207,7 +218,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
+    
     return True
 
 
