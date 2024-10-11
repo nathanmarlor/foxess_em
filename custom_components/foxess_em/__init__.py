@@ -6,9 +6,10 @@ https://github.com/nathanmarlor/foxess_em
 """
 
 import asyncio
+import copy
 from datetime import time
 import logging
-import copy
+
 from homeassistant.config_entries import ConfigEntry, ConfigEntryAuthFailed
 from homeassistant.const import (
     MAJOR_VERSION as HA_MAJOR_VERSION,
