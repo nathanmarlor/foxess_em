@@ -21,7 +21,7 @@ _CALLS = 2
 _API_BUFFER = _CALLS * 2
 _START_HOUR = 6
 _HOURS = 12
-
+_API_LIMIT = 10 # solcast api usage call no longer supported, this is your Api_Limit - set to 10 or 50.
 
 class ForecastController(UnloadController, CallbackController, HassLoadController):
     """Class to manage forecast retrieval"""
@@ -30,7 +30,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         self._hass = hass
         self._api = ForecastModel(api)
         self._api_count = 0
-        self._api_limit = 50
+        self._api_limit = _API_LIMIT
         self._last_update = None
         self._refresh_listeners = []
 
@@ -168,14 +168,12 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
     ) -> None:  # pylint: disable=unused-argument
         """Refresh site info"""
         try:
-            _LOGGER.debug("Refreshing Solcast site info")
+            _LOGGER.debug("Setting Solcast site info")
+            self._api_limit = _API_LIMIT # this api_call no longer works, assume api_limit
+            _LOGGER.debug(f"API Limit {self._api_limit}")
 
-            api_status = await self._api.api_status()
-            self._api_count = api_status["daily_limit_consumed"]
-            self._api_limit = api_status["daily_limit"]
             await self._setup_refresh()
 
-            _LOGGER.debug("Finished refreshing Solcast site info")
         except Exception as ex:
             _LOGGER.error(f"{ex!r}")
 
