@@ -4,7 +4,7 @@ from datetime import datetime, time
 import logging
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.event import async_track_state_change_event
 
 from custom_components.foxess_em.battery.battery_util import BatteryUtils
 from custom_components.foxess_em.battery.schedule import Schedule
@@ -65,7 +65,7 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         HassLoadController.__init__(self, hass, self.async_refresh)
 
         # Refresh on SoC change
-        battery_refresh = async_track_state_change(
+        battery_refresh = async_track_state_change_event(
             self._hass, battery_soc, self.refresh
         )
         self._unload_listeners.append(battery_refresh)
