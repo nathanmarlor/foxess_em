@@ -3,7 +3,7 @@
 import logging
 
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
+from homeassistant.const import UnitOfEnergy
 
 from ..common.sensor import Sensor
 from ..common.sensor_desc import SensorDescription
@@ -14,7 +14,7 @@ SENSORS: dict[str, SensorDescription] = {
     "average_all_house_load": SensorDescription(
         key="average_all_house_load",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Load: Daily",
         icon="mdi:battery",
         should_poll=False,
@@ -22,7 +22,7 @@ SENSORS: dict[str, SensorDescription] = {
     "average_peak_house_load": SensorDescription(
         key="average_peak_house_load",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Load: Peak",
         icon="mdi:battery",
         should_poll=False,
