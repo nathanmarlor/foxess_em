@@ -96,24 +96,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "FoxESSCloud must now be accessed vi API Keys. Please reconfigure."
             )
 
-    for platform in PLATFORMS:
-        if entry_options.get(platform, True):
-            hass.async_add_job(
-                hass.config_entries.async_forward_entry_setup(entry, platform)
-            )
+    solcast_api_key = entry.data.get(SOLCAST_API_KEY)
 
+    eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
+    eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
+    house_power = entry.data.get(HOUSE_POWER)
+    battery_soc = entry.data.get(BATTERY_SOC)
+    aux_power = entry.data.get(AUX_POWER)
+    user_min_soc = entry.data.get(MIN_SOC)
+    capacity = entry.data.get(BATTERY_CAPACITY)
+    dawn_buffer = entry.data.get(DAWN_BUFFER)
+    day_buffer = entry.data.get(DAY_BUFFER)
 
-    solcast_api_key = entry_data.get(SOLCAST_API_KEY)
-
-    eco_start_time = time.fromisoformat(entry_data.get(ECO_START_TIME))
-    eco_end_time = time.fromisoformat(entry_data.get(ECO_END_TIME))
-    house_power = entry_data.get(HOUSE_POWER)
-    battery_soc = entry_data.get(BATTERY_SOC)
-    aux_power = entry_data.get(AUX_POWER)
-    user_min_soc = entry_data.get(MIN_SOC)
-    capacity = entry_data.get(BATTERY_CAPACITY)
-    dawn_buffer = entry_data.get(DAWN_BUFFER)
-    day_buffer = entry_data.get(DAY_BUFFER)
     # Added for 1.6.1
     charge_amps = entry_data.get(CHARGE_AMPS, 18)
     battery_volts = entry_data.get(BATTERY_VOLTS, 208)
@@ -219,6 +213,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id]["unload"] = entry.add_update_listener(
         async_reload_entry
     )
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 

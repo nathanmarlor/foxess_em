@@ -3,7 +3,7 @@
 import logging
 
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
+from homeassistant.const import UnitOfEnergy
 
 from ..common.sensor import Sensor
 from ..common.sensor_desc import SensorDescription
@@ -14,21 +14,21 @@ SENSORS: dict[str, SensorDescription] = {
     "total_kwh_forecast_today": SensorDescription(
         key="total_kwh_forecast_today",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Forecast: Today",
         icon="mdi:solar-power",
     ),
     "total_kwh_forecast_tomorrow": SensorDescription(
         key="total_kwh_forecast_tomorrow",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Forecast: Tomorrow",
         icon="mdi:solar-power",
     ),
     "total_kwh_forecast_today_remaining": SensorDescription(
         key="total_kwh_forecast_today_remaining",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Forecast: Today Remaining",
         icon="mdi:solar-power",
         should_poll=True,
