@@ -3,7 +3,7 @@
 import logging
 
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
+from homeassistant.const import UnitOfEnergy
 
 from ..common.sensor import Sensor
 from ..common.sensor_desc import SensorDescription
@@ -14,7 +14,7 @@ SENSORS: dict[str, SensorDescription] = {
     "charge_total": SensorDescription(
         key="charge_total",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Capacity: Charge Needed",
         icon="mdi:flash",
         should_poll=False,
@@ -36,7 +36,7 @@ SENSORS: dict[str, SensorDescription] = {
     "state_at_eco_start": SensorDescription(
         key="state_at_eco_start",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Capacity: Eco Start",
         icon="mdi:meter-electric",
         should_poll=False,
@@ -57,7 +57,7 @@ SENSORS: dict[str, SensorDescription] = {
     "peak_grid_import": SensorDescription(
         key="peak_grid_import",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Capacity: Peak Grid Import",
         icon="mdi:credit-card-clock-outline",
         should_poll=False,
@@ -66,7 +66,7 @@ SENSORS: dict[str, SensorDescription] = {
     "peak_grid_export": SensorDescription(
         key="peak_grid_export",
         device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         name="Capacity: Peak Grid Export",
         icon="mdi:credit-card-clock-outline",
         should_poll=False,
