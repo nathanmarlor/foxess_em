@@ -96,17 +96,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "FoxESSCloud must now be accessed vi API Keys. Please reconfigure."
             )
 
-    solcast_api_key = entry.data.get(SOLCAST_API_KEY)
+    solcast_api_key = entry_data.get(SOLCAST_API_KEY)
 
-    eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
-    eco_end_time = time.fromisoformat(entry.data.get(ECO_END_TIME))
-    house_power = entry.data.get(HOUSE_POWER)
-    battery_soc = entry.data.get(BATTERY_SOC)
-    aux_power = entry.data.get(AUX_POWER)
-    user_min_soc = entry.data.get(MIN_SOC)
-    capacity = entry.data.get(BATTERY_CAPACITY)
-    dawn_buffer = entry.data.get(DAWN_BUFFER)
-    day_buffer = entry.data.get(DAY_BUFFER)
+    eco_start_time = time.fromisoformat(entry_data.get(ECO_START_TIME))
+    eco_end_time = time.fromisoformat(entry_data.get(ECO_END_TIME))
+    house_power = entry_data.get(HOUSE_POWER)
+    battery_soc = entry_data.get(BATTERY_SOC)
+    aux_power = entry_data.get(AUX_POWER)
+    user_min_soc = entry_data.get(MIN_SOC)
+    capacity = entry_data.get(BATTERY_CAPACITY)
+    dawn_buffer = entry_data.get(DAWN_BUFFER)
+    day_buffer = entry_data.get(DAY_BUFFER)
 
     # Added for 1.6.1
     charge_amps = entry_data.get(CHARGE_AMPS, 18)
