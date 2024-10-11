@@ -89,12 +89,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "FoxESSCloud must now be accessed vi API Keys. Please reconfigure."
             )
 
-    for platform in PLATFORMS:
-        if entry.options.get(platform, True):
-            hass.async_add_job(
-                hass.config_entries.async_forward_entry_setup(entry, platform)
-            )
-
     solcast_api_key = entry.data.get(SOLCAST_API_KEY)
 
     eco_start_time = time.fromisoformat(entry.data.get(ECO_START_TIME))
@@ -211,6 +205,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id]["unload"] = entry.add_update_listener(
         async_reload_entry
     )
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
