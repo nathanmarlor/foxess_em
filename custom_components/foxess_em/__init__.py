@@ -10,7 +10,6 @@ import copy
 from datetime import time
 import logging
 
-
 from homeassistant.config_entries import ConfigEntry, ConfigEntryAuthFailed
 from homeassistant.const import (
     MAJOR_VERSION as HA_MAJOR_VERSION,
@@ -81,15 +80,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # fails, which will prevent setup working when the FoxESS API key is fixed.
     entry_options = copy.deepcopy(dict(entry.options))
     entry_data = copy.deepcopy(dict(entry.data))
-    _LOGGER.debug(f"Options {entry.options}")
-    _LOGGER.debug(f"Data {entry.data}")
+    _LOGGER.debug("Options %s", entry.options)
+    _LOGGER.debug("Data %s", entry.data)
 
-    if entry_options != entry_data:
+    if entry_options and entry_options != entry_data:
         # overwrite data with options
         entry_data = copy.deepcopy(dict(entry.options))
-        _LOGGER.info("Config has been updated")
-    _LOGGER.debug(f"_Data {entry_data}")
-
+        _LOGGER.debug("Config has been updated")
+    _LOGGER.debug("Data %s", entry.data)
 
     connection_type = entry_data.get(CONNECTION_TYPE, FOX_MODBUS_TCP)
     fox_api_key = entry_data.get(FOX_API_KEY)
@@ -98,7 +96,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             raise ConfigEntryAuthFailed(
                 "FoxESSCloud must now be accessed vi API Keys. Please reconfigure."
             )
-
 
     solcast_api_key = entry_data.get(SOLCAST_API_KEY)
 
@@ -218,7 +215,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
+
     return True
 
 
