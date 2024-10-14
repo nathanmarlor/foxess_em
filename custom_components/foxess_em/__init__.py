@@ -84,7 +84,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.debug("Data %s", entry.data)
 
     if entry_options and entry_options != entry_data:
-        # overwrite data with options
+        # overwrite data with options, force update as not allowed to access entries directly
+        hass.config_entries.async_update_entry(
+            entry,
+            data=entry_options,
+            version=BatteryManagerFlowHandler.VERSION,
+        )
         entry_data = copy.deepcopy(dict(entry.options))
         _LOGGER.debug("Config has been updated")
     _LOGGER.debug("Data %s", entry.data)
