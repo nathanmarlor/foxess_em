@@ -6,6 +6,7 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
+from typing import Any
 
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 from custom_components.foxess_em.const import FORECAST
@@ -147,7 +148,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         """Model status"""
         return self._api.ready()
 
-    async def async_refresh(self, *args) -> None:  # pylint: disable=unused-argument
+    async def async_refresh(self, *_: Any) -> None:
         """Refresh forecast"""
         try:
             _LOGGER.debug("Refreshing forecast data")
@@ -165,8 +166,8 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         self._notify_listeners()
 
     async def _async_get_site_info(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
+        self, *_: Any
+    ) -> None:
         """Refresh site info"""
         try:
             _LOGGER.debug("Setting Solcast site info")
@@ -188,7 +189,7 @@ class ForecastController(UnloadController, CallbackController, HassLoadControlle
         """Return resampled data"""
         return self._api.raw_data()
 
-    async def _reset_api_count(self, *args) -> None:  # pylint: disable=unused-argument
+    async def _reset_api_count(self, *_: Any) -> None:
         """Reset API count to 0"""
         self._api_count = 0
 

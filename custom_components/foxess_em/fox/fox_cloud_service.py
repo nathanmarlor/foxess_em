@@ -4,6 +4,7 @@ from datetime import datetime, time
 import logging
 
 from homeassistant.core import HomeAssistant
+from typing import Any
 
 from ..util.exceptions import NoDataError
 from .fox_cloud_api import FoxCloudApiClient
@@ -77,7 +78,7 @@ class FoxCloudService(FoxService):
         except NoDataError as ex:
             _LOGGER.error(ex)
 
-    async def stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
+    async def stop_force_charge(self, *_: Any) -> None:
         """Start force charge"""
         _LOGGER.debug("Requesting stop force charge from Fox Cloud")
 
@@ -92,8 +93,8 @@ class FoxCloudService(FoxService):
             _LOGGER.error(ex)
 
     async def set_min_soc(
-        self, soc: int, *args
-    ) -> None:  # pylint: disable=unused-argument
+        self, soc: int, *_: Any
+    ) -> None:
         """Start force charge"""
         _LOGGER.debug("Sending min SoC to Fox Cloud")
 
@@ -106,7 +107,7 @@ class FoxCloudService(FoxService):
         except NoDataError as ex:
             _LOGGER.error(ex)
 
-    async def set_charge_current(self, charge_current: float, *args) -> None:
+    async def set_charge_current(self, charge_current: float, *_: Any) -> None:
         """Set charge current"""
         _LOGGER.debug(
             "Skipping call to set charge current as not supported using the Cloud"

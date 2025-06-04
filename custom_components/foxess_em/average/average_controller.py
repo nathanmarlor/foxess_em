@@ -6,6 +6,7 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_utc_time_change
 from pandas import DataFrame
+from typing import Any
 
 from custom_components.foxess_em.common.hass_load_controller import HassLoadController
 
@@ -62,7 +63,7 @@ class AverageController(UnloadController, CallbackController, HassLoadController
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(self, *args) -> None:  # pylint: disable=unused-argument
+    async def async_refresh(self, *_: Any) -> None:
         """Refresh data"""
         _LOGGER.debug("Refreshing averages model")
 

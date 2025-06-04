@@ -5,6 +5,7 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_state_change_event
+from typing import Any
 
 from custom_components.foxess_em.battery.battery_util import BatteryUtils
 from custom_components.foxess_em.battery.schedule import Schedule
@@ -74,11 +75,11 @@ class BatteryController(UnloadController, CallbackController, HassLoadController
         """Model status"""
         return self._model.ready()
 
-    async def async_refresh(self, *args) -> None:
+    async def async_refresh(self, *_: Any) -> None:
         """Async refresh"""
         self.refresh()
 
-    def refresh(self, *args) -> None:  # pylint: disable=unused-argument
+    def refresh(self, *_: Any) -> None:
         """Refresh battery model"""
         _LOGGER.debug("Refreshing battery model")
 

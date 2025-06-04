@@ -4,6 +4,7 @@ from datetime import datetime, time
 import logging
 
 from homeassistant.core import HomeAssistant
+from typing import Any
 
 from .fox_modbus import FoxModbus
 from .fox_service import FoxService
@@ -68,19 +69,19 @@ class FoxModbuservice(FoxService):
                 _P1_ENABLE, [1, start_encoded, stop_encoded, 0, 0, 0], self._slave
             )
 
-    async def stop_force_charge(self, *args) -> None:  # pylint: disable=unused-argument
+    async def stop_force_charge(self, *_: Any) -> None:
         """Start force charge"""
         _LOGGER.debug("Requesting stop force charge from Fox Modbus")
         await self._modbus.write_registers(_P1_ENABLE, [0, 0, 0, 0, 0, 0], self._slave)
 
     async def set_min_soc(
-        self, soc: int, *args
-    ) -> None:  # pylint: disable=unused-argument
+        self, soc: int, *_: Any
+    ) -> None:
         """Start force charge"""
         _LOGGER.debug("Request set min SoC to Fox Modbus")
         await self._modbus.write_registers(_MIN_SOC, [soc], self._slave)
 
-    async def set_charge_current(self, charge_current: float, *args) -> None:
+    async def set_charge_current(self, charge_current: float, *_: Any) -> None:
         """Set charge current"""
         _LOGGER.debug(
             f"Requesting set charge current of {charge_current}A to Fox Modbus"
