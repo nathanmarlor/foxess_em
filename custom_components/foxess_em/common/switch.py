@@ -7,6 +7,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_IDENTIFIERS, ATTR_NAME
 from homeassistant.helpers.device_registry import DeviceEntryType
+from typing import Any
 
 from ..common.switch_desc import SwitchDescription
 from ..const import ATTR_ENTRY_TYPE, DEFAULT_NAME, DOMAIN, SWITCH
@@ -32,12 +33,12 @@ class Switch(SwitchEntity, RestoreEntity):
 
         self._unique_id = f"{DEFAULT_NAME}_{SWITCH}_{self.switch_desc.name}"
 
-    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_on(self, **_: Any) -> None:
         """Turn on the switch."""
         switch = getattr(self._controller, self.switch_desc.switch)
         switch(True)
 
-    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_off(self, **_: Any) -> None:
         """Turn off the switch."""
         switch = getattr(self._controller, self.switch_desc.switch)
         switch(False)

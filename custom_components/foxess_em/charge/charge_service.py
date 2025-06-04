@@ -9,6 +9,7 @@ from homeassistant.helpers.event import (
     async_track_state_change,
     async_track_utc_time_change,
 )
+from typing import Any
 
 from custom_components.foxess_em.fox.fox_service import FoxService
 from custom_components.foxess_em.util.peak_period_util import PeakPeriodUtils
@@ -98,7 +99,7 @@ class ChargeService(UnloadController):
         )
         self._unload_listeners.append(eco_end)
 
-    async def _eco_start_setup(self, *args) -> None:  # pylint: disable=unused-argument
+    async def _eco_start_setup(self, *_: Any) -> None:
         """Set target SoC"""
 
         _LOGGER.debug("Calculating optimal battery SoC")
@@ -123,7 +124,7 @@ class ChargeService(UnloadController):
         _LOGGER.debug("Charge rate set to %dA for %s", self._target_charge_amps, window)
         await self._fox.set_charge_current(self._target_charge_amps)
 
-    async def _eco_start(self, *args) -> None:  # pylint: disable=unused-argument
+    async def _eco_start(self, *_: Any) -> None:
         """Eco start"""
 
         _LOGGER.debug("Setting min SoC to %d%%", self._perc_target)
@@ -138,20 +139,20 @@ class ChargeService(UnloadController):
             await self._stop_force_charge()
 
     async def _start_force_charge_off_peak(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
+        self, *_: Any
+    ) -> None:
         """Set Fox force charge settings to True"""
         self._charge_active = True
         await self._fox.start_force_charge_off_peak()
 
     async def _stop_force_charge(
-        self, *args
-    ) -> None:  # pylint: disable=unused-argument
+        self, *_: Any
+    ) -> None:
         """Set Fox force charge settings to False"""
         self._charge_active = False
         await self._fox.stop_force_charge()
 
-    async def _eco_end(self, *args) -> None:  # pylint: disable=unused-argument
+    async def _eco_end(self, *_: Any) -> None:
         """Stop holding SoC"""
 
         self._stop_listening()
@@ -165,7 +166,7 @@ class ChargeService(UnloadController):
 
     async def _battery_soc_change(
         self, entity, old_state, new_state
-    ):  # pylint: disable=unused-argument
+    ) -> None:
         new_state = float(new_state.state)
 
         if self._custom_charge_profile and new_state > 90:
