@@ -31,7 +31,10 @@ class FoxModbus:
             FOX_MODBUS_TCP: ModbusTcpClient,
         }
 
-        self._client = self._class[self._config_type](**config)
+        client_config = {
+            key: value for key, value in config.items() if key != CONNECTION_TYPE
+        }
+        self._client = self._class[self._config_type](**client_config)
         self._hass.async_create_task(self.connect())
 
     async def connect(self):
