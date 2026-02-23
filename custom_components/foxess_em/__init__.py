@@ -15,7 +15,12 @@ from homeassistant.const import (
     MAJOR_VERSION as HA_MAJOR_VERSION,
     MINOR_VERSION as HA_MINOR_VERSION,
 )
-from homeassistant.core import Config, HomeAssistant
+from homeassistant.core import HomeAssistant
+
+try:
+    from homeassistant.core_config import Config
+except ImportError:  # pragma: no cover
+    from typing import Any as Config
 from homeassistant.helpers import config_validation
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 

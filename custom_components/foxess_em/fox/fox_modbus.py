@@ -32,9 +32,7 @@ class FoxModbus:
         }
 
         client_config = {
-            key: value
-            for key, value in config.items()
-            if key != CONNECTION_TYPE
+            key: value for key, value in config.items() if key != CONNECTION_TYPE
         }
         self._client = self._class[self._config_type](**client_config)
         self._hass.async_create_task(self.connect())
